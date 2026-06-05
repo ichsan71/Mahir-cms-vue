@@ -1,0 +1,80 @@
+import gql from "graphql-tag";
+
+// Statistik ringkas 4 kartu atas
+export const DASHBOARD_STATS = gql`
+  query DashboardStats {
+    dashboardStats {
+      totalEmployees
+      presentToday
+      pendingLeaves
+      pendingPayroll
+      employeesDelta
+      totalHeadcount
+    }
+  }
+`;
+
+// Data bar chart kehadiran mingguan
+export const ATTENDANCE_WEEKLY = gql`
+  query AttendanceWeekly {
+    attendanceWeekly {
+      day
+      present
+      late
+      absent
+    }
+  }
+`;
+
+// Distribusi karyawan per departemen (doughnut)
+export const DEPT_DISTRIBUTION = gql`
+  query DepartmentDistribution {
+    departmentDistribution {
+      dept
+      count
+    }
+  }
+`;
+
+// Aktivitas terbaru
+export const RECENT_ACTIVITIES = gql`
+  query RecentActivities {
+    recentActivities {
+      id
+      text
+      time
+      color
+    }
+  }
+`;
+
+// Pengajuan cuti yang menunggu persetujuan
+export const PENDING_LEAVES = gql`
+  query PendingLeaves {
+    pendingLeaves {
+      id
+      emp
+      type
+      dateRange
+      status
+    }
+  }
+`;
+
+export const APPROVE_LEAVE = gql`
+  mutation ApproveLeave($id: ID!) {
+    approveLeave(id: $id) {
+      id
+      status
+    }
+  }
+`;
+
+export const REJECT_LEAVE = gql`
+  mutation RejectLeave($id: ID!) {
+    rejectLeave(id: $id) {
+      id
+      status
+    }
+  }
+`;
