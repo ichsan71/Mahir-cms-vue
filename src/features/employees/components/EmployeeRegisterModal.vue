@@ -50,6 +50,17 @@ const unitsSelected = ref([]);
 // Normalkan nilai tanggal ke "YYYY-MM-DD" untuk input type="date".
 const toDate = (d) => (d ? String(d).slice(0, 10) : "");
 
+// Cocokkan nilai enum tersimpan dari backend ke value opsi (nama enum introspeksi).
+// Backend bisa mengembalikan format berbeda (mis. "islam" vs nama enum "ISLAM"),
+// sedangkan <select> native butuh kecocokan string persis agar opsi ikut terpilih.
+// Samakan dengan mengabaikan beda huruf besar/kecil & pemisah (spasi/_/-).
+const normEnum = (s) => String(s ?? "").toLowerCase().replace(/[\s_-]/g, "");
+function matchEnum(raw, options) {
+  if (!raw) return "";
+  const hit = options.find((o) => normEnum(o.value) === normEnum(raw));
+  return hit ? hit.value : raw;
+}
+
 const blank = () => ({
   // Akun
   username: "",
@@ -98,8 +109,8 @@ function fillForm() {
       birthPlace: e.birthPlace ?? "",
       birthDate: toDate(e.birthDate),
       citizenship: e.citizenship ?? "",
-      religion: e.religion ?? "",
-      maritalStatus: e.maritalStatus ?? "",
+      religion: matchEnum(e.religion, religionOptions.value),
+      maritalStatus: matchEnum(e.maritalStatus, maritalStatusOptions.value),
       hiredDate: toDate(e.hiredDate),
       resignDate: toDate(e.resignDate),
       talentaId: e.talentaId ?? "",
@@ -133,6 +144,15 @@ function fillForm() {
 
 watch(() => props.open, (open) => open && fillForm());
 watch(() => props.employee, () => props.open && fillForm());
+
+// Saat opsi enum baru selesai dimuat (setelah form terisi), cocokkan ulang nilai
+// tersimpan agar <select> ikut terpilih meski opsi datang belakangan.
+watch(religionOptions, (opts) => {
+  if (opts.length && form.value.religion) form.value.religion = matchEnum(form.value.religion, opts);
+});
+watch(maritalStatusOptions, (opts) => {
+  if (opts.length && form.value.maritalStatus) form.value.maritalStatus = matchEnum(form.value.maritalStatus, opts);
+});
 
 // Gabungkan nama lengkap dari bagian-bagiannya.
 function buildFullName() {
