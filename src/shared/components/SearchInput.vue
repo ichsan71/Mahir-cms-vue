@@ -1,5 +1,7 @@
 <script setup>
 // Input pencarian dengan ikon. Dipakai v-model dari toolbar tiap fitur.
+import { MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
+
 defineProps({
   modelValue: { type: String, default: "" },
   placeholder: { type: String, default: "Cari..." },
@@ -10,7 +12,7 @@ defineEmits(["update:modelValue"]);
 
 <template>
   <div class="relative" :style="{ width }">
-    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+    <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
     <input
       :value="modelValue"
       type="text"

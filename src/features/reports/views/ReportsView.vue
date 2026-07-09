@@ -12,16 +12,23 @@ import { useReports } from "../composables/useReports";
 import PageHeader from "@/shared/components/PageHeader.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatCurrency } from "@/shared/utils/format";
+import {
+  ArrowDownTrayIcon,
+  CalendarDaysIcon,
+  BanknotesIcon,
+  UsersIcon,
+  DocumentTextIcon,
+} from "@heroicons/vue/24/outline";
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, LineElement, PointElement, ArcElement, CategoryScale, LinearScale, Filler);
 
 const { months, monthlyAttendance, monthlyPayroll, deptHeadcount, employeeStats, attendance, payroll, leaveReport } = useReports();
 
 const TABS = [
-  { id: "attendance", icon: "bi-calendar2-check", label: "Kehadiran" },
-  { id: "payroll", icon: "bi-cash-stack", label: "Penggajian" },
-  { id: "employees", icon: "bi-people-fill", label: "Karyawan" },
-  { id: "leaves", icon: "bi-file-earmark-text", label: "Cuti & Izin" },
+  { id: "attendance", icon: CalendarDaysIcon, label: "Kehadiran" },
+  { id: "payroll", icon: BanknotesIcon, label: "Penggajian" },
+  { id: "employees", icon: UsersIcon, label: "Karyawan" },
+  { id: "leaves", icon: DocumentTextIcon, label: "Cuti & Izin" },
 ];
 const activeTab = ref("attendance");
 
@@ -73,7 +80,7 @@ const cardCls = "rounded-2xl border border-mahir-border bg-white p-5";
         <option>Apr 2026</option><option>Mar 2026</option><option>Feb 2026</option><option>Jan 2026</option>
       </select>
       <button class="flex items-center gap-2 rounded-lg border border-mahir-border bg-white px-4 py-2 text-[13.5px] font-medium text-slate-700 hover:bg-slate-50">
-        <i class="bi bi-download"></i> Ekspor
+        <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
       </button>
     </template>
   </PageHeader>
@@ -87,7 +94,7 @@ const cardCls = "rounded-2xl border border-mahir-border bg-white p-5";
       :class="activeTab === t.id ? 'border-mahir-border bg-white text-mahir-primary' : 'border-transparent bg-transparent text-slate-500 hover:text-slate-700'"
       @click="activeTab = t.id"
     >
-      <i class="bi" :class="t.icon"></i> {{ t.label }}
+      <component :is="t.icon" class="h-4 w-4" /> {{ t.label }}
     </button>
   </div>
 

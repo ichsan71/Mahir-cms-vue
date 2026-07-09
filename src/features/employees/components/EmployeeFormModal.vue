@@ -7,6 +7,7 @@ import { DEPARTMENTS } from "../constants";
 const props = defineProps({
   open: { type: Boolean, default: false },
   employee: { type: Object, default: null }, // null = mode tambah
+  saving: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["update:open", "save"]);
@@ -56,6 +57,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
     :open="open"
     :title="employee ? 'Edit Karyawan' : 'Tambah Karyawan'"
     size="lg"
+    :loading="saving"
     @update:open="emit('update:open', $event)"
     @submit="onSubmit"
   >

@@ -1,46 +1,75 @@
 <script setup>
-// Port dari resources/views/pages/employees/index.blade.php
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useEmployees } from "../composables/useEmployees";
+import { useEmployeeRegister } from "../composables/useEmployeeRegister";
+import { useEmployeeDetail } from "../composables/useEmployeeDetail";
 import EmployeeStats from "../components/EmployeeStats.vue";
 import EmployeeToolbar from "../components/EmployeeToolbar.vue";
 import EmployeeTable from "../components/EmployeeTable.vue";
-import EmployeeFormModal from "../components/EmployeeFormModal.vue";
+import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
+import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
+import { PlusIcon } from "@heroicons/vue/24/outline";
 
-const { employees, stats, loading, createEmployee, updateEmployee, deleteEmployee } =
-  useEmployees();
+const router = useRouter();
+const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
+const { registerEmployee, editEmployee, deleteEmployee, loading: saving } = useEmployeeRegister();
+
+// Statistik dari metadata pagination (backend belum sediakan endpoint stats khusus).
+const stats = computed(() => ({ total: pagination.value.count }));
 
 const modalOpen = ref(false);
-const editing = ref(null);
 
-function openCreate() {
-  editing.value = null;
+// Id karyawan yang sedang diubah; null = mode daftar baru.
+// useEmployeeDetail mengambil data lengkap (getEmployee) untuk prefill form.
+const editId = ref(null);
+const { employee: editingEmployee } = useEmployeeDetail(editId);
+
+function openAdd() {
+  editId.value = null;
   modalOpen.value = true;
 }
 
 function openEdit(emp) {
-  editing.value = emp;
+  editId.value = emp.id;
   modalOpen.value = true;
 }
 
-async function handleSave({ id, input }) {
-  if (id) {
-    await updateEmployee(id, input);
-  } else {
-    await createEmployee(input);
-  }
-  modalOpen.value = false;
-}
-
-async function handleDelete(emp) {
-  if (window.confirm(`Hapus karyawan "${emp.name}"?`)) {
-    await deleteEmployee(emp.id);
-  }
-}
-
 function handleDetail(emp) {
-  // Detail view di luar scope; tampilkan ringkas sementara.
-  window.alert(`${emp.name}\n${emp.position} — ${emp.dept}\n${emp.email}`);
+  router.push({ name: "karyawan-detail", params: { id: emp.id } });
+}
+
+async function handleSave({ id, username, email, input }) {
+  const result = id
+    ? await editEmployee(id, input)
+    : await registerEmployee({ username, email, input });
+  if (result) {
+    modalOpen.value = false;
+    refetch();
+  }
+}
+
+// Hapus: tampung target lalu konfirmasi dulu sebelum eksekusi.
+const confirmOpen = ref(false);
+const deleteTarget = ref(null);
+
+const deleteMessage = computed(
+  () => `Hapus karyawan "${deleteTarget.value?.fullName ?? ''}"? Tindakan ini dapat memengaruhi data terkait.`,
+);
+
+function openDelete(emp) {
+  deleteTarget.value = emp;
+  confirmOpen.value = true;
+}
+
+async function handleDelete() {
+  if (!deleteTarget.value) return;
+  const ok = await deleteEmployee(deleteTarget.value.id);
+  if (ok) {
+    confirmOpen.value = false;
+    deleteTarget.value = null;
+    refetch();
+  }
 }
 </script>
 
@@ -52,10 +81,10 @@ function handleDetail(emp) {
       <p class="text-sm text-mahir-muted">Data seluruh karyawan aktif & non-aktif Mazta Group</p>
     </div>
     <button
-      class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
-      @click="openCreate"
+      class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+      @click="openAdd"
     >
-      <i class="bi bi-person-plus-fill"></i> Tambah Karyawan
+      <PlusIcon class="h-4 w-4" /> Daftar Karyawan
     </button>
   </div>
 
@@ -69,7 +98,7 @@ function handleDetail(emp) {
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
         Daftar Karyawan
-        <span class="ml-1 text-[13px] font-normal text-slate-400">{{ employees.length }}</span>
+        <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
       </h2>
       <EmployeeToolbar />
     </div>
@@ -79,26 +108,52 @@ function handleDetail(emp) {
       :loading="loading"
       @detail="handleDetail"
       @edit="openEdit"
-      @delete="handleDelete"
+      @delete="openDelete"
     />
 
     <!-- Footer / pagination -->
     <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
       <span class="text-[13px] text-mahir-muted"
-        >Menampilkan {{ employees.length }} dari {{ stats?.total ?? employees.length }} karyawan</span
+        >Menampilkan {{ employees.length }} dari {{ pagination.count }} karyawan</span
       >
       <nav class="flex items-center gap-1">
-        <button class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm text-slate-400" disabled>‹</button>
-        <button class="rounded-lg bg-mahir-primary px-3 py-1 text-sm font-medium text-white">1</button>
-        <button class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm text-slate-600">›</button>
+        <button
+          class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm disabled:text-slate-300 enabled:text-slate-600 enabled:hover:bg-slate-50"
+          :disabled="!pagination.hasPrev"
+          @click="prevPage"
+        >
+          ‹
+        </button>
+        <span class="rounded-lg bg-mahir-primary px-3 py-1 text-sm font-medium text-white">
+          {{ pagination.currentPage }}
+        </span>
+        <span class="px-1 text-[13px] text-mahir-muted">dari {{ pagination.totalPages }}</span>
+        <button
+          class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm disabled:text-slate-300 enabled:text-slate-600 enabled:hover:bg-slate-50"
+          :disabled="!pagination.hasNext"
+          @click="nextPage"
+        >
+          ›
+        </button>
       </nav>
     </div>
   </div>
 
-  <!-- Add / Edit modal -->
-  <EmployeeFormModal
+  <!-- Modal daftar / edit karyawan -->
+  <EmployeeRegisterModal
     v-model:open="modalOpen"
-    :employee="editing"
+    :saving="saving"
+    :employee="editId ? editingEmployee : null"
     @save="handleSave"
+  />
+
+  <!-- Konfirmasi hapus karyawan -->
+  <ConfirmDialog
+    v-model:open="confirmOpen"
+    title="Hapus Karyawan"
+    :message="deleteMessage"
+    confirm-text="Ya, Hapus"
+    :loading="saving"
+    @confirm="handleDelete"
   />
 </template>

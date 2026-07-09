@@ -5,6 +5,15 @@ import { useUiStore } from "@/stores/ui.store";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useAuth } from "@/features/auth/composables/useAuth";
 import { initials } from "@/shared/utils/format";
+import {
+  Bars3Icon,
+  ChevronDownIcon,
+  UserIcon,
+  Cog6ToothIcon,
+  ArrowLeftStartOnRectangleIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+} from "@heroicons/vue/24/outline";
 
 defineProps({
   title: { type: String, default: "Dashboard" },
@@ -15,9 +24,9 @@ const auth = useAuthStore();
 const { logout } = useAuth();
 const menuOpen = ref(false);
 
-const userName = computed(() => auth.user?.name || "Admin");
-const userRole = computed(() => auth.user?.role || "Super Admin");
-const userEmail = computed(() => auth.user?.email || "admin@maztagroup.com");
+const userName = computed(() => auth.displayName);
+const userRole = computed(() => auth.displayRole);
+const userEmail = computed(() => auth.user?.email || "—");
 const userInitials = computed(() => initials(userName.value));
 </script>
 
@@ -31,7 +40,7 @@ const userInitials = computed(() => initials(userName.value));
         aria-label="Toggle sidebar"
         @click="ui.toggleSidebar"
       >
-        <i class="bi bi-list text-lg"></i>
+        <Bars3Icon class="h-5 w-5" />
       </button>
 
       <!-- Breadcrumb -->
@@ -46,25 +55,25 @@ const userInitials = computed(() => initials(userName.value));
 
     <div class="flex items-center gap-3">
       <!-- Search -->
-      <div class="hidden lg:block">
+      <!-- <div class="hidden lg:block">
         <div class="relative w-[220px]">
-          <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+          <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Cari..."
             class="w-full rounded-lg border border-mahir-border bg-white py-2 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
           />
         </div>
-      </div>
+      </div> -->
 
       <!-- Notification -->
-      <button
+      <!-- <button
         class="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
         aria-label="Notifikasi"
       >
-        <i class="bi bi-bell"></i>
+        <BellIcon class="h-5 w-5" />
         <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-mahir-danger"></span>
-      </button>
+      </button> -->
 
       <!-- User menu -->
       <div class="relative">
@@ -81,7 +90,7 @@ const userInitials = computed(() => initials(userName.value));
             <div class="text-[13px] font-semibold text-slate-900">{{ userName }}</div>
             <div class="text-[11px] text-slate-400">{{ userRole }}</div>
           </div>
-          <i class="bi bi-chevron-down hidden text-[11px] text-slate-400 md:block"></i>
+          <ChevronDownIcon class="hidden h-3.5 w-3.5 text-slate-400 md:block" />
         </button>
 
         <Transition name="fade">
@@ -95,12 +104,12 @@ const userInitials = computed(() => initials(userName.value));
             </li>
             <li>
               <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/pengaturan"
-                ><i class="bi bi-person"></i> Profil Saya</RouterLink
+                ><UserIcon class="h-4 w-4" /> Profil Saya</RouterLink
               >
             </li>
             <li>
               <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/pengaturan"
-                ><i class="bi bi-gear"></i> Pengaturan</RouterLink
+                ><Cog6ToothIcon class="h-4 w-4" /> Pengaturan</RouterLink
               >
             </li>
             <li class="border-t border-mahir-border">
@@ -108,7 +117,7 @@ const userInitials = computed(() => initials(userName.value));
                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-mahir-danger hover:bg-slate-50"
                 @mousedown.prevent="logout"
               >
-                <i class="bi bi-box-arrow-left"></i> Keluar
+                <ArrowLeftStartOnRectangleIcon class="h-4 w-4" /> Keluar
               </button>
             </li>
           </ul>

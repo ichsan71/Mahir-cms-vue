@@ -166,13 +166,35 @@ const typeDefs = /* GraphQL */ `
 
   type User {
     id: ID!
-    name: String!
     email: String!
-    role: String!
+    isStaff: Boolean!
+    isActive: Boolean!
+    isSuperuser: Boolean!
+    username: String!
   }
-  type AuthPayload {
+  type AuthLevel {
+    id: ID!
+    name: String!
+  }
+  type AuthUnit {
+    id: ID!
+    name: String!
+  }
+  type AuthEmployee {
+    id: ID!
+    firstName: String
+    fullName: String
+    lastName: String
+    level: AuthLevel
+    units: [AuthUnit!]
+  }
+  type LoginData {
+    employee: AuthEmployee
     token: String!
     user: User!
+  }
+  type LoginPayload {
+    data: LoginData!
   }
 
   input EmployeeInput {
@@ -246,7 +268,7 @@ const typeDefs = /* GraphQL */ `
     createJob(input: JobInput!): Job!
     moveApplicantStage(id: ID!, stage: String!): Applicant!
 
-    login(email: String!, password: String!): AuthPayload!
+    login(username: String!, password: String!): LoginPayload!
   }
 `;
 
@@ -261,6 +283,18 @@ function nextId(list, prefix, pad = 3) {
 
 function textMatch(haystack, q) {
   return haystack.some((s) => String(s).toLowerCase().includes(q));
+}
+
+// Bentuk User publik (tanpa password) sesuai kontrak GraphQL auth.
+function publicUser(u) {
+  return {
+    id: u.id,
+    email: u.email,
+    isStaff: !!u.isStaff,
+    isActive: !!u.isActive,
+    isSuperuser: !!u.isSuperuser,
+    username: u.username,
+  };
 }
 
 const resolvers = {
@@ -386,7 +420,7 @@ const resolvers = {
     monthlyPayroll: () => seed.monthlyPayroll,
     deptHeadcount: () => seed.deptHeadcount,
 
-    me: () => ({ id: seed.users[0].id, name: seed.users[0].name, email: seed.users[0].email, role: seed.users[0].role }),
+    me: () => publicUser(seed.users[0]),
   },
 
   Mutation: {
@@ -451,14 +485,16 @@ const resolvers = {
       return ap;
     },
 
-    login: (_, { email, password }) => {
-      // Mock: terima akun demo, atau email apa pun dengan password non-kosong.
-      const known = seed.users.find((u) => u.email === email && u.password === password);
-      const user = known || (email && password ? { id: "USR-GUEST", name: "Admin", email, role: "Super Admin" } : null);
-      if (!user) throw new Error("Email atau password salah");
+    login: (_, { username, password }) => {
+      // Hanya akun seed yang cocok username + password yang boleh login.
+      const account = seed.users.find((u) => u.username === username && u.password === password);
+      if (!account) throw new Error("Please check your username or password.");
       return {
-        token: `mock-token-${Date.now()}`,
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        data: {
+          employee: account.employee || null,
+          token: `mock-token-${Date.now()}`,
+          user: publicUser(account),
+        },
       };
     },
   },

@@ -6,6 +6,13 @@ import StatsCard from "@/shared/components/StatsCard.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import SearchInput from "@/shared/components/SearchInput.vue";
 import { initials } from "@/shared/utils/format";
+import {
+  ArrowDownTrayIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  CalendarDaysIcon,
+} from "@heroicons/vue/24/outline";
 
 const { filters, records, stats, loading } = useAttendance();
 </script>
@@ -15,17 +22,17 @@ const { filters, records, stats, loading } = useAttendance();
     <template #actions>
       <input type="date" value="2026-04-24" class="rounded-lg border border-mahir-border px-3 py-2 text-[13.5px] text-slate-700 focus:border-mahir-primary focus:outline-none" />
       <button class="flex items-center gap-2 rounded-lg border border-mahir-border bg-white px-4 py-2 text-[13.5px] font-medium text-slate-700 hover:bg-slate-50">
-        <i class="bi bi-download"></i> Ekspor
+        <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
       </button>
     </template>
   </PageHeader>
 
   <!-- Stats -->
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <StatsCard :value="stats?.ontime ?? '—'" label="Tepat Waktu" icon="bi-check-circle-fill" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.late ?? '—'" label="Terlambat" icon="bi-clock-history" color="#D98E18" bg-color="#FFF3DA" />
-    <StatsCard :value="stats?.absent ?? '—'" label="Tidak Hadir" icon="bi-x-circle-fill" color="#D14343" bg-color="#FCE7E7" />
-    <StatsCard :value="stats?.leave ?? '—'" label="Cuti/Izin" icon="bi-calendar2-x" color="#2884E8" bg-color="#E4F1FF" />
+    <StatsCard :value="stats?.ontime ?? '—'" label="Tepat Waktu" :icon="CheckCircleIcon" color="#1B9C67" bg-color="#E2F8EC" />
+    <StatsCard :value="stats?.late ?? '—'" label="Terlambat" :icon="ClockIcon" color="#D98E18" bg-color="#FFF3DA" />
+    <StatsCard :value="stats?.absent ?? '—'" label="Tidak Hadir" :icon="XCircleIcon" color="#D14343" bg-color="#FCE7E7" />
+    <StatsCard :value="stats?.leave ?? '—'" label="Cuti/Izin" :icon="CalendarDaysIcon" color="#2884E8" bg-color="#E4F1FF" />
   </div>
 
   <!-- Table -->

@@ -8,6 +8,14 @@ import StatsCard from "@/shared/components/StatsCard.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import SearchInput from "@/shared/components/SearchInput.vue";
 import { initials } from "@/shared/utils/format";
+import {
+  PlusIcon,
+  UsersIcon,
+  PencilIcon,
+  BriefcaseIcon,
+  ClockIcon,
+  CheckBadgeIcon,
+} from "@heroicons/vue/24/outline";
 
 const {
   jobFilters, applFilters, jobs, applicants, stats, stageCounts,
@@ -59,17 +67,17 @@ function filterByJob(title) {
         class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
         @click="jobModalOpen = true"
       >
-        <i class="bi bi-plus-lg"></i> Buka Lowongan Baru
+        <PlusIcon class="h-4 w-4" /> Buka Lowongan Baru
       </button>
     </template>
   </PageHeader>
 
   <!-- Stats -->
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <StatsCard :value="stats?.openJobs ?? '—'" label="Posisi Terbuka" icon="bi-briefcase-fill" color="#243B8F" bg-color="#E7EEFF" />
-    <StatsCard :value="stats?.totalApplicants ?? '—'" label="Total Pelamar" icon="bi-people-fill" color="#2884E8" bg-color="#E4F1FF" />
-    <StatsCard :value="stats?.inProcess ?? '—'" label="Dalam Proses" icon="bi-hourglass-split" color="#D98E18" bg-color="#FFF3DA" />
-    <StatsCard :value="stats?.hired ?? '—'" label="Berhasil Diterima" icon="bi-patch-check-fill" color="#1B9C67" bg-color="#E2F8EC" />
+    <StatsCard :value="stats?.openJobs ?? '—'" label="Posisi Terbuka" :icon="BriefcaseIcon" color="#243B8F" bg-color="#E7EEFF" />
+    <StatsCard :value="stats?.totalApplicants ?? '—'" label="Total Pelamar" :icon="UsersIcon" color="#2884E8" bg-color="#E4F1FF" />
+    <StatsCard :value="stats?.inProcess ?? '—'" label="Dalam Proses" :icon="ClockIcon" color="#D98E18" bg-color="#FFF3DA" />
+    <StatsCard :value="stats?.hired ?? '—'" label="Berhasil Diterima" :icon="CheckBadgeIcon" color="#1B9C67" bg-color="#E2F8EC" />
   </div>
 
   <!-- Job Openings -->
@@ -115,10 +123,10 @@ function filterByJob(title) {
             <td class="px-4 py-3">
               <div class="flex gap-1.5">
                 <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200" title="Lihat Pelamar" @click="filterByJob(j.title)">
-                  <i class="bi bi-people"></i>
+                  <UsersIcon class="h-4 w-4" />
                 </button>
                 <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200" title="Edit">
-                  <i class="bi bi-pencil"></i>
+                  <PencilIcon class="h-4 w-4" />
                 </button>
               </div>
             </td>

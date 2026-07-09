@@ -1,49 +1,71 @@
 <script setup>
-import { storeToRefs } from "pinia";
+import { ref, watch, onUnmounted } from "vue";
 import { useEmployeeFiltersStore } from "../stores/employeeFilters.store";
-import { DEPARTMENTS } from "../constants";
+import { MagnifyingGlassIcon, ShareIcon, ArrowDownTrayIcon } from "@heroicons/vue/24/outline";
 
 const filters = useEmployeeFiltersStore();
-const { search, dept, status } = storeToRefs(filters);
+
+// Input lokal sebagai penampung sementara: pengetikan tidak langsung memicu
+// query. Nilai baru baru di-commit ke store setelah jeda (debounce) sehingga
+// jumlah request berkurang.
+const localSearch = ref(filters.search);
+const localUnitsName = ref(filters.unitsName);
+
+let timeoutId = null;
+
+function commit() {
+  filters.search = localSearch.value;
+  filters.unitsName = localUnitsName.value;
+  // Reset ke halaman 1 ditangani composable saat filter berubah.
+}
+
+function debouncedCommit() {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(commit, 400);
+}
+
+watch([localSearch, localUnitsName], debouncedCommit);
+onUnmounted(() => clearTimeout(timeoutId));
+
+// Sinkron balik bila store di-reset dari luar (mis. tombol Reset).
+watch(
+  () => [filters.search, filters.unitsName],
+  ([s, u]) => {
+    if (s !== localSearch.value) localSearch.value = s;
+    if (u !== localUnitsName.value) localUnitsName.value = u;
+  },
+);
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <!-- Search -->
+    <!-- Pencarian umum (nama / NIK) -->
     <div class="relative">
-      <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400"></i>
+      <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       <input
-        v-model="search"
+        v-model="localSearch"
         type="text"
-        placeholder="Cari nama, ID..."
+        placeholder="Cari nama, NIK..."
         class="w-[200px] rounded-lg border border-mahir-border py-2 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
       />
     </div>
 
-    <!-- Dept filter -->
-    <select
-      v-model="dept"
-      class="rounded-lg border border-mahir-border px-3 py-2 text-sm text-slate-700 focus:border-mahir-primary focus:outline-none"
-    >
-      <option value="">Semua Dept</option>
-      <option v-for="d in DEPARTMENTS" :key="d" :value="d">{{ d }}</option>
-    </select>
-
-    <!-- Status filter -->
-    <select
-      v-model="status"
-      class="rounded-lg border border-mahir-border px-3 py-2 text-sm text-slate-700 focus:border-mahir-primary focus:outline-none"
-    >
-      <option value="">Semua Status</option>
-      <option value="active">Aktif</option>
-      <option value="inactive">Non-Aktif</option>
-    </select>
+    <!-- Filter unit -->
+    <div class="relative">
+      <ShareIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        v-model="localUnitsName"
+        type="text"
+        placeholder="Filter unit..."
+        class="w-[160px] rounded-lg border border-mahir-border py-2 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
+      />
+    </div>
 
     <!-- Export -->
     <button
       class="flex items-center gap-1.5 rounded-lg border border-mahir-border bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
     >
-      <i class="bi bi-download"></i> Ekspor
+      <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
     </button>
   </div>
 </template>

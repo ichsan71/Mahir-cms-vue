@@ -1,21 +1,72 @@
 <script setup>
 // Port dari resources/views/partials/sidebar.blade.php
-import { RouterLink } from "vue-router";
+import { ref, computed } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 import { useUiStore } from "@/stores/ui.store";
 import { useAuth } from "@/features/auth/composables/useAuth";
+import {
+  Squares2X2Icon,
+  UsersIcon,
+  BuildingOffice2Icon,
+  MapPinIcon,
+  IdentificationIcon,
+  ClockIcon,
+  ShareIcon,
+  ChartBarIcon,
+  BanknotesIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  UserPlusIcon,
+  PresentationChartLineIcon,
+  ChevronDownIcon,
+  ArrowLeftStartOnRectangleIcon,
+  Cog6ToothIcon,
+} from "@heroicons/vue/24/outline";
 
 const ui = useUiStore();
+const route = useRoute();
 const { logout } = useAuth();
 
+// Item dengan `children` dirender sebagai accordion.
 const navItems = [
-  { to: "/dashboard", icon: "bi-grid-1x2-fill", label: "Dashboard" },
-  { to: "/karyawan", icon: "bi-people-fill", label: "Karyawan" },
-  { to: "/penggajian", icon: "bi-cash-stack", label: "Penggajian" },
-  { to: "/kehadiran", icon: "bi-calendar2-check", label: "Kehadiran" },
-  { to: "/cuti", icon: "bi-file-earmark-text", label: "Cuti & Izin", badge: 3 },
-  { to: "/rekrutmen", icon: "bi-person-plus-fill", label: "Rekrutmen" },
-  { to: "/laporan", icon: "bi-bar-chart-line-fill", label: "Laporan" },
+  { to: "/dashboard", icon: Squares2X2Icon, label: "Dashboard", isDev: false },
+  {
+    key: "data-induk",
+    icon: UsersIcon,
+    label: "Data Induk",
+    children: [
+      { to: "/perusahaan", icon: BuildingOffice2Icon, label: "Perusahaan", isDev: false },
+      { to: "/cabang", icon: MapPinIcon, label: "Cabang", isDev: false },
+      { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", isDev: false },
+      { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", isDev: false },
+      { to: "/shift", icon: ClockIcon, label: "Shift", isDev: false },
+      { to: "/unit", icon: ShareIcon, label: "Unit", isDev: false },
+      { to: "/level", icon: ChartBarIcon, label: "Level", isDev: false },
+    ],
+  },
+  { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", isDev: true },
+  { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", isDev: true },
+  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", badge: 3, isDev: true },
+  { to: "/rekrutmen", icon: UserPlusIcon, label: "Rekrutmen", isDev: true },
+  { to: "/laporan", icon: PresentationChartLineIcon, label: "Laporan", isDev: true },
 ];
+
+// Accordion yang sedang terbuka. Buka otomatis grup yang memuat rute aktif.
+function groupHasActive(item) {
+  return (item.children ?? []).some((c) => c.to && route.path.startsWith(c.to));
+}
+
+const openGroups = ref(
+  navItems.filter((i) => i.children && groupHasActive(i)).map((i) => i.key),
+);
+
+function toggleGroup(key) {
+  openGroups.value = openGroups.value.includes(key)
+    ? openGroups.value.filter((k) => k !== key)
+    : [...openGroups.value, key];
+}
+
+const isOpen = (key) => openGroups.value.includes(key);
 
 const linkBase =
   "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors";
@@ -61,25 +112,69 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
         Menu Utama
       </div>
 
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.label"
-        :to="item.to"
-        :class="[linkBase, inactive]"
-        active-class="!bg-mahir-sidebar-active !text-white"
-        @click="ui.closeMobile"
-      >
-        <i class="bi w-[18px] opacity-70" :class="item.icon"></i>
-        <span>{{ item.label }}</span>
-        <span
-          v-if="item.badge"
-          class="ml-auto rounded-full bg-white/10 px-1.5 py-px text-[10px] font-bold text-white/60"
-          >{{ item.badge }}</span
+      <template v-for="item in navItems" :key="item.key || item.label">
+        <!-- Grup accordion -->
+        <div v-if="item.children">
+          <button
+            type="button"
+            :class="[linkBase, inactive, 'w-full text-left']"
+            @click="toggleGroup(item.key)"
+          >
+            <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
+            <span>{{ item.label }}</span>
+            <ChevronDownIcon
+              class="ml-auto h-3.5 w-3.5 opacity-60 transition-transform"
+              :class="{ 'rotate-180': isOpen(item.key) }"
+            />
+          </button>
+
+          <div v-show="isOpen(item.key)" class="ml-3 mt-0.5 flex flex-col gap-0.5 border-l border-white/10 pl-2">
+            <RouterLink
+              v-for="child in item.children"
+              :key="child.to"
+              :to="child.to"
+              :class="[linkBase, inactive, 'py-2']"
+              active-class="!bg-mahir-sidebar-active !text-white"
+              @click="ui.closeMobile"
+            >
+              <component :is="child.icon" class="h-[18px] w-[18px] opacity-70" />
+              <span>{{ child.label }}</span>
+            </RouterLink>
+          </div>
+        </div>
+
+        <!-- Item tunggal -->
+        <component
+          :is="item.isDev ? 'div' : 'RouterLink'"
+          v-else
+          :to="!item.isDev ? item.to : undefined"
+          :class="[linkBase, item.isDev ? 'text-white/40 cursor-not-allowed select-none' : inactive]"
+          active-class="!bg-mahir-sidebar-active !text-white"
+          @click="!item.isDev && ui.closeMobile()"
         >
-      </RouterLink>
+          <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
+          <span>{{ item.label }}</span>
+
+          <span
+            v-if="item.badge && !item.isDev"
+            class="ml-auto rounded-full bg-white/10 px-1.5 py-px text-[10px] font-bold text-white/60"
+          >
+            {{ item.badge }}
+          </span>
+
+          <span
+            v-if="item.isDev"
+            class="ml-auto rounded bg-orange-400 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-black"
+          >
+            Soon
+          </span>
+        </component>
+      </template>
 
       <div class="mx-3 my-2 h-px bg-white/10"></div>
-      <div class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
+
+      <!-- menu pengaturan di disable sementara -->
+      <!-- <div class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
         Pengaturan
       </div>
 
@@ -89,11 +184,13 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
         active-class="!bg-mahir-sidebar-active !text-white"
         @click="ui.closeMobile"
       >
-        <i class="bi bi-gear-fill w-[18px] opacity-70"></i>
+        <Cog6ToothIcon class="h-[18px] w-[18px] opacity-70" />
         <span>Pengaturan</span>
-      </RouterLink>
+      </RouterLink> -->
+      <!-- end menu pengaturan -->
+       
       <button :class="[linkBase, inactive, 'w-full text-left']" @click="logout">
-        <i class="bi bi-box-arrow-left w-[18px] opacity-70"></i>
+        <ArrowLeftStartOnRectangleIcon class="h-[18px] w-[18px] opacity-70" />
         <span>Keluar</span>
       </button>
     </div>

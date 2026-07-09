@@ -6,6 +6,15 @@ import StatsCard from "@/shared/components/StatsCard.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import SearchInput from "@/shared/components/SearchInput.vue";
 import { formatCurrency } from "@/shared/utils/format";
+import {
+  DocumentArrowDownIcon,
+  DocumentTextIcon,
+  BanknotesIcon,
+  CheckCircleIcon,
+  CheckBadgeIcon,
+  ClockIcon,
+} from "@heroicons/vue/24/outline";
+import { PlayCircleIcon } from "@heroicons/vue/24/solid";
 
 const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
 </script>
@@ -14,23 +23,23 @@ const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
   <PageHeader title="Manajemen Penggajian" subtitle="Rekapitulasi & pemrosesan gaji karyawan — Periode April 2026">
     <template #actions>
       <button class="flex items-center gap-2 rounded-lg border border-mahir-border bg-white px-4 py-2 text-[13.5px] font-medium text-slate-700 hover:bg-slate-50">
-        <i class="bi bi-file-earmark-arrow-down"></i> Ekspor CSV
+        <DocumentArrowDownIcon class="h-4 w-4" /> Ekspor CSV
       </button>
       <button
         class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
         @click="processAll"
       >
-        <i class="bi bi-play-circle-fill"></i> Proses Semua
+        <PlayCircleIcon class="h-4 w-4" /> Proses Semua
       </button>
     </template>
   </PageHeader>
 
   <!-- Stats -->
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <StatsCard :value="stats ? formatCurrency(stats.totalNet) : '—'" label="Total Penggajian" icon="bi-cash-stack" color="#243B8F" bg-color="#E7EEFF" />
-    <StatsCard :value="stats ? formatCurrency(stats.paidNet) : '—'" label="Total Terbayar" icon="bi-check-circle-fill" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.countPaid ?? '—'" label="Sudah Diproses" icon="bi-person-check-fill" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.countPending ?? '—'" label="Belum Diproses" icon="bi-hourglass-split" color="#D98E18" bg-color="#FFF3DA" />
+    <StatsCard :value="stats ? formatCurrency(stats.totalNet) : '—'" label="Total Penggajian" :icon="BanknotesIcon" color="#243B8F" bg-color="#E7EEFF" />
+    <StatsCard :value="stats ? formatCurrency(stats.paidNet) : '—'" label="Total Terbayar" :icon="CheckCircleIcon" color="#1B9C67" bg-color="#E2F8EC" />
+    <StatsCard :value="stats?.countPaid ?? '—'" label="Sudah Diproses" :icon="CheckBadgeIcon" color="#1B9C67" bg-color="#E2F8EC" />
+    <StatsCard :value="stats?.countPending ?? '—'" label="Belum Diproses" :icon="ClockIcon" color="#D98E18" bg-color="#FFF3DA" />
   </div>
 
   <!-- Table -->
@@ -86,7 +95,7 @@ const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
             <td class="px-4 py-3">
               <div class="flex items-center justify-center gap-1.5">
                 <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200" title="Lihat Slip">
-                  <i class="bi bi-file-earmark-text"></i>
+                  <DocumentTextIcon class="h-4 w-4" />
                 </button>
                 <button
                   v-if="p.status !== 'paid'"
@@ -94,7 +103,7 @@ const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
                   title="Proses"
                   @click="process(p.id)"
                 >
-                  <i class="bi bi-check-circle"></i>
+                  <CheckCircleIcon class="h-4 w-4" />
                 </button>
               </div>
             </td>

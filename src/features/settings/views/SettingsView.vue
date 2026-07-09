@@ -3,23 +3,43 @@
 // Konfigurasi statis (tanpa GraphQL): nav kiri + panel kanan per seksi.
 import { ref } from "vue";
 import PageHeader from "@/shared/components/PageHeader.vue";
+import {
+  BuildingOffice2Icon,
+  CalendarDaysIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  CalendarIcon,
+  ShareIcon,
+  BanknotesIcon,
+  ArrowTrendingUpIcon,
+  IdentificationIcon,
+  ShieldCheckIcon,
+  LockClosedIcon,
+  BellIcon,
+  PuzzlePieceIcon,
+  CircleStackIcon,
+  ChevronRightIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  Cog6ToothIcon,
+} from "@heroicons/vue/24/outline";
 
 const sections = [
-  { id: "company", icon: "bi-building", label: "Profil Perusahaan" },
-  { id: "attendance", icon: "bi-calendar2-check", label: "Kebijakan Kehadiran" },
-  { id: "shift", icon: "bi-clock-history", label: "Shift Kerja" },
-  { id: "overtime", icon: "bi-hourglass-split", label: "Kebijakan Lembur" },
-  { id: "leave", icon: "bi-file-earmark-text", label: "Kebijakan Cuti" },
-  { id: "holiday", icon: "bi-calendar3-event", label: "Kalender Libur" },
-  { id: "approval", icon: "bi-diagram-3", label: "Alur Persetujuan" },
-  { id: "payroll", icon: "bi-cash-stack", label: "Komponen Penggajian" },
-  { id: "performance", icon: "bi-graph-up-arrow", label: "Performa & KPI" },
-  { id: "ess", icon: "bi-person-badge", label: "Employee Self Service" },
-  { id: "users", icon: "bi-shield-lock-fill", label: "Pengguna & Akses" },
-  { id: "security", icon: "bi-lock-fill", label: "Keamanan Akun" },
-  { id: "notif", icon: "bi-bell-fill", label: "Notifikasi" },
-  { id: "integration", icon: "bi-plug-fill", label: "Integrasi" },
-  { id: "backup", icon: "bi-database-down", label: "Data & Backup" },
+  { id: "company", icon: BuildingOffice2Icon, label: "Profil Perusahaan" },
+  { id: "attendance", icon: CalendarDaysIcon, label: "Kebijakan Kehadiran" },
+  { id: "shift", icon: ClockIcon, label: "Shift Kerja" },
+  { id: "overtime", icon: ClockIcon, label: "Kebijakan Lembur" },
+  { id: "leave", icon: DocumentTextIcon, label: "Kebijakan Cuti" },
+  { id: "holiday", icon: CalendarIcon, label: "Kalender Libur" },
+  { id: "approval", icon: ShareIcon, label: "Alur Persetujuan" },
+  { id: "payroll", icon: BanknotesIcon, label: "Komponen Penggajian" },
+  { id: "performance", icon: ArrowTrendingUpIcon, label: "Performa & KPI" },
+  { id: "ess", icon: IdentificationIcon, label: "Employee Self Service" },
+  { id: "users", icon: ShieldCheckIcon, label: "Pengguna & Akses" },
+  { id: "security", icon: LockClosedIcon, label: "Keamanan Akun" },
+  { id: "notif", icon: BellIcon, label: "Notifikasi" },
+  { id: "integration", icon: PuzzlePieceIcon, label: "Integrasi" },
+  { id: "backup", icon: CircleStackIcon, label: "Data & Backup" },
 ];
 
 const active = ref("company");
@@ -57,9 +77,9 @@ const toggles = ref({
             :class="active === s.id ? 'bg-mahir-primary-soft text-mahir-primary' : 'text-slate-600 hover:bg-slate-50'"
             @click="active = s.id"
           >
-            <i class="bi w-4" :class="s.icon"></i>
+            <component :is="s.icon" class="h-4 w-4 shrink-0" />
             <span>{{ s.label }}</span>
-            <i class="bi bi-chevron-right ml-auto text-[11px] text-slate-300"></i>
+            <ChevronRightIcon class="ml-auto h-3.5 w-3.5 text-slate-300" />
           </button>
         </nav>
       </div>
@@ -75,7 +95,7 @@ const toggles = ref({
             <p class="text-[13px] text-slate-400">Informasi dasar perusahaan Anda</p>
           </div>
           <button class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90">
-            <i class="bi bi-floppy"></i> Simpan Perubahan
+            <ArrowDownTrayIcon class="h-4 w-4" /> Simpan Perubahan
           </button>
         </div>
 
@@ -84,7 +104,7 @@ const toggles = ref({
           <div>
             <div class="text-sm font-semibold text-slate-800">Logo Perusahaan</div>
             <div class="mb-2 text-[12.5px] text-slate-400">Format PNG atau SVG, maks 2MB, rekomendasi 200×200px</div>
-            <button class="rounded-lg border border-mahir-border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"><i class="bi bi-upload mr-1"></i> Unggah Logo</button>
+            <button class="inline-flex items-center rounded-lg border border-mahir-border px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"><ArrowUpTrayIcon class="mr-1 h-4 w-4" /> Unggah Logo</button>
           </div>
         </div>
 
@@ -110,7 +130,7 @@ const toggles = ref({
             <p class="text-[13px] text-slate-400">Atur jam kerja, toleransi, dan aturan absensi</p>
           </div>
           <button class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90">
-            <i class="bi bi-floppy"></i> Simpan
+            <ArrowDownTrayIcon class="h-4 w-4" /> Simpan
           </button>
         </div>
 
@@ -158,7 +178,7 @@ const toggles = ref({
 
       <!-- Seksi lain (placeholder) -->
       <div v-else class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-mahir-border bg-white p-12 text-center">
-        <i class="bi bi-gear text-3xl text-slate-300"></i>
+        <Cog6ToothIcon class="h-9 w-9 text-slate-300" />
         <h2 class="mt-3 font-semibold text-slate-800">{{ activeLabel() }}</h2>
         <p class="mt-1 max-w-sm text-[13px] text-slate-400">
           Konfigurasi untuk seksi ini akan tersedia setelah backend pengaturan terhubung.

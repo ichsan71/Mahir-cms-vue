@@ -1,65 +1,65 @@
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useQuery, useMutation } from "@vue/apollo-composable";
-import {
-  EMPLOYEES,
-  EMPLOYEE_STATS,
-  CREATE_EMPLOYEE,
-  UPDATE_EMPLOYEE,
-  DELETE_EMPLOYEE,
-} from "../graphql/employee.queries";
+import { useQuery } from "@vue/apollo-composable";
+import { LIST_EMPLOYEE } from "../graphql/employee.queries";
 import { useEmployeeFiltersStore } from "../stores/employeeFilters.store";
 
-// Layer logika karyawan: list (reaktif terhadap filter) + stats + CRUD.
+// Layer logika karyawan: daftar paginated (reaktif terhadap filter & halaman).
 export function useEmployees() {
   const filters = useEmployeeFiltersStore();
-  const { search, dept, status } = storeToRefs(filters);
+  const { search, fullName, nik, unitsName, page, pageSize } = storeToRefs(filters);
 
-  // Variabel query dibungkus fungsi agar reaktif terhadap perubahan filter.
+  // Variabel query dibungkus fungsi agar reaktif terhadap perubahan filter/halaman.
   const { result, loading, refetch } = useQuery(
-    EMPLOYEES,
+    LIST_EMPLOYEE,
     () => ({
-      search: search.value || null,
-      dept: dept.value || null,
-      status: status.value || null,
+      params: {
+        fullName: fullName.value?.trim() || null,
+        unitsName: unitsName.value?.trim() || null,
+        nik: nik.value?.trim() || null,
+        search: search.value?.trim() || null,
+        page: page.value || null,
+        pageSize: pageSize.value || null,
+      },
     }),
     { fetchPolicy: "cache-and-network" },
   );
 
-  const { result: statsRes, refetch: refetchStats } = useQuery(EMPLOYEE_STATS);
+  const data = computed(() => result.value?.listEmployee?.data ?? null);
+  const employees = computed(() => data.value?.results ?? []);
+  const pagination = computed(() => ({
+    count: data.value?.count ?? 0,
+    currentPage: data.value?.currentPage ?? page.value,
+    totalPages: data.value?.totalPages ?? 1,
+    hasNext: data.value?.hasNext ?? false,
+    hasPrev: data.value?.hasPrev ?? false,
+  }));
 
-  const employees = computed(() => result.value?.employees ?? []);
-  const stats = computed(() => statsRes.value?.employeeStats ?? null);
+  // Ubah filter → kembali ke halaman pertama agar hasil tetap relevan.
+  watch([search, fullName, nik, unitsName, pageSize], () => {
+    page.value = 1;
+  });
 
-  const { mutate: createMut } = useMutation(CREATE_EMPLOYEE);
-  const { mutate: updateMut } = useMutation(UPDATE_EMPLOYEE);
-  const { mutate: deleteMut } = useMutation(DELETE_EMPLOYEE);
-
-  async function refreshAll() {
-    await Promise.all([refetch(), refetchStats()]);
+  function nextPage() {
+    if (pagination.value.hasNext) page.value += 1;
   }
 
-  async function createEmployee(input) {
-    await createMut({ input });
-    await refreshAll();
+  function prevPage() {
+    if (pagination.value.hasPrev) page.value -= 1;
   }
 
-  async function updateEmployee(id, input) {
-    await updateMut({ id, input });
-    await refreshAll();
-  }
-
-  async function deleteEmployee(id) {
-    await deleteMut({ id });
-    await refreshAll();
+  function goToPage(p) {
+    page.value = p;
   }
 
   return {
     employees,
-    stats,
+    pagination,
+    pageSize,
     loading,
-    createEmployee,
-    updateEmployee,
-    deleteEmployee,
+    refetch,
+    nextPage,
+    prevPage,
+    goToPage,
   };
 }

@@ -8,6 +8,15 @@ import StatsCard from "@/shared/components/StatsCard.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import SearchInput from "@/shared/components/SearchInput.vue";
 import { initials } from "@/shared/utils/format";
+import {
+  PlusIcon,
+  CheckIcon,
+  XMarkIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/vue/24/outline";
 
 const { filters, leaves, stats, loading, approve, reject, createLeave } = useLeaves();
 
@@ -26,17 +35,17 @@ async function handleSave(input) {
         class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
         @click="modalOpen = true"
       >
-        <i class="bi bi-plus-lg"></i> Tambah Pengajuan
+        <PlusIcon class="h-4 w-4" /> Tambah Pengajuan
       </button>
     </template>
   </PageHeader>
 
   <!-- Stats -->
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <StatsCard :value="stats?.total ?? '—'" label="Total Pengajuan" icon="bi-file-earmark-text" color="#243B8F" bg-color="#E7EEFF" />
-    <StatsCard :value="stats?.pending ?? '—'" label="Menunggu Approval" icon="bi-hourglass-split" color="#D98E18" bg-color="#FFF3DA" />
-    <StatsCard :value="stats?.approved ?? '—'" label="Disetujui" icon="bi-check-circle-fill" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.rejected ?? '—'" label="Ditolak" icon="bi-x-circle-fill" color="#D14343" bg-color="#FCE7E7" />
+    <StatsCard :value="stats?.total ?? '—'" label="Total Pengajuan" :icon="DocumentTextIcon" color="#243B8F" bg-color="#E7EEFF" />
+    <StatsCard :value="stats?.pending ?? '—'" label="Menunggu Approval" :icon="ClockIcon" color="#D98E18" bg-color="#FFF3DA" />
+    <StatsCard :value="stats?.approved ?? '—'" label="Disetujui" :icon="CheckCircleIcon" color="#1B9C67" bg-color="#E2F8EC" />
+    <StatsCard :value="stats?.rejected ?? '—'" label="Ditolak" :icon="XCircleIcon" color="#D14343" bg-color="#FCE7E7" />
   </div>
 
   <!-- Table -->
@@ -95,10 +104,10 @@ async function handleSave(input) {
               <div class="flex items-center justify-center gap-1.5">
                 <template v-if="l.status === 'pending'">
                   <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-mahir-success text-white hover:opacity-90" title="Setujui" @click="approve(l.id)">
-                    <i class="bi bi-check-lg"></i>
+                    <CheckIcon class="h-4 w-4" />
                   </button>
                   <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-mahir-danger text-white hover:opacity-90" title="Tolak" @click="reject(l.id)">
-                    <i class="bi bi-x-lg"></i>
+                    <XMarkIcon class="h-4 w-4" />
                   </button>
                 </template>
                 <span v-else class="text-slate-300">—</span>

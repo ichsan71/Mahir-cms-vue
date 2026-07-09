@@ -1,5 +1,6 @@
 <script setup>
 import StatusBadge from "@/shared/components/StatusBadge.vue";
+import { CheckIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
 defineProps({
   leaves: { type: Array, default: () => [] },
@@ -42,14 +43,14 @@ const emit = defineEmits(["approve", "reject"]);
                 title="Setujui"
                 @click="emit('approve', lv.id)"
               >
-                <i class="bi bi-check-lg"></i>
+                <CheckIcon class="h-4 w-4" />
               </button>
               <button
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-mahir-danger text-white hover:opacity-90"
                 title="Tolak"
                 @click="emit('reject', lv.id)"
               >
-                <i class="bi bi-x-lg"></i>
+                <XMarkIcon class="h-4 w-4" />
               </button>
             </div>
           </td>

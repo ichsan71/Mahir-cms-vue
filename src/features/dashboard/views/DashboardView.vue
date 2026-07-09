@@ -6,6 +6,16 @@ import AttendanceChart from "../components/AttendanceChart.vue";
 import DeptDistributionChart from "../components/DeptDistributionChart.vue";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import PendingLeavesTable from "../components/PendingLeavesTable.vue";
+import {
+  ClockIcon,
+  ArrowDownTrayIcon,
+  PlusIcon,
+  ChevronDownIcon,
+  UsersIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  BanknotesIcon,
+} from "@heroicons/vue/24/outline";
 
 const {
   stats,
@@ -20,7 +30,7 @@ const {
 
 <template>
   <!-- Page header -->
-  <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+  <!-- <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div>
       <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
       <p class="text-sm text-mahir-muted">
@@ -31,22 +41,22 @@ const {
       <button
         class="flex items-center gap-2 rounded-lg border border-mahir-border bg-white px-4 py-2 text-[13.5px] font-medium text-slate-700 hover:bg-slate-50"
       >
-        <i class="bi bi-download"></i> Ekspor
+        <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
       </button>
       <button
         class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
       >
-        <i class="bi bi-plus-lg"></i> Tambah Karyawan
+        <PlusIcon class="h-4 w-4" /> Tambah Karyawan
       </button>
     </div>
-  </div>
+  </div> -->
 
   <!-- Stats row -->
-  <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <!-- <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
     <StatsCard
       :value="stats?.totalEmployees ?? '—'"
       label="Total Karyawan"
-      icon="bi-people-fill"
+      :icon="UsersIcon"
       color="#243B8F"
       bg-color="#E7EEFF"
       :delta="stats?.employeesDelta"
@@ -55,7 +65,7 @@ const {
     <StatsCard
       :value="stats?.presentToday ?? '—'"
       label="Hadir Hari Ini"
-      icon="bi-calendar2-check"
+      :icon="CalendarDaysIcon"
       color="#1B9C67"
       bg-color="#E2F8EC"
       :delta="stats ? `dari ${stats.totalHeadcount} karyawan` : null"
@@ -64,21 +74,21 @@ const {
     <StatsCard
       :value="stats?.pendingLeaves ?? '—'"
       label="Cuti Menunggu"
-      icon="bi-file-earmark-text"
+      :icon="DocumentTextIcon"
       color="#D98E18"
       bg-color="#FFF3DA"
     />
     <StatsCard
       :value="stats?.pendingPayroll ?? '—'"
       label="Payroll Pending"
-      icon="bi-cash-stack"
+      :icon="BanknotesIcon"
       color="#D14343"
       bg-color="#FCE7E7"
     />
-  </div>
+  </div> -->
 
   <!-- Charts row -->
-  <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <!-- <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
     <div class="rounded-2xl border border-mahir-border bg-white p-5 lg:col-span-2">
       <div class="mb-4 flex items-center justify-between">
         <h2 class="font-semibold text-slate-900">Kehadiran Minggu Ini</h2>
@@ -87,7 +97,7 @@ const {
           <button
             class="rounded-lg border border-mahir-border bg-white px-2.5 py-1 text-xs text-slate-600"
           >
-            Minggu ini <i class="bi bi-chevron-down ml-1"></i>
+            Minggu ini <ChevronDownIcon class="ml-1 inline h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -98,10 +108,10 @@ const {
       <h2 class="mb-4 font-semibold text-slate-900">Distribusi Departemen</h2>
       <DeptDistributionChart :data="deptDistribution" />
     </div>
-  </div>
+  </div> -->
 
   <!-- Bottom row -->
-  <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+  <!-- <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
     <div class="rounded-2xl border border-mahir-border bg-white p-5 lg:col-span-5">
       <div class="mb-4 flex items-center justify-between">
         <h2 class="font-semibold text-slate-900">Aktivitas Terbaru</h2>
@@ -121,5 +131,35 @@ const {
         @reject="rejectLeave"
       />
     </div>
+  </div> -->
+  
+  <div class="relative min-h-[80vh] w-full rounded-2xl border border-mahir-border bg-white p-6 flex flex-col justify-between">
+    
+    <div class="absolute -right-10 -top-10 -z-10 h-64 w-64 rounded-full bg-mahir-primary/5 blur-[80px]"></div>
+
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+      <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
+    </div>
+
+    <div class="my-auto py-12 flex flex-col items-center text-center max-w-md mx-auto">
+      
+      <div class="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600 text-white ring-1 ring-slate-100">
+        <ClockIcon class="h-6 w-6 animate-spin" style="animation-duration: 2s;" />
+      </div>
+
+      <h2 class="text-xl font-bold text-slate-900 mb-2">
+        Dashboard Belum Siap
+      </h2>
+      <p class="text-sm text-slate-500 leading-relaxed">
+        Halaman ini masih dalam proses pengembangan dan akan segera hadir (*coming soon*) untuk mempermudah pekerjaan Anda. Terima kasih atas kesabarannya!
+      </p>
+
+    </div>
+
+    <div class="border-t border-slate-100 pt-4 text-center sm:text-left text-xs text-slate-400">
+      &copy; Mazta Group. All rights reserved.
+    </div>
+
   </div>
 </template>

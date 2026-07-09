@@ -114,7 +114,23 @@ export const activities = [
   { id: "A5", text: "Dinda Larasati tidak hadir tanpa keterangan", time: "7 jam lalu", color: "#D14343" },
 ];
 
-// Akun demo untuk login mock
+// Akun demo untuk login mock (kontrak auth: username/password + flag staf).
 export const users = [
-  { id: "USR-001", name: "Admin MAHIR", email: "admin@maztagroup.com", role: "Super Admin", password: "password" },
+  {
+    id: "USR-001",
+    username: "admin",
+    email: "admin@maztagroup.com",
+    password: "password",
+    isStaff: true,
+    isActive: true,
+    isSuperuser: true,
+    employee: {
+      id: "EMP-001",
+      firstName: "Admin",
+      fullName: "Admin MAHIR",
+      lastName: "MAHIR",
+      level: { id: "1", name: "Super Admin" },
+      units: [{ id: "1", name: "IT" }],
+    },
+  },
 ];

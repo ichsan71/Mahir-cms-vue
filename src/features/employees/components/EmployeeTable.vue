@@ -1,8 +1,8 @@
 <script setup>
-// Port dari modules/employees.js (renderRows + select-all)
 import { ref, computed, watch } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
-import { initials } from "@/shared/utils/format";
+import { initials, formatDate } from "@/shared/utils/format";
+import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
   employees: { type: Array, default: () => [] },
@@ -19,6 +19,11 @@ const allChecked = computed(
 
 function toggleAll(e) {
   selected.value = e.target.checked ? props.employees.map((emp) => emp.id) : [];
+}
+
+// Gabungkan nama unit (relasi many) menjadi satu teks.
+function unitNames(emp) {
+  return (emp.units ?? []).map((u) => u.name).join(", ") || "—";
 }
 
 // Bersihkan seleksi yang sudah tidak ada di hasil filter terbaru
@@ -45,20 +50,19 @@ watch(
             />
           </th>
           <th class="px-4 py-3 font-semibold">Karyawan</th>
-          <th class="px-4 py-3 font-semibold">NIP / ID</th>
-          <th class="px-4 py-3 font-semibold">Departemen</th>
-          <th class="px-4 py-3 font-semibold">Jabatan</th>
-          <th class="px-4 py-3 font-semibold">Bergabung</th>
+          <th class="px-4 py-3 font-semibold">Unit</th>
+          <th class="px-4 py-3 font-semibold">Level</th>
+          <th class="px-4 py-3 font-semibold">Tanggal Masuk</th>
           <th class="px-4 py-3 font-semibold">Status</th>
           <th class="px-4 py-3 text-center font-semibold">Aksi</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="loading && !employees.length">
-          <td colspan="8" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
+          <td colspan="7" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
         </tr>
         <tr v-else-if="!employees.length">
-          <td colspan="8" class="px-4 py-8 text-center text-slate-400">
+          <td colspan="7" class="px-4 py-8 text-center text-slate-400">
             Tidak ada karyawan yang cocok.
           </td>
         </tr>
@@ -79,19 +83,20 @@ watch(
             <div class="flex items-center gap-2.5">
               <span
                 class="flex h-9 w-9 items-center justify-center rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
-                >{{ initials(emp.name) }}</span
+                >{{ initials(emp.fullName) }}</span
               >
               <div>
-                <div class="text-[13.5px] font-semibold text-slate-800">{{ emp.name }}</div>
-                <div class="text-[11.5px] text-slate-400">{{ emp.email }}</div>
+                <div class="text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
+                <div class="text-[11.5px] text-slate-400">NIK: {{ emp.nik || "—" }}</div>
               </div>
             </div>
           </td>
-          <td class="px-4 py-3 text-slate-600">{{ emp.id }}</td>
-          <td class="px-4 py-3 text-slate-600">{{ emp.dept }}</td>
-          <td class="px-4 py-3 text-slate-600">{{ emp.position }}</td>
-          <td class="px-4 py-3 text-slate-600">{{ emp.join }}</td>
-          <td class="px-4 py-3"><StatusBadge :status="emp.status" /></td>
+          <td class="px-4 py-3 text-slate-600">{{ unitNames(emp) }}</td>
+          <td class="px-4 py-3 text-slate-600">{{ emp.level?.name ?? "—" }}</td>
+          <td class="px-4 py-3 text-slate-600">{{ formatDate(emp.hiredDate) }}</td>
+          <td class="px-4 py-3">
+            <StatusBadge :status="emp.user?.isActive ? 'active' : 'inactive'" />
+          </td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-center gap-1.5">
               <button
@@ -99,21 +104,21 @@ watch(
                 title="Detail"
                 @click="emit('detail', emp)"
               >
-                <i class="bi bi-eye"></i>
+                <EyeIcon class="h-4 w-4" />
               </button>
               <button
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                 title="Edit"
                 @click="emit('edit', emp)"
               >
-                <i class="bi bi-pencil"></i>
+                <PencilIcon class="h-4 w-4" />
               </button>
               <button
-                class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-mahir-danger hover:bg-mahir-danger-soft"
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
                 title="Hapus"
                 @click="emit('delete', emp)"
               >
-                <i class="bi bi-trash3"></i>
+                <TrashIcon class="h-4 w-4" />
               </button>
             </div>
           </td>
