@@ -1,5 +1,7 @@
 <script setup>
 import { IdentificationIcon, EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 
 defineProps({
   employmentTypes: { type: Array, default: () => [] },
@@ -7,6 +9,8 @@ defineProps({
 });
 
 const emit = defineEmits(["detail", "edit", "delete"]);
+
+const auth = useAuthStore();
 </script>
 
 <template>
@@ -52,6 +56,7 @@ const emit = defineEmits(["detail", "edit", "delete"]);
                 <EyeIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.EDIT)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                 title="Edit"
                 @click="emit('edit', type)"
@@ -59,6 +64,7 @@ const emit = defineEmits(["detail", "edit", "delete"]);
                 <PencilIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.DELETE)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
                 title="Hapus"
                 @click="emit('delete', type)"

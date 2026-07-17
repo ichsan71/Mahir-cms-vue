@@ -26,7 +26,21 @@ export const LOGIN = gql`
           isActive
           isSuperuser
           username
+          userPermissions
         }
+      }
+    }
+  }
+`;
+
+// Logout di sisi server: menginvalidasi token. authLink otomatis membawa header
+// `Authorization: Bearer <token>` selama token masih ada di store (dipanggil
+// sebelum sesi lokal dibersihkan), atau via context header eksplisit.
+export const LOGOUT = gql`
+  mutation Logout {
+    logout {
+      data {
+        success
       }
     }
   }

@@ -20,6 +20,7 @@ const blank = () => ({
   position: "",
   join: "",
   status: "active",
+  image: null,
 });
 
 const form = ref(blank());
@@ -38,10 +39,42 @@ watch(
           position: props.employee.position,
           join: props.employee.join || "",
           status: props.employee.status,
+          image: props.employee.image ?? null,
         }
       : blank();
   },
 );
+
+// Upload foto: baca file jadi data URL base64 lalu simpan di form.image.
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+const imageError = ref("");
+
+function onImageChange(event) {
+  imageError.value = "";
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    imageError.value = "Berkas harus berupa gambar.";
+    return;
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    imageError.value = "Ukuran gambar maksimal 2 MB.";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    form.value.image = reader.result; // data URL base64
+  };
+  reader.onerror = () => {
+    imageError.value = "Gagal membaca berkas gambar.";
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  form.value.image = null;
+  imageError.value = "";
+}
 
 function onSubmit() {
   emit("save", { id: props.employee?.id ?? null, input: { ...form.value } });
@@ -61,6 +94,40 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
     @update:open="emit('update:open', $event)"
     @submit="onSubmit"
   >
+    <div class="mb-4 flex items-center gap-4">
+      <span
+        class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-mahir-border bg-slate-50 text-slate-300"
+      >
+        <img
+          v-if="form.image"
+          :src="form.image"
+          alt="Foto karyawan"
+          class="h-full w-full object-cover"
+        />
+        <span v-else class="text-xs">Foto</span>
+      </span>
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <label
+            class="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+          >
+            {{ form.image ? "Ganti Foto" : "Unggah Foto" }}
+            <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+          </label>
+          <button
+            v-if="form.image"
+            type="button"
+            class="rounded-lg px-2.5 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+            @click="removeImage"
+          >
+            Hapus
+          </button>
+        </div>
+        <p v-if="imageError" class="mt-1 text-xs text-rose-500">{{ imageError }}</p>
+        <p v-else class="mt-1 text-xs text-slate-400">Format gambar, maks. 2 MB.</p>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
         <label :class="labelCls">Nama Lengkap *</label>

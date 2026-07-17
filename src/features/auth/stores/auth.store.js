@@ -9,6 +9,22 @@ export const useAuthStore = defineStore("auth", () => {
 
   const isAuthenticated = computed(() => !!token.value);
 
+  // Himpunan nama operasi GraphQL yang boleh dijalankan user, dari
+  // `user.userPermissions` (mis. `listEmployee`). Dipakai untuk lookup O(1) di can().
+  const permissionSet = computed(() => new Set(user.value?.userPermissions || []));
+
+  /**
+   * Apakah user boleh menjalankan sebuah operasi. Gating di frontend hanya untuk
+   * UX — API tetap yang menegakkan akses — jadi ini sekadar menyembunyikan aksi
+   * yang tak boleh dipakai. Superuser selalu diizinkan.
+   * @param {string|string[]} perm Nama operasi, atau daftar (true jika ADA yang cocok).
+   */
+  function can(perm) {
+    if (user.value?.isSuperuser) return true;
+    if (Array.isArray(perm)) return perm.some((p) => permissionSet.value.has(p));
+    return permissionSet.value.has(perm);
+  }
+
   // Nama tampilan & jabatan diturunkan dari data employee (fallback ke user).
   const displayName = computed(
     () => employee.value?.fullName || user.value?.username || "Pengguna",
@@ -34,5 +50,5 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("mahir_employee");
   }
 
-  return { token, user, employee, isAuthenticated, displayName, displayRole, setSession, logout };
+  return { token, user, employee, isAuthenticated, permissionSet, can, displayName, displayRole, setSession, logout };
 });

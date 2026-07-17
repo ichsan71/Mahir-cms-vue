@@ -3,6 +3,8 @@ import { ref, computed, watch } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { initials, formatDate } from "@/shared/utils/format";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 
 const props = defineProps({
   employees: { type: Array, default: () => [] },
@@ -10,6 +12,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["detail", "edit", "delete"]);
+
+const auth = useAuthStore();
 
 const selected = ref([]);
 
@@ -107,6 +111,7 @@ watch(
                 <EyeIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.EDIT)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                 title="Edit"
                 @click="emit('edit', emp)"
@@ -114,6 +119,7 @@ watch(
                 <PencilIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.DELETE)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
                 title="Hapus"
                 @click="emit('delete', emp)"

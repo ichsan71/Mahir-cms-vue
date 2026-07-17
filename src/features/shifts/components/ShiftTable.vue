@@ -1,6 +1,8 @@
 <script setup>
 import { prettyEnum } from "@/shared/composables/useEnumChoices";
 import { ClockIcon, EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 
 defineProps({
   shifts: { type: Array, default: () => [] },
@@ -8,6 +10,8 @@ defineProps({
 });
 
 const emit = defineEmits(["detail", "edit", "delete"]);
+
+const auth = useAuthStore();
 
 // Tampilkan jam ringkas "HH:MM" (buang detik bila ada).
 function fmtTime(t) {
@@ -67,6 +71,7 @@ function fmtTime(t) {
                 <EyeIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.EDIT)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                 title="Edit"
                 @click="emit('edit', shift)"
@@ -74,6 +79,7 @@ function fmtTime(t) {
                 <PencilIcon class="h-4 w-4" />
               </button>
               <button
+                v-if="auth.can(PERM.DELETE)"
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
                 title="Hapus"
                 @click="emit('delete', shift)"

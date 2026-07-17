@@ -1,10 +1,13 @@
 <script setup>
 import { ref, watch, onUnmounted } from "vue";
 import { useLevelFiltersStore } from "../stores/levelFilters.store";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/vue/24/outline";
 
 const emit = defineEmits(["add"]);
 
+const auth = useAuthStore();
 const filters = useLevelFiltersStore();
 
 // Input lokal sebagai penampung sementara: pengetikan tidak langsung memicu
@@ -47,6 +50,7 @@ watch(
 
     <!-- Tambah level -->
     <button
+      v-if="auth.can(PERM.CREATE)"
       class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
       @click="emit('add')"
     >

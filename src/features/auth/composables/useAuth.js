@@ -1,9 +1,10 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMutation } from "@vue/apollo-composable";
-import { LOGIN } from "../graphql/auth.queries";
+import { LOGIN, LOGOUT } from "../graphql/auth.queries";
 import { useAuthStore } from "../stores/auth.store";
 import { useToastStore } from "@/stores/toast.store";
+import { apolloClient } from "@/apollo/client";
 
 // Bersihkan prefix teknis dari pesan error GraphQL/Apollo.
 function cleanMessage(e) {
@@ -24,6 +25,7 @@ export function useAuth() {
   const loading = ref(false);
 
   const { mutate: loginMut } = useMutation(LOGIN);
+  const { mutate: logoutMut } = useMutation(LOGOUT);
 
   async function login({ username, password }) {
     error.value = "";
@@ -45,8 +47,9 @@ export function useAuth() {
         throw new Error("Username atau password salah");
       }
 
-      // Hanya staf aktif yang boleh masuk ke sistem.
-      if (!payload.user.isStaff) {
+      // Super admin boleh masuk meski bukan staff & tanpa data employee
+      // (backend mengembalikan employee null untuk superuser).
+      if (!payload.user.isStaff && !payload.user.isSuperuser) {
         throw new Error("Akun Anda tidak memiliki akses ke sistem MAHIR");
       }
       if (!payload.user.isActive) {
@@ -56,8 +59,9 @@ export function useAuth() {
       auth.setSession(payload);
       toast.success(`Selamat datang, ${auth.displayName}!`);
 
-      const redirect = router.currentRoute.value.query.redirect || "/dashboard";
-      await router.push(redirect);
+      // Semua peran mendarat di Dashboard (atau rute redirect). Sidebar & guard
+      // membatasi menu sesuai permission masing-masing.
+      await router.push(router.currentRoute.value.query.redirect || "/dashboard");
     } catch (e) {
       error.value = cleanMessage(e) || "Gagal masuk. Coba lagi.";
       toast.error(error.value);
@@ -66,10 +70,26 @@ export function useAuth() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    // Tangkap token saat ini untuk logout server, lalu bersihkan sesi lokal
+    // segera (supaya guard langsung menganggap kita sudah keluar).
+    const bearer = auth.token;
     auth.logout();
     toast.info("Anda telah keluar dari sistem");
     router.push("/login");
+
+    if (bearer) {
+      try {
+        // Bawa Bearer token eksplisit karena token di store sudah dikosongkan.
+        await logoutMut(undefined, {
+          context: { headers: { Authorization: `Bearer ${bearer}` } },
+        });
+      } catch {
+        // Abaikan kegagalan server — sesi lokal sudah dibersihkan.
+      }
+    }
+    // Kosongkan cache agar data akun sebelumnya tak bocor ke akun berikutnya.
+    apolloClient.clearStore().catch(() => {});
   }
 
   return { login, logout, error, loading };

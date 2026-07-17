@@ -3,6 +3,7 @@
 // Relasi (branch/company/unit/level/employmentType/shift/atasan) memakai
 // SearchableSelect dengan query pencarian yang sudah ada (reusable).
 import { ref, computed, watch } from "vue";
+import { UserCircleIcon } from "@heroicons/vue/24/outline";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import SearchableSelect from "@/shared/components/SearchableSelect.vue";
 import { useEnumChoices } from "@/shared/composables/useEnumChoices";
@@ -62,6 +63,8 @@ function matchEnum(raw, options) {
 }
 
 const blank = () => ({
+  // Foto
+  image: null,
   // Akun
   username: "",
   email: "",
@@ -98,6 +101,7 @@ function fillForm() {
   const e = props.employee;
   if (e?.id) {
     form.value = {
+      image: e.image ?? null,
       // username/email tidak dipakai saat edit (editEmployee tak menerimanya).
       username: "",
       email: "",
@@ -154,6 +158,38 @@ watch(maritalStatusOptions, (opts) => {
   if (opts.length && form.value.maritalStatus) form.value.maritalStatus = matchEnum(form.value.maritalStatus, opts);
 });
 
+// Upload foto: baca file jadi data URL base64 lalu simpan di form.image.
+// Backend menerima `image` sebagai bagian dari EmployeeInput.
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
+const imageError = ref("");
+
+function onImageChange(event) {
+  imageError.value = "";
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    imageError.value = "Berkas harus berupa gambar.";
+    return;
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    imageError.value = "Ukuran gambar maksimal 2 MB.";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    form.value.image = reader.result; // data URL base64
+  };
+  reader.onerror = () => {
+    imageError.value = "Gagal membaca berkas gambar.";
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  form.value.image = null;
+  imageError.value = "";
+}
+
 // Gabungkan nama lengkap dari bagian-bagiannya.
 function buildFullName() {
   return [form.value.firstName, form.value.middleName, form.value.lastName]
@@ -166,6 +202,7 @@ function onSubmit() {
   const f = form.value;
   const fullName = buildFullName();
   const input = {
+    image: f.image || null,
     firstName: f.firstName?.trim() || null,
     middleName: f.middleName?.trim() || null,
     lastName: f.lastName?.trim() || null,
@@ -216,6 +253,44 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
     @submit="onSubmit"
   >
     <div class="space-y-6">
+      <!-- Foto -->
+      <div>
+        <h3 :class="sectionCls">Foto</h3>
+        <div class="mt-3 flex items-center gap-4">
+          <span
+            class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-mahir-border bg-slate-50"
+          >
+            <img
+              v-if="form.image"
+              :src="form.image"
+              alt="Foto karyawan"
+              class="h-full w-full object-cover"
+            />
+            <UserCircleIcon v-else class="h-10 w-10 text-slate-300" />
+          </span>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <label
+                class="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+              >
+                {{ form.image ? "Ganti Foto" : "Unggah Foto" }}
+                <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+              </label>
+              <button
+                v-if="form.image"
+                type="button"
+                class="rounded-lg px-2.5 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                @click="removeImage"
+              >
+                Hapus
+              </button>
+            </div>
+            <p v-if="imageError" class="mt-1 text-xs text-rose-500">{{ imageError }}</p>
+            <p v-else class="mt-1 text-xs text-slate-400">Format gambar, maks. 2 MB.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Akun -->
       <div>
         <h3 :class="sectionCls">Akun</h3>

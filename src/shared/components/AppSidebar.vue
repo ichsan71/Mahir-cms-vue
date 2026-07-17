@@ -4,6 +4,7 @@ import { ref, computed } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { useUiStore } from "@/stores/ui.store";
 import { useAuth } from "@/features/auth/composables/useAuth";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
 import {
   Squares2X2Icon,
   UsersIcon,
@@ -21,35 +22,60 @@ import {
   ChevronDownIcon,
   ArrowLeftStartOnRectangleIcon,
   Cog6ToothIcon,
+  UserCircleIcon,
 } from "@heroicons/vue/24/outline";
 
 const ui = useUiStore();
 const route = useRoute();
 const { logout } = useAuth();
+const auth = useAuthStore();
 
 // Item dengan `children` dirender sebagai accordion.
+// `permissions` = daftar operasi GraphQL yang dipakai halaman itu; item tampil
+// bila user punya SALAH SATU izinnya (sembunyi hanya bila tak punya satu pun).
+// Item tanpa `permissions` selalu tampil.
 const navItems = [
-  { to: "/dashboard", icon: Squares2X2Icon, label: "Dashboard", isDev: false },
+  { to: "/dashboard", icon: Squares2X2Icon, label: "Dashboard" },
   {
     key: "data-induk",
     icon: UsersIcon,
     label: "Data Induk",
+    superOnly: true, // Master data hanya untuk super admin.
     children: [
-      { to: "/perusahaan", icon: BuildingOffice2Icon, label: "Perusahaan", isDev: false },
-      { to: "/cabang", icon: MapPinIcon, label: "Cabang", isDev: false },
-      { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", isDev: false },
-      { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", isDev: false },
-      { to: "/shift", icon: ClockIcon, label: "Shift", isDev: false },
-      { to: "/unit", icon: ShareIcon, label: "Unit", isDev: false },
-      { to: "/level", icon: ChartBarIcon, label: "Level", isDev: false },
+      { to: "/perusahaan", icon: BuildingOffice2Icon, label: "Perusahaan", permissions: ["listCompany", "getCompany"] },
+      { to: "/cabang", icon: MapPinIcon, label: "Cabang", permissions: ["listBranch", "getBranch"] },
+      { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", permissions: ["listEmployee", "getEmployee"] },
+      { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", permissions: ["listEmploymentType", "getEmploymentType"] },
+      { to: "/shift", icon: ClockIcon, label: "Shift", permissions: ["listShift", "getShift"] },
+      { to: "/unit", icon: ShareIcon, label: "Unit", permissions: ["listUnit", "getUnit"] },
+      { to: "/level", icon: ChartBarIcon, label: "Level", permissions: ["listLevel", "getLevel"] },
     ],
   },
-  { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", isDev: true },
-  { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", isDev: true },
-  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", badge: 3, isDev: true },
-  { to: "/rekrutmen", icon: UserPlusIcon, label: "Rekrutmen", isDev: true },
-  { to: "/laporan", icon: PresentationChartLineIcon, label: "Laporan", isDev: true },
+  // Menu operasional masih "Soon" (belum aktif) — ditampilkan disabled ke semua.
+  { icon: BanknotesIcon, label: "Penggajian", soon: true },
+  { icon: CalendarDaysIcon, label: "Kehadiran", soon: true },
+  { icon: DocumentTextIcon, label: "Cuti & Izin", soon: true },
+  { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
+  { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
+  // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).
+  { to: "/saya", icon: UserCircleIcon, label: "Profil Saya" },
 ];
+
+// Nav terfilter permission: buang item yang tak diizinkan, lalu buang grup yang
+// jadi kosong. Item tanpa `permissions` (Dashboard, Profil Saya) selalu tampil.
+const visibleNavItems = computed(() =>
+  navItems
+    // Item `superOnly` (Data Induk) hanya untuk super admin.
+    .filter((item) => !item.superOnly || auth.user?.isSuperuser)
+    .map((item) => {
+      if (!item.children) return item;
+      return { ...item, children: item.children.filter((c) => !c.permissions || auth.can(c.permissions)) };
+    })
+    .filter((item) => !item.children || item.children.length > 0)
+    .filter((item) => item.children || !item.permissions || auth.can(item.permissions))
+    // Profil Saya hanya untuk akun yang tertaut employee (superuser employee=null).
+    .filter((item) => item.to !== "/saya" || !!auth.employee),
+);
 
 // Accordion yang sedang terbuka. Buka otomatis grup yang memuat rute aktif.
 function groupHasActive(item) {
@@ -112,7 +138,7 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
         Menu Utama
       </div>
 
-      <template v-for="item in navItems" :key="item.key || item.label">
+      <template v-for="item in visibleNavItems" :key="item.key || item.label">
         <!-- Grup accordion -->
         <div v-if="item.children">
           <button
@@ -143,32 +169,38 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
           </div>
         </div>
 
-        <!-- Item tunggal -->
-        <component
-          :is="item.isDev ? 'div' : 'RouterLink'"
+        <!-- Item 'Soon' (belum aktif, tidak bisa diklik) -->
+        <div
+          v-else-if="item.soon"
+          :class="[linkBase, 'text-white/40 cursor-not-allowed select-none']"
+        >
+          <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
+          <span>{{ item.label }}</span>
+          <span
+            class="ml-auto rounded bg-orange-400 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-black"
+          >
+            Soon
+          </span>
+        </div>
+
+        <!-- Item tunggal (link aktif) -->
+        <RouterLink
           v-else
-          :to="!item.isDev ? item.to : undefined"
-          :class="[linkBase, item.isDev ? 'text-white/40 cursor-not-allowed select-none' : inactive]"
+          :to="item.to"
+          :class="[linkBase, inactive]"
           active-class="!bg-mahir-sidebar-active !text-white"
-          @click="!item.isDev && ui.closeMobile()"
+          @click="ui.closeMobile"
         >
           <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
           <span>{{ item.label }}</span>
 
           <span
-            v-if="item.badge && !item.isDev"
+            v-if="item.badge"
             class="ml-auto rounded-full bg-white/10 px-1.5 py-px text-[10px] font-bold text-white/60"
           >
             {{ item.badge }}
           </span>
-
-          <span
-            v-if="item.isDev"
-            class="ml-auto rounded bg-orange-400 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-black"
-          >
-            Soon
-          </span>
-        </component>
+        </RouterLink>
       </template>
 
       <div class="mx-3 my-2 h-px bg-white/10"></div>

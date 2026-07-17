@@ -10,7 +10,10 @@ import EmployeeTable from "../components/EmployeeTable.vue";
 import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { PlusIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 
+const auth = useAuthStore();
 const router = useRouter();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
 const { registerEmployee, editEmployee, deleteEmployee, loading: saving } = useEmployeeRegister();
@@ -81,6 +84,7 @@ async function handleDelete() {
       <p class="text-sm text-mahir-muted">Data seluruh karyawan aktif & non-aktif Mazta Group</p>
     </div>
     <button
+      v-if="auth.can([PERM.REGISTER, PERM.CREATE])"
       class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
       @click="openAdd"
     >
