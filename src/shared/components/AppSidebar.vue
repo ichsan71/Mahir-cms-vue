@@ -40,18 +40,19 @@ const navItems = [
     key: "data-induk",
     icon: UsersIcon,
     label: "Data Induk",
-    superOnly: true, // Master data hanya untuk super admin.
     children: [
-      { to: "/perusahaan", icon: BuildingOffice2Icon, label: "Perusahaan", permissions: ["listCompany", "getCompany"] },
-      { to: "/cabang", icon: MapPinIcon, label: "Cabang", permissions: ["listBranch", "getBranch"] },
-      { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", permissions: ["listEmployee", "getEmployee"] },
-      { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", permissions: ["listEmploymentType", "getEmploymentType"] },
-      { to: "/shift", icon: ClockIcon, label: "Shift", permissions: ["listShift", "getShift"] },
-      { to: "/unit", icon: ShareIcon, label: "Unit", permissions: ["listUnit", "getUnit"] },
-      { to: "/level", icon: ChartBarIcon, label: "Level", permissions: ["listLevel", "getLevel"] },
+      { to: "/perusahaan", icon: BuildingOffice2Icon, label: "Perusahaan", permissions: ["listCompany"] },
+      { to: "/cabang", icon: MapPinIcon, label: "Cabang", permissions: ["listBranch"] },
+      { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", permissions: ["listEmployee"] },
+      { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", permissions: ["listEmploymentType"] },
+      { to: "/shift", icon: ClockIcon, label: "Shift", permissions: ["listShift"] },
+      { to: "/unit", icon: ShareIcon, label: "Unit", permissions: ["listUnit"] },
+      { to: "/level", icon: ChartBarIcon, label: "Level", permissions: ["listLevel"] },
     ],
   },
-  // Menu operasional masih "Soon" (belum aktif) — ditampilkan disabled ke semua.
+  // Modul operasional belum selesai → tampil "Soon" (disabled) untuk semua,
+  // termasuk super admin. Saat modul siap: buang `soon`, kembalikan `to` +
+  // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
   { icon: BanknotesIcon, label: "Penggajian", soon: true },
   { icon: CalendarDaysIcon, label: "Kehadiran", soon: true },
   { icon: DocumentTextIcon, label: "Cuti & Izin", soon: true },
@@ -65,8 +66,6 @@ const navItems = [
 // jadi kosong. Item tanpa `permissions` (Dashboard, Profil Saya) selalu tampil.
 const visibleNavItems = computed(() =>
   navItems
-    // Item `superOnly` (Data Induk) hanya untuk super admin.
-    .filter((item) => !item.superOnly || auth.user?.isSuperuser)
     .map((item) => {
       if (!item.children) return item;
       return { ...item, children: item.children.filter((c) => !c.permissions || auth.can(c.permissions)) };
@@ -169,7 +168,7 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
           </div>
         </div>
 
-        <!-- Item 'Soon' (belum aktif, tidak bisa diklik) -->
+        <!-- Item 'Soon' (modul belum selesai, tidak bisa diklik — semua peran) -->
         <div
           v-else-if="item.soon"
           :class="[linkBase, 'text-white/40 cursor-not-allowed select-none']"

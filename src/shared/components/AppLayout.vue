@@ -14,10 +14,12 @@ const title = computed(() => route.meta.title || "Dashboard");
   <div class="min-h-screen bg-mahir-bg">
     <AppSidebar />
 
-    <!-- Main area digeser ke kanan selebar sidebar pada layar lg+ -->
-    <div class="lg:pl-[260px]">
+    <!-- Main area digeser ke kanan selebar sidebar pada layar lg+.
+         `min-w-0` + `overflow-x-hidden` mencegah konten melebar dari viewport
+         (scroll horizontal pada body); tabel lebar tetap scroll di kartunya. -->
+    <div class="min-w-0 lg:pl-[260px]">
       <AppNavbar :title="title" />
-      <main class="p-4 lg:p-6">
+      <main class="max-w-full overflow-x-hidden p-4 lg:p-6">
         <RouterView />
       </main>
     </div>
