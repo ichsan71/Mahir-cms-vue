@@ -30,6 +30,8 @@ export const useAuthStore = defineStore("auth", () => {
     () => employee.value?.fullName || user.value?.username || "Pengguna",
   );
   const displayRole = computed(() => employee.value?.level?.name || "Karyawan");
+  // Foto profil karyawan (null bila tidak ada → UI jatuh ke inisial nama).
+  const displayImage = computed(() => employee.value?.image || null);
 
   // payload = { token, user, employee } hasil mutation login.
   function setSession({ token: t, user: u, employee: e }) {
@@ -41,6 +43,14 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.setItem("mahir_employee", JSON.stringify(e));
   }
 
+  // Perbarui sebagian data employee sesi (mis. setelah user mengedit profilnya
+  // sendiri) agar tampilan seperti avatar navbar ikut berubah tanpa login ulang.
+  function patchEmployee(partial) {
+    if (!employee.value) return;
+    employee.value = { ...employee.value, ...partial };
+    localStorage.setItem("mahir_employee", JSON.stringify(employee.value));
+  }
+
   function logout() {
     token.value = null;
     user.value = null;
@@ -50,5 +60,5 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("mahir_employee");
   }
 
-  return { token, user, employee, isAuthenticated, permissionSet, can, displayName, displayRole, setSession, logout };
+  return { token, user, employee, isAuthenticated, permissionSet, can, displayName, displayRole, displayImage, setSession, patchEmployee, logout };
 });

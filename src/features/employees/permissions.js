@@ -10,4 +10,8 @@ export const PERM = {
   REGISTER: "registerEmployee",
   EDIT: "editEmployee",
   DELETE: "deleteEmployee",
+  // Alamat karyawan (dikelola di halaman detail karyawan).
+  ADDRESS_CREATE: "createEmployeeAddress",
+  ADDRESS_EDIT: "editEmployeeAddress",
+  ADDRESS_DELETE: "deleteEmployeeAddress",
 };

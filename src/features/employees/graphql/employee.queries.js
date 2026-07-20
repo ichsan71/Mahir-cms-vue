@@ -14,6 +14,7 @@ export const LIST_EMPLOYEE = gql`
         results {
           id
           fullName
+          image
           nik
           units {
             id
@@ -137,6 +138,7 @@ export const EDIT_EMPLOYEE = gql`
       data {
         id
         fullName
+        image
       }
     }
   }

@@ -17,11 +17,21 @@ import {
   DocumentDuplicateIcon,
   ShieldCheckIcon,
   UserCircleIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
 } from "@heroicons/vue/24/outline";
 
 defineProps({
   employee: { type: Object, required: true },
+  // Aktifkan kontrol kelola alamat (tambah/ubah/hapus) di kartu alamat.
+  editableAddress: { type: Boolean, default: false },
+  canAddAddress: { type: Boolean, default: false },
+  canEditAddress: { type: Boolean, default: false },
+  canDeleteAddress: { type: Boolean, default: false },
 });
+
+const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
 </script>
 
 <template>
@@ -273,7 +283,17 @@ defineProps({
       </div>
 
       <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
-        <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Lokasi / Tempat Tinggal</h2>
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Lokasi / Tempat Tinggal</h2>
+          <button
+            v-if="editableAddress && canAddAddress"
+            class="inline-flex items-center gap-1 rounded-lg bg-mahir-primary-soft px-2 py-1 text-[11px] font-semibold text-mahir-primary hover:bg-mahir-primary/10"
+            title="Tambah alamat"
+            @click="emit('add-address')"
+          >
+            <PlusIcon class="h-3.5 w-3.5" /> Tambah
+          </button>
+        </div>
 
         <div v-if="!employee.addresses?.length" class="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-6 text-center text-slate-400">
           <MapPinIcon class="h-5 w-5 mb-1" />
@@ -281,14 +301,34 @@ defineProps({
         </div>
 
         <ul v-else class="space-y-3">
-          <li v-for="addr in employee.addresses" :key="addr.id" class="relative rounded-xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/60 p-3.5 shadow-xs">
-            <div class="text-xs font-semibold text-slate-800">{{ addr.line1 || "—" }}</div>
-            <div v-if="addr.line2" class="text-xs text-slate-500 mt-0.5">{{ addr.line2 }}</div>
-            <div class="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-              <MapIcon class="h-3.5 w-3.5 shrink-0" />
-              <span class="truncate">
-                {{ [addr.city, addr.state, addr.country].filter(Boolean).join(", ") || "—" }}
-              </span>
+          <li v-for="addr in employee.addresses" :key="addr.id" class="group relative rounded-xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/60 p-3.5 shadow-xs">
+            <div class="pr-14">
+              <div class="text-xs font-semibold text-slate-800">{{ addr.line1 || "—" }}</div>
+              <div v-if="addr.line2" class="text-xs text-slate-500 mt-0.5">{{ addr.line2 }}</div>
+              <div class="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                <MapIcon class="h-3.5 w-3.5 shrink-0" />
+                <span class="truncate">
+                  {{ [addr.city, addr.state, addr.country].filter(Boolean).join(", ") || "—" }}
+                </span>
+              </div>
+            </div>
+            <div v-if="editableAddress" class="absolute right-2.5 top-2.5 flex items-center gap-1">
+              <button
+                v-if="canEditAddress"
+                class="flex h-6 w-6 items-center justify-center rounded-md bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-mahir-primary"
+                title="Ubah alamat"
+                @click="emit('edit-address', addr)"
+              >
+                <PencilIcon class="h-3.5 w-3.5" />
+              </button>
+              <button
+                v-if="canDeleteAddress"
+                class="flex h-6 w-6 items-center justify-center rounded-md bg-white text-rose-500 ring-1 ring-rose-100 hover:bg-rose-50"
+                title="Hapus alamat"
+                @click="emit('delete-address', addr)"
+              >
+                <TrashIcon class="h-3.5 w-3.5" />
+              </button>
             </div>
           </li>
         </ul>

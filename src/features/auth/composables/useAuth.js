@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMutation } from "@vue/apollo-composable";
-import { LOGIN, LOGOUT } from "../graphql/auth.queries";
+import { LOGIN, LOGOUT, CHANGE_PASSWORD } from "../graphql/auth.queries";
 import { useAuthStore } from "../stores/auth.store";
 import { useToastStore } from "@/stores/toast.store";
 import { apolloClient } from "@/apollo/client";
@@ -26,6 +26,7 @@ export function useAuth() {
 
   const { mutate: loginMut } = useMutation(LOGIN);
   const { mutate: logoutMut } = useMutation(LOGOUT);
+  const { mutate: changePasswordMut } = useMutation(CHANGE_PASSWORD);
 
   async function login({ username, password }) {
     error.value = "";
@@ -70,6 +71,27 @@ export function useAuth() {
     }
   }
 
+  // Ubah password akun sendiri. Bila berhasil, langsung logout agar user masuk
+  // lagi memakai password baru. Mengembalikan true jika sukses.
+  async function changePassword({ oldPassword, newPassword }) {
+    error.value = "";
+    loading.value = true;
+    try {
+      const res = await changePasswordMut({ input: { oldPassword, newPassword } });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      if (!res?.data?.changePassword?.data) throw new Error("Gagal mengubah password");
+      toast.success("Password berhasil diubah. Silakan masuk kembali dengan password baru.");
+      await logout();
+      return true;
+    } catch (e) {
+      error.value = cleanMessage(e) || "Gagal mengubah password. Coba lagi.";
+      toast.error(error.value);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function logout() {
     // Tangkap token saat ini untuk logout server, lalu bersihkan sesi lokal
     // segera (supaya guard langsung menganggap kita sudah keluar).
@@ -92,5 +114,5 @@ export function useAuth() {
     apolloClient.clearStore().catch(() => {});
   }
 
-  return { login, logout, error, loading };
+  return { login, logout, changePassword, error, loading };
 }

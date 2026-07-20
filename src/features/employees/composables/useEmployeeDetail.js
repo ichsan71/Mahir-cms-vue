@@ -11,7 +11,7 @@ export function useEmployeeDetail(id) {
     return Number.isInteger(n) && n > 0 ? n : null;
   });
 
-  const { result, loading, error } = useQuery(
+  const { result, loading, error, refetch } = useQuery(
     GET_EMPLOYEE,
     () => ({ getEmployeeId: getEmployeeId.value }),
     // Jangan jalankan query bila id belum valid.
@@ -20,5 +20,5 @@ export function useEmployeeDetail(id) {
 
   const employee = computed(() => result.value?.getEmployee?.data ?? null);
 
-  return { employee, loading, error };
+  return { employee, loading, error, refetch };
 }

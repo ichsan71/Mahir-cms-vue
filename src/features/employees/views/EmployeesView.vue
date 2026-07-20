@@ -47,6 +47,11 @@ async function handleSave({ id, username, email, input }) {
     ? await editEmployee(id, input)
     : await registerEmployee({ username, email, input });
   if (result) {
+    // Jika yang diedit adalah karyawan yang sedang login, sinkronkan data sesi
+    // (nama & foto) agar avatar/nama di navbar ikut berubah tanpa login ulang.
+    if (id && String(id) === String(auth.employee?.id)) {
+      auth.patchEmployee({ fullName: result.fullName, image: result.image ?? null });
+    }
     modalOpen.value = false;
     refetch();
   }

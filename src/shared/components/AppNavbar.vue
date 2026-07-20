@@ -1,6 +1,6 @@
 <script setup>
 // Port dari resources/views/partials/navbar.blade.php
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useUiStore } from "@/stores/ui.store";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useAuth } from "@/features/auth/composables/useAuth";
@@ -23,11 +23,25 @@ const ui = useUiStore();
 const auth = useAuthStore();
 const { logout } = useAuth();
 const menuOpen = ref(false);
+const menuRef = ref(null);
+
+// Tutup dropdown saat klik di luar. Dipakai menggantikan @blur pada tombol —
+// @blur menutup menu pada mousedown sehingga klik RouterLink di dalamnya batal
+// (navigasi tak pernah terjadi). Click-outside membiarkan klik item diproses.
+function onClickOutside(e) {
+  if (menuOpen.value && menuRef.value && !menuRef.value.contains(e.target)) {
+    menuOpen.value = false;
+  }
+}
+
+onMounted(() => document.addEventListener("click", onClickOutside));
+onBeforeUnmount(() => document.removeEventListener("click", onClickOutside));
 
 const userName = computed(() => auth.displayName);
 const userRole = computed(() => auth.displayRole);
 const userEmail = computed(() => auth.user?.email || "—");
 const userInitials = computed(() => initials(userName.value));
+const userImage = computed(() => auth.displayImage);
 </script>
 
 <template>
@@ -76,16 +90,22 @@ const userInitials = computed(() => initials(userName.value));
       </button> -->
 
       <!-- User menu -->
-      <div class="relative">
+      <div ref="menuRef" class="relative">
         <button
           class="flex items-center gap-2"
           @click="menuOpen = !menuOpen"
-          @blur="menuOpen = false"
         >
           <span
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
-            >{{ userInitials }}</span
+            class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
           >
+            <img
+              v-if="userImage"
+              :src="userImage"
+              :alt="userName"
+              class="h-full w-full object-cover"
+            />
+            <template v-else>{{ userInitials }}</template>
+          </span>
           <div class="hidden text-left leading-tight md:block">
             <div class="text-[13px] font-semibold text-slate-900">{{ userName }}</div>
             <div class="text-[11px] text-slate-400">{{ userRole }}</div>
@@ -103,12 +123,12 @@ const userInitials = computed(() => initials(userName.value));
               <div class="text-xs text-slate-400">{{ userEmail }}</div>
             </li>
             <li>
-              <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/pengaturan"
+              <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/saya" @click="menuOpen = false"
                 ><UserIcon class="h-4 w-4" /> Profil Saya</RouterLink
               >
             </li>
             <li>
-              <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/pengaturan"
+              <RouterLink class="flex items-center gap-2 px-4 py-2 hover:bg-slate-50" to="/pengaturan" @click="menuOpen = false"
                 ><Cog6ToothIcon class="h-4 w-4" /> Pengaturan</RouterLink
               >
             </li>

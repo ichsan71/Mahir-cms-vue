@@ -73,6 +73,7 @@ const blank = () => ({
   firstName: "",
   middleName: "",
   lastName: "",
+  fullName: "",
   nik: "",
   birthPlace: "",
   birthDate: "",
@@ -96,12 +97,19 @@ const blank = () => ({
 
 const form = ref(blank());
 
+// Menandai apakah "Nama Lengkap" pernah diubah manual. Selama belum disentuh,
+// field ini ikut terisi otomatis dari nama depan/tengah/belakang. Sekali diubah
+// manual, nilai manual dipertahankan (kecuali dikosongkan → auto lagi).
+const fullNameTouched = ref(false);
+
 // Prefill dari data karyawan (mode edit) atau kosongkan (mode daftar baru).
 function fillForm() {
   const e = props.employee;
   if (e?.id) {
     form.value = {
-      image: e.image ?? null,
+      // image hanya diisi bila user memilih berkas baru; foto lama ditampilkan
+      // lewat imagePreview dan TIDAK dikirim ulang (backend butuh File, bukan URL).
+      image: null,
       // username/email tidak dipakai saat edit (editEmployee tak menerimanya).
       username: "",
       email: "",
@@ -109,6 +117,7 @@ function fillForm() {
       firstName: e.firstName ?? "",
       middleName: e.middleName ?? "",
       lastName: e.lastName ?? "",
+      fullName: e.fullName ?? "",
       nik: e.nik ?? "",
       birthPlace: e.birthPlace ?? "",
       birthDate: toDate(e.birthDate),
@@ -127,6 +136,9 @@ function fillForm() {
       companyIds: (e.companies ?? []).map((c) => c.id),
       unitIds: (e.units ?? []).map((u) => u.id),
     };
+    // Nilai fullName tersimpan dianggap sudah "disentuh" agar tidak tertimpa auto.
+    fullNameTouched.value = !!(e.fullName ?? "").trim();
+    imagePreview.value = e.image ?? null;
     branchSelected.value = e.branch ?? null;
     empTypeSelected.value = e.employmentType ?? null;
     levelSelected.value = e.level ?? null;
@@ -136,6 +148,8 @@ function fillForm() {
     unitsSelected.value = e.units ?? [];
   } else {
     form.value = blank();
+    fullNameTouched.value = false;
+    imagePreview.value = null;
     branchSelected.value = null;
     empTypeSelected.value = null;
     levelSelected.value = null;
@@ -158,10 +172,13 @@ watch(maritalStatusOptions, (opts) => {
   if (opts.length && form.value.maritalStatus) form.value.maritalStatus = matchEnum(form.value.maritalStatus, opts);
 });
 
-// Upload foto: baca file jadi data URL base64 lalu simpan di form.image.
-// Backend menerima `image` sebagai bagian dari EmployeeInput.
+// Upload foto: kirim objek File langsung agar apollo-upload-client memakai
+// GraphQL multipart upload (backend butuh berkas nyata; string base64 memicu
+// "'str' object has no attribute 'read'"). `form.image` menampung File yang akan
+// dikirim, sedangkan `imagePreview` (data URL) hanya untuk pratinjau di layar.
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 const imageError = ref("");
+const imagePreview = ref(null);
 
 function onImageChange(event) {
   imageError.value = "";
@@ -175,9 +192,10 @@ function onImageChange(event) {
     imageError.value = "Ukuran gambar maksimal 2 MB.";
     return;
   }
+  form.value.image = file; // objek File → dikirim sebagai berkas (multipart)
   const reader = new FileReader();
   reader.onload = () => {
-    form.value.image = reader.result; // data URL base64
+    imagePreview.value = reader.result; // data URL, hanya untuk pratinjau
   };
   reader.onerror = () => {
     imageError.value = "Gagal membaca berkas gambar.";
@@ -187,6 +205,7 @@ function onImageChange(event) {
 
 function removeImage() {
   form.value.image = null;
+  imagePreview.value = null;
   imageError.value = "";
 }
 
@@ -198,9 +217,25 @@ function buildFullName() {
     .join(" ");
 }
 
+// Auto-isi "Nama Lengkap" dari nama depan/tengah/belakang selama belum diubah
+// manual. Sekali diketik manual (fullNameTouched), nilai manual dipertahankan.
+watch(
+  () => [form.value.firstName, form.value.middleName, form.value.lastName],
+  () => {
+    if (!fullNameTouched.value) form.value.fullName = buildFullName();
+  }
+);
+
+// Dipanggil saat user mengetik di field Nama Lengkap. Kosong = kembali ke mode
+// auto; ada isinya = tandai manual agar tidak tertimpa nama depan/tengah/belakang.
+function onFullNameInput() {
+  fullNameTouched.value = !!form.value.fullName.trim();
+}
+
 function onSubmit() {
   const f = form.value;
-  const fullName = buildFullName();
+  // Pakai isian manual bila ada; jika dikosongkan, jatuh ke gabungan nama.
+  const fullName = f.fullName?.trim() || buildFullName();
   const input = {
     image: f.image || null,
     firstName: f.firstName?.trim() || null,
@@ -261,8 +296,8 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
             class="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-mahir-border bg-slate-50"
           >
             <img
-              v-if="form.image"
-              :src="form.image"
+              v-if="imagePreview"
+              :src="imagePreview"
               alt="Foto karyawan"
               class="h-full w-full object-cover"
             />
@@ -273,11 +308,11 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               <label
                 class="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
               >
-                {{ form.image ? "Ganti Foto" : "Unggah Foto" }}
+                {{ imagePreview ? "Ganti Foto" : "Unggah Foto" }}
                 <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
               </label>
               <button
-                v-if="form.image"
+                v-if="imagePreview"
                 type="button"
                 class="rounded-lg px-2.5 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50"
                 @click="removeImage"
@@ -326,6 +361,19 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
           <div>
             <label :class="labelCls">Nama Belakang</label>
             <input v-model="form.lastName" type="text" :class="fieldCls" />
+          </div>
+          <div class="md:col-span-3">
+            <label :class="labelCls">Nama Lengkap</label>
+            <input
+              v-model="form.fullName"
+              type="text"
+              :class="fieldCls"
+              placeholder="Terisi otomatis dari nama depan/tengah/belakang"
+              @input="onFullNameInput"
+            />
+            <p class="mt-1 text-xs text-slate-400">
+              Terisi otomatis dari nama depan/tengah/belakang. Bisa diubah manual.
+            </p>
           </div>
           <div>
             <label :class="labelCls">NIK</label>

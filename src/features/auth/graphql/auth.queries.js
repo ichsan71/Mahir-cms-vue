@@ -6,6 +6,7 @@ export const LOGIN = gql`
       data {
         employee {
           id
+          image
           firstName
           fullName
           lastName
@@ -27,6 +28,20 @@ export const LOGIN = gql`
           isSuperuser
           username
           userPermissions
+        }
+      }
+    }
+  }
+`;
+
+// Ubah password akun yang sedang login. Butuh password lama & baru.
+export const CHANGE_PASSWORD = gql`
+  mutation ChangePassword($input: ChangePasswordInput!) {
+    changePassword(input: $input) {
+      data {
+        employee {
+          id
+          fullName
         }
       }
     }

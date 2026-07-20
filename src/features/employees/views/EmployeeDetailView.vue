@@ -1,18 +1,78 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEmployeeDetail } from "../composables/useEmployeeDetail";
+import { useEmployeeAddresses } from "../composables/useEmployeeAddresses";
 import EmployeeProfileCard from "../components/EmployeeProfileCard.vue";
+import EmployeeAddressModal from "../components/EmployeeAddressModal.vue";
+import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 import { ArrowLeftIcon, ArrowPathIcon, UserMinusIcon } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const id = computed(() => route.params.id);
-const { employee, loading } = useEmployeeDetail(id);
+const { employee, loading, refetch } = useEmployeeDetail(id);
 
 function goBack() {
   router.push({ name: "karyawan" });
+}
+
+// ── Kelola alamat karyawan (CRUD, ditampilkan di kartu profil) ──────────────
+const { createAddress, editAddress, deleteAddress, loading: savingAddress } = useEmployeeAddresses();
+
+const canAddAddress = computed(() => auth.can(PERM.ADDRESS_CREATE));
+const canEditAddress = computed(() => auth.can(PERM.ADDRESS_EDIT));
+const canDeleteAddress = computed(() => auth.can(PERM.ADDRESS_DELETE));
+const editableAddress = computed(
+  () => canAddAddress.value || canEditAddress.value || canDeleteAddress.value,
+);
+
+const addressModalOpen = ref(false);
+const editingAddress = ref(null);
+
+function openAddAddress() {
+  editingAddress.value = null;
+  addressModalOpen.value = true;
+}
+
+function openEditAddress(addr) {
+  editingAddress.value = addr;
+  addressModalOpen.value = true;
+}
+
+async function handleSaveAddress({ id: addressId, input }) {
+  const ok = addressId ? await editAddress(addressId, input) : await createAddress(input);
+  if (ok) {
+    addressModalOpen.value = false;
+    refetch();
+  }
+}
+
+// Hapus alamat: konfirmasi dulu.
+const confirmOpen = ref(false);
+const deleteTarget = ref(null);
+
+const deleteMessage = computed(
+  () => `Hapus alamat "${deleteTarget.value?.line1 ?? ''}"? Tindakan ini tidak dapat dibatalkan.`,
+);
+
+function openDeleteAddress(addr) {
+  deleteTarget.value = addr;
+  confirmOpen.value = true;
+}
+
+async function handleDeleteAddress() {
+  if (!deleteTarget.value) return;
+  const ok = await deleteAddress(deleteTarget.value.id);
+  if (ok) {
+    confirmOpen.value = false;
+    deleteTarget.value = null;
+    refetch();
+  }
 }
 </script>
 
@@ -39,5 +99,34 @@ function goBack() {
     <p class="text-xs text-slate-400 mt-1">Pastikan ID yang Anda tuju sudah benar atau hubungi super admin.</p>
   </div>
 
-  <EmployeeProfileCard v-else :employee="employee" />
+  <EmployeeProfileCard
+    v-else
+    :employee="employee"
+    :editable-address="editableAddress"
+    :can-add-address="canAddAddress"
+    :can-edit-address="canEditAddress"
+    :can-delete-address="canDeleteAddress"
+    @add-address="openAddAddress"
+    @edit-address="openEditAddress"
+    @delete-address="openDeleteAddress"
+  />
+
+  <!-- Tambah / ubah alamat karyawan -->
+  <EmployeeAddressModal
+    v-model:open="addressModalOpen"
+    :saving="savingAddress"
+    :employee-id="employee?.id"
+    :address="editingAddress"
+    @save="handleSaveAddress"
+  />
+
+  <!-- Konfirmasi hapus alamat -->
+  <ConfirmDialog
+    v-model:open="confirmOpen"
+    title="Hapus Alamat"
+    :message="deleteMessage"
+    confirm-text="Ya, Hapus"
+    :loading="savingAddress"
+    @confirm="handleDeleteAddress"
+  />
 </template>

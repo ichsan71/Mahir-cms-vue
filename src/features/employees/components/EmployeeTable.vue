@@ -86,9 +86,16 @@ watch(
           <td class="px-4 py-3">
             <div class="flex items-center gap-2.5">
               <span
-                class="flex h-9 w-9 items-center justify-center rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
-                >{{ initials(emp.fullName) }}</span
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
               >
+                <img
+                  v-if="emp.image"
+                  :src="emp.image"
+                  :alt="emp.fullName"
+                  class="h-full w-full object-cover"
+                />
+                <template v-else>{{ initials(emp.fullName) }}</template>
+              </span>
               <div>
                 <div class="text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
                 <div class="text-[11.5px] text-slate-400">NIK: {{ emp.nik || "—" }}</div>
