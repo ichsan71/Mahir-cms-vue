@@ -97,6 +97,11 @@ const blank = () => ({
 
 const form = ref(blank());
 
+// Pesan galat per field yang wajib diisi (branchId/companyIds/employmentTypeId/
+// levelId/shiftId/unitIds/fullName — sesuai field non-null di skema backend).
+// Divalidasi di sisi klien agar SearchableSelect (bukan input native) tetap wajib.
+const errors = ref({});
+
 // Menandai apakah "Nama Lengkap" pernah diubah manual. Selama belum disentuh,
 // field ini ikut terisi otomatis dari nama depan/tengah/belakang. Sekali diubah
 // manual, nilai manual dipertahankan (kecuali dikosongkan → auto lagi).
@@ -104,6 +109,7 @@ const fullNameTouched = ref(false);
 
 // Prefill dari data karyawan (mode edit) atau kosongkan (mode daftar baru).
 function fillForm() {
+  errors.value = {};
   const e = props.employee;
   if (e?.id) {
     form.value = {
@@ -232,10 +238,28 @@ function onFullNameInput() {
   fullNameTouched.value = !!form.value.fullName.trim();
 }
 
+// Validasi field wajib (non-null di skema backend). Mengisi `errors` dan
+// mengembalikan true bila semua terisi. Relasi single memakai id, relasi
+// multiple wajib punya minimal satu item.
+function validate(fullName) {
+  const f = form.value;
+  const next = {};
+  if (!fullName) next.fullName = "Nama lengkap wajib diisi.";
+  if (!f.branchId) next.branchId = "Cabang wajib dipilih.";
+  if (!f.employmentTypeId) next.employmentTypeId = "Tipe kepegawaian wajib dipilih.";
+  if (!f.levelId) next.levelId = "Level wajib dipilih.";
+  if (!f.shiftId) next.shiftId = "Shift wajib dipilih.";
+  if (!f.companyIds?.length) next.companyIds = "Minimal satu perusahaan wajib dipilih.";
+  if (!f.unitIds?.length) next.unitIds = "Minimal satu unit wajib dipilih.";
+  errors.value = next;
+  return Object.keys(next).length === 0;
+}
+
 function onSubmit() {
   const f = form.value;
   // Pakai isian manual bila ada; jika dikosongkan, jatuh ke gabungan nama.
   const fullName = f.fullName?.trim() || buildFullName();
+  if (!validate(fullName)) return;
   const input = {
     image: f.image || null,
     firstName: f.firstName?.trim() || null,
@@ -332,11 +356,11 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
         <div class="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
           <!-- Username & email hanya saat daftar baru (editEmployee tak menerimanya) -->
           <div v-if="!isEdit">
-            <label :class="labelCls">Username *</label>
+            <label :class="labelCls">Username <span class="text-rose-500">*</span></label>
             <input v-model="form.username" type="text" required :class="fieldCls" />
           </div>
           <div v-if="!isEdit">
-            <label :class="labelCls">Email *</label>
+            <label :class="labelCls">Email <span class="text-rose-500">*</span></label>
             <input v-model="form.email" type="email" required :class="fieldCls" />
           </div>
           <div>
@@ -351,8 +375,8 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
         <h3 :class="sectionCls">Data Pribadi</h3>
         <div class="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label :class="labelCls">Nama Depan *</label>
-            <input v-model="form.firstName" type="text" required :class="fieldCls" />
+            <label :class="labelCls">Nama Depan</label>
+            <input v-model="form.firstName" type="text" :class="fieldCls" />
           </div>
           <div>
             <label :class="labelCls">Nama Tengah</label>
@@ -363,7 +387,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
             <input v-model="form.lastName" type="text" :class="fieldCls" />
           </div>
           <div class="md:col-span-3">
-            <label :class="labelCls">Nama Lengkap</label>
+            <label :class="labelCls">Nama Lengkap <span class="text-rose-500">*</span></label>
             <input
               v-model="form.fullName"
               type="text"
@@ -371,7 +395,8 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               placeholder="Terisi otomatis dari nama depan/tengah/belakang"
               @input="onFullNameInput"
             />
-            <p class="mt-1 text-xs text-slate-400">
+            <p v-if="errors.fullName" class="mt-1 text-xs text-rose-500">{{ errors.fullName }}</p>
+            <p v-else class="mt-1 text-xs text-slate-400">
               Terisi otomatis dari nama depan/tengah/belakang. Bisa diubah manual.
             </p>
           </div>
@@ -427,7 +452,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
           </div>
 
           <div>
-            <label :class="labelCls">Cabang</label>
+            <label :class="labelCls">Cabang <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.branchId"
               :selected="branchSelected"
@@ -437,9 +462,10 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari cabang…"
               @search="branchSearch"
             />
+            <p v-if="errors.branchId" class="mt-1 text-xs text-rose-500">{{ errors.branchId }}</p>
           </div>
           <div>
-            <label :class="labelCls">Tipe Kepegawaian</label>
+            <label :class="labelCls">Tipe Kepegawaian <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.employmentTypeId"
               :selected="empTypeSelected"
@@ -449,9 +475,10 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari tipe…"
               @search="empTypeSearch"
             />
+            <p v-if="errors.employmentTypeId" class="mt-1 text-xs text-rose-500">{{ errors.employmentTypeId }}</p>
           </div>
           <div>
-            <label :class="labelCls">Level</label>
+            <label :class="labelCls">Level <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.levelId"
               :selected="levelSelected"
@@ -461,9 +488,10 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari level…"
               @search="levelSearch"
             />
+            <p v-if="errors.levelId" class="mt-1 text-xs text-rose-500">{{ errors.levelId }}</p>
           </div>
           <div>
-            <label :class="labelCls">Shift</label>
+            <label :class="labelCls">Shift <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.shiftId"
               :selected="shiftSelected"
@@ -473,6 +501,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari shift…"
               @search="shiftSearch"
             />
+            <p v-if="errors.shiftId" class="mt-1 text-xs text-rose-500">{{ errors.shiftId }}</p>
           </div>
           <div>
             <label :class="labelCls">Atasan Langsung</label>
@@ -488,7 +517,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
           </div>
 
           <div>
-            <label :class="labelCls">Perusahaan</label>
+            <label :class="labelCls">Perusahaan <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.companyIds"
               multiple
@@ -499,9 +528,10 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari perusahaan…"
               @search="companySearch"
             />
+            <p v-if="errors.companyIds" class="mt-1 text-xs text-rose-500">{{ errors.companyIds }}</p>
           </div>
           <div>
-            <label :class="labelCls">Unit</label>
+            <label :class="labelCls">Unit <span class="text-rose-500">*</span></label>
             <SearchableSelect
               v-model="form.unitIds"
               multiple
@@ -512,6 +542,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               search-placeholder="Cari unit…"
               @search="unitSearch"
             />
+            <p v-if="errors.unitIds" class="mt-1 text-xs text-rose-500">{{ errors.unitIds }}</p>
           </div>
         </div>
       </div>

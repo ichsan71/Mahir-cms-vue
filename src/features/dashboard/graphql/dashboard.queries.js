@@ -61,6 +61,24 @@ export const PENDING_LEAVES = gql`
   }
 `;
 
+// Struktur organisasi: karyawan puncak (root) beserta pohon bawahannya.
+// `childrenTree` adalah scalar JSON berisi node bersarang (full_name/code/childrens).
+export const GET_ROOT_EMPLOYEE = gql`
+  query GetRootEmployee {
+    getRootEmployee {
+      data {
+        childrenTree
+        id
+        fullName
+        units {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
+
 export const APPROVE_LEAVE = gql`
   mutation ApproveLeave($id: ID!) {
     approveLeave(id: $id) {
