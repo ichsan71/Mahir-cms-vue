@@ -6,6 +6,8 @@
 export const PERM = {
   LIST: "listEmployee",
   GET: "getEmployee",
+  // Struktur organisasi (pohon atasan–bawahan) di dashboard.
+  ROOT: "getRootEmployee",
   CREATE: "createEmployee",
   REGISTER: "registerEmployee",
   EDIT: "editEmployee",
