@@ -121,7 +121,26 @@ export const CREATE_BRANCH_ADDRESS = gql`
   }
 `;
 
-// TODO: EDIT_BRANCH_ADDRESS — menunggu kontrak mutation update dari backend.
+// Ubah alamat cabang. `editBranchAddressId` adalah id alamat.
+export const EDIT_BRANCH_ADDRESS = gql`
+  mutation EditBranchAddress($input: BranchAddressInput!, $editBranchAddressId: Int!) {
+    editBranchAddress(input: $input, id: $editBranchAddressId) {
+      data {
+        id
+        line1
+      }
+    }
+  }
+`;
+
+// Hapus alamat cabang. `hard` selalu false (soft delete) sesuai kebijakan.
+export const DELETE_BRANCH_ADDRESS = gql`
+  mutation DeleteBranchAddress($deleteBranchAddressId: Int!, $hard: Boolean!) {
+    deleteBranchAddress(id: $deleteBranchAddressId, hard: $hard) {
+      data
+    }
+  }
+`;
 
 // Hapus cabang. `hard` selalu false (soft delete) sesuai kebijakan.
 export const DELETE_BRANCH = gql`

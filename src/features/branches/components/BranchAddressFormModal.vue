@@ -46,7 +46,7 @@ function fillForm() {
 watch(() => props.open, (open) => open && fillForm());
 
 function onSubmit() {
-  // Kirim koordinat sebagai Float (null bila kosong/tidak valid).
+  // Koordinat sebagai Float; null bila kosong/tidak valid.
   const toFloat = (v) => {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : null;
@@ -59,9 +59,14 @@ function onSubmit() {
     city: f.city?.trim() || null,
     state: f.state?.trim() || null,
     country: f.country?.trim() || null,
-    latitude: toFloat(f.latitude),
-    longitude: toFloat(f.longitude),
   };
+  // Sertakan koordinat hanya bila ada nilainya, agar edit tanpa menyentuh peta
+  // tidak menimpa koordinat lama dengan null.
+  const lat = toFloat(f.latitude);
+  const lng = toFloat(f.longitude);
+  if (lat !== null) input.latitude = lat;
+  if (lng !== null) input.longitude = lng;
+
   emit("save", { id: props.address?.id ?? null, input });
 }
 
