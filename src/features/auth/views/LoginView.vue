@@ -2,6 +2,7 @@
 // Port dari resources/views/pages/auth/login.blade.php + layouts/auth.blade.php
 import { ref } from "vue";
 import { useAuth } from "../composables/useAuth";
+import logoUrl from "@/assets/mahir-logo 1-2.png";
 import {
   UsersIcon,
   CalendarDaysIcon,
@@ -40,10 +41,8 @@ const features = [
     <div class="hidden w-[43%] flex-col justify-between bg-mahir-sidebar-bg p-12 lg:flex">
       <div>
         <div class="mb-10 flex items-center gap-3">
-          <div class="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-white">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#243B8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
+          <div class="flex h-[38px] w-[38px] items-center justify-center overflow-hidden rounded-[10px] bg-white">
+            <img :src="logoUrl" alt="MAHIR" class="h-full w-full object-contain p-0.5" />
           </div>
           <div>
             <div class="font-display text-[15px] font-extrabold text-white">MAHIR</div>
@@ -94,10 +93,8 @@ const features = [
     <div class="flex flex-1 flex-col items-center justify-center bg-mahir-bg p-8">
       <div class="w-full max-w-[440px] rounded-[20px] border border-slate-200 bg-white p-9 shadow-sm">
         <div class="mb-6 text-center">
-          <div class="mx-auto mb-3 flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-mahir-primary-soft">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#243B8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
+          <div class="mx-auto mb-3 flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-[14px] bg-white ring-1 ring-slate-100">
+            <img :src="logoUrl" alt="MAHIR" class="h-full w-full object-contain p-1" />
           </div>
           <h2 class="font-display text-[22px] font-extrabold text-slate-900">Masuk ke MAHIR</h2>
           <p class="mt-1 text-[13px] text-mahir-muted">Gunakan akun yang diberikan oleh Administrator</p>

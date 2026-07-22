@@ -5,6 +5,7 @@ import { RouterLink, useRoute } from "vue-router";
 import { useUiStore } from "@/stores/ui.store";
 import { useAuth } from "@/features/auth/composables/useAuth";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import logoUrl from "@/assets/mahir-logo 1-2.png";
 import {
   Squares2X2Icon,
   UsersIcon,
@@ -114,16 +115,8 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
     <div
       class="flex h-[60px] flex-shrink-0 items-center gap-3 border-b border-white/10 bg-mahir-sidebar-hdr px-5"
     >
-      <div class="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[10px] bg-white">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-            stroke="#243B8F"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
+      <div class="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white">
+        <img :src="logoUrl" alt="MAHIR" class="h-full w-full object-contain p-0.5" />
       </div>
       <div>
         <div class="font-display text-[15px] font-extrabold leading-tight text-white">MAHIR</div>
