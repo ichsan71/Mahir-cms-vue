@@ -14,6 +14,14 @@ export const LIST_BRANCH = gql`
         results {
           id
           name
+          address {
+            id
+            city
+            country
+            line1
+            line2
+            state
+          }
           companies {
             id
             name
@@ -34,6 +42,16 @@ export const GET_BRANCH = gql`
         employees {
           id
           fullName
+          image
+          nik
+          level {
+            id
+            name
+          }
+          units {
+            id
+            name
+          }
         }
         companies {
           id
@@ -64,6 +82,69 @@ export const EDIT_BRANCH = gql`
         id
         name
       }
+    }
+  }
+`;
+
+// ── Alamat cabang (branch address) ─────────────────────────────────────────
+
+// Daftar alamat cabang (paginated). Filter per cabang lewat `branchName`.
+export const LIST_BRANCH_ADDRESS = gql`
+  query ListBranchAddress($params: BranchAddressParams) {
+    listBranchAddress(params: $params) {
+      data {
+        count
+        currentPage
+        hasNext
+        hasPrev
+        totalPages
+        results {
+          id
+          line1
+          line2
+          country
+          state
+          city
+          latitude
+          longitude
+        }
+      }
+    }
+  }
+`;
+
+// Tambah alamat cabang. `input` mengikuti BranchAddressInput:
+// branchId, city, country, latitude, longitude, line1, line2, state.
+export const CREATE_BRANCH_ADDRESS = gql`
+  mutation CreateBranchAddress($input: BranchAddressInput!) {
+    createBranchAddress(input: $input) {
+      data {
+        id
+        branch {
+          name
+        }
+      }
+    }
+  }
+`;
+
+// Ubah alamat cabang. `editBranchAddressId` adalah id alamat.
+export const EDIT_BRANCH_ADDRESS = gql`
+  mutation EditBranchAddress($input: BranchAddressInput!, $editBranchAddressId: Int!) {
+    editBranchAddress(input: $input, id: $editBranchAddressId) {
+      data {
+        id
+        line1
+      }
+    }
+  }
+`;
+
+// Hapus alamat cabang. `hard` selalu false (soft delete) sesuai kebijakan.
+export const DELETE_BRANCH_ADDRESS = gql`
+  mutation DeleteBranchAddress($deleteBranchAddressId: Int!, $hard: Boolean!) {
+    deleteBranchAddress(id: $deleteBranchAddressId, hard: $hard) {
+      data
     }
   }
 `;

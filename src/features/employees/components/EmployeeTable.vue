@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
+import ImagePreview from "@/shared/components/ImagePreview.vue";
 import { initials, formatDate } from "@/shared/utils/format";
 import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -16,6 +17,13 @@ const emit = defineEmits(["detail", "edit", "delete"]);
 const auth = useAuthStore();
 
 const selected = ref([]);
+
+// Lightbox foto karyawan.
+const preview = ref({ open: false, src: "", alt: "" });
+function openPreview(emp) {
+  if (!emp.image) return;
+  preview.value = { open: true, src: emp.image, alt: emp.fullName };
+}
 
 const allChecked = computed(
   () => props.employees.length > 0 && selected.value.length === props.employees.length,
@@ -87,6 +95,8 @@ watch(
             <div class="flex items-center gap-2.5">
               <span
                 class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
+                :class="emp.image ? 'cursor-zoom-in ring-1 ring-transparent hover:ring-mahir-primary' : ''"
+                @click="openPreview(emp)"
               >
                 <img
                   v-if="emp.image"
@@ -138,5 +148,11 @@ watch(
         </tr>
       </tbody>
     </table>
+
+    <ImagePreview
+      v-model:open="preview.open"
+      :src="preview.src"
+      :alt="preview.alt"
+    />
   </div>
 </template>

@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: "0.0.0.0",
-      port: 5173,
+      port: 8000,
       proxy: {
         // Frontend memanggil /graphql (same-origin) → diteruskan ke gateway
         // sehingga tidak terkena CORS. Target dibaca dari VITE_GRAPHQL_URI.

@@ -8,4 +8,9 @@ export const PERM = {
   CREATE: "createBranch",
   EDIT: "editBranch",
   DELETE: "deleteBranch",
+  // Alamat cabang
+  ADDRESS_LIST: "listBranchAddress",
+  ADDRESS_CREATE: "createBranchAddress",
+  ADDRESS_EDIT: "editBranchAddress",
+  ADDRESS_DELETE: "deleteBranchAddress",
 };

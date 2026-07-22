@@ -16,6 +16,23 @@ const auth = useAuthStore();
 function companyNames(branch) {
   return (branch.companies ?? []).map((c) => c.name).join(", ") || "—";
 }
+
+// `address` bisa berupa objek tunggal atau array — ambil yang pertama.
+function addressOf(branch) {
+  const a = branch.address;
+  return Array.isArray(a) ? a[0] : a;
+}
+// Baris utama alamat (jalan).
+function addressLine(branch) {
+  const a = addressOf(branch);
+  return a?.line1 || a?.line2 || "";
+}
+// Wilayah: kota, provinsi, negara.
+function addressRegion(branch) {
+  const a = addressOf(branch);
+  if (!a) return "";
+  return [a.city, a.state, a.country].filter(Boolean).join(", ");
+}
 </script>
 
 <template>
@@ -25,15 +42,16 @@ function companyNames(branch) {
         <tr class="border-b border-mahir-border text-xs uppercase tracking-wide text-slate-400">
           <th class="px-4 py-3 font-semibold">Cabang</th>
           <th class="px-4 py-3 font-semibold">Perusahaan Induk</th>
+          <th class="px-4 py-3 font-semibold">Alamat</th>
           <th class="px-4 py-3 text-center font-semibold">Aksi</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="loading && !branches.length">
-          <td colspan="3" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
+          <td colspan="4" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
         </tr>
         <tr v-else-if="!branches.length">
-          <td colspan="3" class="px-4 py-8 text-center text-slate-400">
+          <td colspan="4" class="px-4 py-8 text-center text-slate-400">
             Tidak ada cabang yang cocok.
           </td>
         </tr>
@@ -53,6 +71,20 @@ function companyNames(branch) {
             </div>
           </td>
           <td class="px-4 py-3 text-slate-600">{{ companyNames(branch) }}</td>
+          <td class="px-4 py-3">
+            <template v-if="addressOf(branch)">
+              <div class="max-w-[260px] truncate text-[13px] text-slate-700">
+                {{ addressLine(branch) || "—" }}
+              </div>
+              <div
+                v-if="addressRegion(branch)"
+                class="max-w-[260px] truncate text-[11.5px] text-slate-400"
+              >
+                {{ addressRegion(branch) }}
+              </div>
+            </template>
+            <span v-else class="text-slate-400">—</span>
+          </td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-center gap-1.5">
               <button

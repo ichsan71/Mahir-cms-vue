@@ -1,7 +1,9 @@
 <script setup>
 // Kartu profil karyawan (read-only). Dipakai ulang di EmployeeDetailView
 // (mode super admin) dan MyProfileView (mode "profil saya" non-superadmin).
+import { ref } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
+import ImagePreview from "@/shared/components/ImagePreview.vue";
 import { initials, formatDate } from "@/shared/utils/format";
 import {
   BriefcaseIcon,
@@ -32,6 +34,9 @@ defineProps({
 });
 
 const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
+
+// Lightbox foto profil.
+const previewOpen = ref(false);
 </script>
 
 <template>
@@ -43,7 +48,11 @@ const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
         <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-mahir-primary/[0.02]"></div>
 
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span class="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-mahir-primary-soft text-xl font-bold text-mahir-primary tracking-wide shadow-inner">
+          <span
+            class="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-mahir-primary-soft text-xl font-bold text-mahir-primary tracking-wide shadow-inner"
+            :class="employee.image ? 'cursor-zoom-in ring-1 ring-transparent transition hover:ring-mahir-primary' : ''"
+            @click="employee.image && (previewOpen = true)"
+          >
             <img
               v-if="employee.image"
               :src="employee.image"
@@ -346,5 +355,10 @@ const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
 
     </div>
 
+    <ImagePreview
+      v-model:open="previewOpen"
+      :src="employee.image"
+      :alt="employee.fullName"
+    />
   </div>
 </template>

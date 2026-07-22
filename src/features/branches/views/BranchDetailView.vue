@@ -1,7 +1,13 @@
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBranchDetail } from "../composables/useBranchDetail";
+import { useBranchAddresses, useBranchAddressForm } from "../composables/useBranchAddresses";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
+import BranchAddressFormModal from "../components/BranchAddressFormModal.vue";
+import ImagePreview from "@/shared/components/ImagePreview.vue";
+import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { initials } from "@/shared/utils/format";
 import {
   ArrowLeftIcon,
@@ -9,16 +15,100 @@ import {
   MapPinIcon,
   UsersIcon,
   BuildingOffice2Icon,
+  PlusIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
 const router = useRouter();
+const auth = useAuthStore();
 
 const id = computed(() => route.params.id);
 const { branch, loading } = useBranchDetail(id);
 
 const companies = computed(() => branch.value?.companies ?? []);
 const employees = computed(() => branch.value?.employees ?? []);
+
+// Filter karyawan (client-side): nama, NIK, level, atau unit.
+const employeeSearch = ref("");
+const filteredEmployees = computed(() => {
+  const q = employeeSearch.value.trim().toLowerCase();
+  if (!q) return employees.value;
+  return employees.value.filter((emp) => {
+    const haystack = [
+      emp.fullName,
+      emp.nik,
+      emp.level?.name,
+      ...(emp.units ?? []).map((u) => u.name),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+});
+
+// Alamat cabang (difilter lewat nama cabang).
+const branchName = computed(() => branch.value?.name ?? null);
+const { addresses, loading: addressesLoading, refetch: refetchAddresses } = useBranchAddresses(branchName);
+const { createAddress, editAddress, deleteAddress, loading: addressSaving } = useBranchAddressForm();
+
+// Kebijakan: satu cabang hanya boleh punya satu alamat.
+const canAddAddress = computed(() => auth.can(PERM.ADDRESS_CREATE) && addresses.value.length === 0);
+
+const addressModalOpen = ref(false);
+const editingAddress = ref(null);
+
+function openAddAddress() {
+  editingAddress.value = null;
+  addressModalOpen.value = true;
+}
+
+function openEditAddress(address) {
+  editingAddress.value = address;
+  addressModalOpen.value = true;
+}
+
+async function handleSaveAddress({ id, input }) {
+  const result = id ? await editAddress(id, input) : await createAddress(input);
+  if (result) {
+    addressModalOpen.value = false;
+    refetchAddresses();
+  }
+}
+
+// Hapus alamat: konfirmasi dulu.
+const confirmOpen = ref(false);
+const deleteTarget = ref(null);
+
+function openDeleteAddress(address) {
+  deleteTarget.value = address;
+  confirmOpen.value = true;
+}
+
+async function handleDeleteAddress() {
+  if (!deleteTarget.value) return;
+  const ok = await deleteAddress(deleteTarget.value.id);
+  if (ok) {
+    confirmOpen.value = false;
+    deleteTarget.value = null;
+    refetchAddresses();
+  }
+}
+
+// Gabungkan nama unit (relasi many) menjadi satu teks.
+function unitNames(emp) {
+  return (emp.units ?? []).map((u) => u.name).join(", ");
+}
+
+// Lightbox foto karyawan.
+const preview = ref({ open: false, src: "", alt: "" });
+function openPreview(emp) {
+  if (!emp.image) return;
+  preview.value = { open: true, src: emp.image, alt: emp.fullName };
+}
 
 function goBack() {
   router.push({ name: "cabang" });
@@ -77,9 +167,21 @@ function goBack() {
 
         <!-- Karyawan -->
         <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
-          <div class="flex items-center gap-2 border-b border-slate-100 p-5">
-            <UsersIcon class="h-4 w-4 text-mahir-primary" />
-            <h2 class="font-display text-[15px] font-bold text-slate-900">Karyawan</h2>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
+            <div class="flex items-center gap-2">
+              <UsersIcon class="h-4 w-4 text-mahir-primary" />
+              <h2 class="font-display text-[15px] font-bold text-slate-900">Karyawan</h2>
+              <span class="text-[13px] font-normal text-slate-400">{{ employees.length }}</span>
+            </div>
+            <div v-if="employees.length" class="relative">
+              <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                v-model="employeeSearch"
+                type="text"
+                placeholder="Cari nama, NIK, unit…"
+                class="w-full rounded-lg border border-mahir-border py-1.5 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary sm:w-64"
+              />
+            </div>
           </div>
           <div
             v-if="!employees.length"
@@ -87,19 +189,43 @@ function goBack() {
           >
             Belum ada karyawan pada cabang ini.
           </div>
-          <ul v-else class="divide-y divide-mahir-border">
-            <li v-for="emp in employees" :key="emp.id" class="flex items-center gap-2.5 px-5 py-3">
+          <div
+            v-else-if="!filteredEmployees.length"
+            class="px-5 py-8 text-center text-sm text-slate-400"
+          >
+            Tidak ada karyawan yang cocok dengan "{{ employeeSearch }}".
+          </div>
+          <ul v-else class="max-h-80 divide-y divide-mahir-border overflow-y-auto">
+            <li v-for="emp in filteredEmployees" :key="emp.id" class="flex items-center gap-2.5 px-5 py-3">
               <span
-                class="flex h-9 w-9 items-center justify-center rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
-                >{{ initials(emp.fullName) }}</span
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-mahir-primary-soft text-xs font-bold text-mahir-primary"
+                :class="emp.image ? 'cursor-zoom-in ring-1 ring-transparent hover:ring-mahir-primary' : ''"
+                @click="openPreview(emp)"
               >
-              <span class="text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</span>
+                <img
+                  v-if="emp.image"
+                  :src="emp.image"
+                  :alt="emp.fullName"
+                  class="h-full w-full object-cover"
+                />
+                <template v-else>{{ initials(emp.fullName) }}</template>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
+                <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-slate-400">
+                  <span>NIK: {{ emp.nik || "—" }}</span>
+                  <span v-if="emp.level?.name" class="text-slate-300">·</span>
+                  <span v-if="emp.level?.name">{{ emp.level.name }}</span>
+                  <span v-if="unitNames(emp)" class="text-slate-300">·</span>
+                  <span v-if="unitNames(emp)" class="truncate">{{ unitNames(emp) }}</span>
+                </div>
+              </div>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Sidebar: perusahaan -->
+      <!-- Sidebar: perusahaan & alamat -->
       <div class="space-y-6">
         <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
           <h2 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Perusahaan</h2>
@@ -120,7 +246,94 @@ function goBack() {
             </li>
           </ul>
         </div>
+
+        <!-- Alamat cabang (maksimal satu) -->
+        <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Alamat</h2>
+            <button
+              v-if="canAddAddress"
+              class="inline-flex items-center gap-1 rounded-lg bg-mahir-primary-soft px-2 py-1 text-[11px] font-semibold text-mahir-primary hover:bg-mahir-primary/10"
+              title="Tambah alamat"
+              @click="openAddAddress"
+            >
+              <PlusIcon class="h-3.5 w-3.5" /> Tambah
+            </button>
+          </div>
+
+          <div
+            v-if="addressesLoading && !addresses.length"
+            class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400"
+          >
+            Memuat alamat…
+          </div>
+          <div
+            v-else-if="!addresses.length"
+            class="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 p-6 text-center text-slate-400"
+          >
+            <MapPinIcon class="mb-1 h-5 w-5" />
+            <span class="text-xs">Belum ada alamat cabang.</span>
+          </div>
+          <ul v-else class="space-y-3">
+            <li
+              v-for="addr in addresses"
+              :key="addr.id"
+              class="group relative rounded-xl border border-slate-100 bg-gradient-to-b from-white to-slate-50/60 p-3.5 shadow-xs"
+            >
+              <div class="pr-14">
+                <div class="text-xs font-semibold text-slate-800">{{ addr.line1 || "—" }}</div>
+                <div v-if="addr.line2" class="mt-0.5 text-xs text-slate-500">{{ addr.line2 }}</div>
+                <div class="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+                  <MapPinIcon class="h-3.5 w-3.5 shrink-0" />
+                  <span class="truncate">
+                    {{ [addr.city, addr.state, addr.country].filter(Boolean).join(", ") || "—" }}
+                  </span>
+                </div>
+              </div>
+              <div class="absolute right-2.5 top-2.5 flex items-center gap-1">
+                <button
+                  v-if="auth.can(PERM.ADDRESS_EDIT)"
+                  class="flex h-6 w-6 items-center justify-center rounded-md bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-mahir-primary"
+                  title="Ubah alamat"
+                  @click="openEditAddress(addr)"
+                >
+                  <PencilSquareIcon class="h-3.5 w-3.5" />
+                </button>
+                <button
+                  v-if="auth.can(PERM.ADDRESS_DELETE)"
+                  class="flex h-6 w-6 items-center justify-center rounded-md bg-white text-rose-500 ring-1 ring-rose-100 hover:bg-rose-50"
+                  title="Hapus alamat"
+                  @click="openDeleteAddress(addr)"
+                >
+                  <TrashIcon class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
+
+    <!-- Modal tambah/ubah alamat cabang -->
+    <BranchAddressFormModal
+      v-model:open="addressModalOpen"
+      :saving="addressSaving"
+      :branch-id="branch.id"
+      :address="editingAddress"
+      @save="handleSaveAddress"
+    />
+
+    <!-- Konfirmasi hapus alamat -->
+    <ConfirmDialog
+      v-model:open="confirmOpen"
+      title="Hapus Alamat"
+      message="Hapus alamat cabang ini? Tindakan ini tidak dapat dibatalkan."
+      confirm-text="Ya, Hapus"
+      :loading="addressSaving"
+      @confirm="handleDeleteAddress"
+    />
+
+    <!-- Lightbox foto karyawan -->
+    <ImagePreview v-model:open="preview.open" :src="preview.src" :alt="preview.alt" />
   </template>
 </template>

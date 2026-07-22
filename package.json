@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.9.0",
+    "@googlemaps/js-api-loader": "^1.16.10",
     "@graphql-tools/schema": "^10.0.0",
     "@heroicons/vue": "^2.2.0",
     "@vue/apollo-composable": "^4.0.0",
