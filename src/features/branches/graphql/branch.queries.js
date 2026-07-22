@@ -41,17 +41,12 @@ export const GET_BRANCH = gql`
         name
         employees {
           id
-          fullName
-          image
           nik
+          image
           level {
-            id
             name
           }
-          units {
-            id
-            name
-          }
+          fullName
         }
         companies {
           id
@@ -105,8 +100,6 @@ export const LIST_BRANCH_ADDRESS = gql`
           country
           state
           city
-          latitude
-          longitude
         }
       }
     }
@@ -128,26 +121,7 @@ export const CREATE_BRANCH_ADDRESS = gql`
   }
 `;
 
-// Ubah alamat cabang. `editBranchAddressId` adalah id alamat.
-export const EDIT_BRANCH_ADDRESS = gql`
-  mutation EditBranchAddress($input: BranchAddressInput!, $editBranchAddressId: Int!) {
-    editBranchAddress(input: $input, id: $editBranchAddressId) {
-      data {
-        id
-        line1
-      }
-    }
-  }
-`;
-
-// Hapus alamat cabang. `hard` selalu false (soft delete) sesuai kebijakan.
-export const DELETE_BRANCH_ADDRESS = gql`
-  mutation DeleteBranchAddress($deleteBranchAddressId: Int!, $hard: Boolean!) {
-    deleteBranchAddress(id: $deleteBranchAddressId, hard: $hard) {
-      data
-    }
-  }
-`;
+// TODO: EDIT_BRANCH_ADDRESS — menunggu kontrak mutation update dari backend.
 
 // Hapus cabang. `hard` selalu false (soft delete) sesuai kebijakan.
 export const DELETE_BRANCH = gql`
