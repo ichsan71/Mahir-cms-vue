@@ -57,7 +57,7 @@ const navItems = [
   // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
   { icon: BanknotesIcon, label: "Penggajian", soon: true },
   { icon: CalendarDaysIcon, label: "Kehadiran", soon: true },
-  { icon: DocumentTextIcon, label: "Cuti & Izin", soon: true },
+  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction", "listLeaveMandatoryApprover"] },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
   // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).
