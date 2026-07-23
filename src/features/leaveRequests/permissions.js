@@ -6,4 +6,5 @@ export const PERM = {
   LIST: "listLeave",
   CREATE: "createLeave",
   SUBMIT: "submitLeave",
+  CANCEL: "cancelLeave",
 };

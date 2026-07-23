@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { useMutation } from "@vue/apollo-composable";
-import { CREATE_LEAVE, SUBMIT_LEAVE } from "../graphql/leaveRequest.queries";
+import { CREATE_LEAVE, SUBMIT_LEAVE, CANCEL_LEAVE } from "../graphql/leaveRequest.queries";
 import { useToastStore } from "@/stores/toast.store";
 
 // Bersihkan prefix teknis dari pesan error GraphQL/Apollo.
@@ -21,6 +21,7 @@ export function useLeaveRequestForm() {
 
   const { mutate: createMut } = useMutation(CREATE_LEAVE);
   const { mutate: submitMut } = useMutation(SUBMIT_LEAVE);
+  const { mutate: cancelMut } = useMutation(CANCEL_LEAVE);
 
   async function createLeave(input) {
     error.value = "";
@@ -61,5 +62,25 @@ export function useLeaveRequestForm() {
     }
   }
 
-  return { createLeave, submitLeave, error, loading };
+  // Batalkan pengajuan (hanya saat DRAFT).
+  async function cancelLeave(id) {
+    error.value = "";
+    loading.value = true;
+    try {
+      const res = await cancelMut({ cancelLeaveId: Number(id) });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      const cancelled = res?.data?.cancelLeave?.data;
+      if (!cancelled) throw new Error("Gagal membatalkan pengajuan");
+      toast.success("Pengajuan cuti berhasil dibatalkan");
+      return cancelled;
+    } catch (e) {
+      error.value = cleanMessage(e) || "Gagal membatalkan pengajuan. Coba lagi.";
+      toast.error(error.value);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { createLeave, submitLeave, cancelLeave, error, loading };
 }

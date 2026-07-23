@@ -3,14 +3,14 @@ import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatDate } from "@/shared/utils/format";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "../permissions";
-import { CalendarDaysIcon, PaperClipIcon, UserCircleIcon, ClockIcon, PaperAirplaneIcon } from "@heroicons/vue/24/outline";
+import { CalendarDaysIcon, PaperClipIcon, UserCircleIcon, ClockIcon, PaperAirplaneIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
 defineProps({
   leaves: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["submit"]);
+const emit = defineEmits(["submit", "cancel"]);
 
 const auth = useAuthStore();
 
@@ -151,14 +151,24 @@ function pendingNames(row) {
           >
             <PaperClipIcon class="h-3.5 w-3.5" /> Lampiran
           </a>
-          <button
-            v-if="isDraft(row.status) && auth.can(PERM.SUBMIT)"
-            class="inline-flex items-center gap-1 rounded-lg bg-mahir-primary px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-mahir-primary/90"
-            title="Kirim untuk persetujuan"
-            @click="emit('submit', row)"
-          >
-            <PaperAirplaneIcon class="h-3.5 w-3.5" /> Kirim
-          </button>
+          <div v-if="isDraft(row.status)" class="flex items-center gap-1.5">
+            <button
+              v-if="auth.can(PERM.CANCEL)"
+              class="inline-flex items-center gap-1 rounded-lg border border-mahir-border px-2.5 py-1 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
+              title="Batalkan pengajuan"
+              @click="emit('cancel', row)"
+            >
+              <XMarkIcon class="h-3.5 w-3.5" /> Batal
+            </button>
+            <button
+              v-if="auth.can(PERM.SUBMIT)"
+              class="inline-flex items-center gap-1 rounded-lg bg-mahir-primary px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-mahir-primary/90"
+              title="Kirim untuk persetujuan"
+              @click="emit('submit', row)"
+            >
+              <PaperAirplaneIcon class="h-3.5 w-3.5" /> Kirim
+            </button>
+          </div>
         </div>
       </div>
     </div>

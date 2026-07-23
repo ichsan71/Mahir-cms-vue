@@ -8,7 +8,7 @@ import LeaveRequestFormModal from "../components/LeaveRequestFormModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 
 const { leaves, pagination, loading, nextPage, prevPage, refetch } = useLeaves();
-const { createLeave, submitLeave, loading: saving } = useLeaveRequestForm();
+const { createLeave, submitLeave, cancelLeave, loading: saving } = useLeaveRequestForm();
 
 const modalOpen = ref(false);
 
@@ -43,6 +43,30 @@ async function handleSubmit() {
     refetch();
   }
 }
+
+// Batalkan pengajuan (DRAFT): konfirmasi dulu.
+const cancelConfirmOpen = ref(false);
+const cancelTarget = ref(null);
+
+const cancelMessage = computed(
+  () =>
+    `Batalkan pengajuan cuti "${cancelTarget.value?.leaveType?.name ?? ''}" (${cancelTarget.value?.totalDays ?? '—'} hari)? Pengajuan yang masih draft akan dibatalkan.`,
+);
+
+function openCancel(leave) {
+  cancelTarget.value = leave;
+  cancelConfirmOpen.value = true;
+}
+
+async function handleCancel() {
+  if (!cancelTarget.value) return;
+  const ok = await cancelLeave(cancelTarget.value.id);
+  if (ok) {
+    cancelConfirmOpen.value = false;
+    cancelTarget.value = null;
+    refetch();
+  }
+}
 </script>
 
 <template>
@@ -56,7 +80,7 @@ async function handleSubmit() {
       <LeaveToolbar @add="modalOpen = true" />
     </div>
 
-    <LeaveTable :leaves="leaves" :loading="loading" @submit="openSubmit" />
+    <LeaveTable :leaves="leaves" :loading="loading" @submit="openSubmit" @cancel="openCancel" />
 
     <!-- Footer / pagination -->
     <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
@@ -97,5 +121,15 @@ async function handleSubmit() {
     confirm-text="Ya, Kirim"
     :loading="saving"
     @confirm="handleSubmit"
+  />
+
+  <!-- Konfirmasi batalkan pengajuan -->
+  <ConfirmDialog
+    v-model:open="cancelConfirmOpen"
+    title="Batalkan Pengajuan Cuti"
+    :message="cancelMessage"
+    confirm-text="Ya, Batalkan"
+    :loading="saving"
+    @confirm="handleCancel"
   />
 </template>

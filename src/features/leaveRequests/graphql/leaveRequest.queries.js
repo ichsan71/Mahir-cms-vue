@@ -52,6 +52,18 @@ export const SUBMIT_LEAVE = gql`
   }
 `;
 
+// Batalkan pengajuan cuti. Hanya berlaku saat status masih DRAFT.
+export const CANCEL_LEAVE = gql`
+  mutation CancelLeave($cancelLeaveId: Int!) {
+    cancelLeave(id: $cancelLeaveId) {
+      data {
+        id
+        status
+      }
+    }
+  }
+`;
+
 // Ajukan cuti baru. `input` (LeaveInput): employeeId, leaveTypeId, startDate,
 // endDate, totalDays, reason, status (LeaveStatusChoices), attachment (file).
 export const CREATE_LEAVE = gql`
