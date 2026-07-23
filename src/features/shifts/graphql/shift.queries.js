@@ -1,7 +1,7 @@
 import gql from "graphql-tag";
 
 // Daftar shift (paginated) sesuai kontrak backend nyata.
-// `params` opsional: page, pageSize, search, name.
+// `params` (ShiftParams) opsional: page, pageSize, search, name, isFlexible.
 export const LIST_SHIFT = gql`
   query ListShift($params: ShiftParams) {
     listShift(params: $params) {
@@ -14,8 +14,6 @@ export const LIST_SHIFT = gql`
         results {
           id
           name
-          startDay
-          endDay
           startTime
           endTime
         }
@@ -31,22 +29,26 @@ export const GET_SHIFT = gql`
       data {
         id
         name
-        startDay
-        endDay
+        code
         startTime
         endTime
+        breakStart
+        breakEnd
+        lateTolerance
+        earlyLeaveTolerance
+        isFlexible
       }
     }
   }
 `;
 
 // Tambah shift baru.
-// `input` mengikuti ShiftInput: name, startDay, endDay, startTime, endTime.
+// `input` mengikuti ShiftInput: name, startTime, endTime, breakStart, breakEnd,
+// isFlexible, lateTolerance, earlyLeaveTolerance.
 export const CREATE_SHIFT = gql`
   mutation CreateShift($input: ShiftInput!) {
     createShift(input: $input) {
       data {
-        id
         name
       }
     }
@@ -54,11 +56,11 @@ export const CREATE_SHIFT = gql`
 `;
 
 // Ubah shift yang ada. `editShiftId` adalah id shift.
+// `input` mengikuti ShiftInput yang sama seperti CREATE_SHIFT.
 export const EDIT_SHIFT = gql`
   mutation EditShift($input: ShiftInput!, $editShiftId: Int!) {
     editShift(input: $input, id: $editShiftId) {
       data {
-        id
         name
       }
     }

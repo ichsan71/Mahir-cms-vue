@@ -24,6 +24,7 @@ const blank = () => ({
   country: "",
   latitude: null,
   longitude: null,
+  distanceTolerance: "",
 });
 
 const form = ref(blank());
@@ -39,6 +40,7 @@ function fillForm() {
         country: a.country ?? "",
         latitude: a.latitude ?? null,
         longitude: a.longitude ?? null,
+        distanceTolerance: a.distanceTolerance ?? "",
       }
     : blank();
 }
@@ -51,6 +53,13 @@ function onSubmit() {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : null;
   };
+  // Toleransi jarak sebagai Int; null bila kosong/tidak valid.
+  const toInt = (v) => {
+    const s = String(v ?? "").trim();
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isInteger(n) ? n : null;
+  };
   const f = form.value;
   const input = {
     branchId: props.branchId != null ? Number(props.branchId) : null,
@@ -59,6 +68,7 @@ function onSubmit() {
     city: f.city?.trim() || null,
     state: f.state?.trim() || null,
     country: f.country?.trim() || null,
+    distanceTolerance: toInt(f.distanceTolerance),
   };
   // Sertakan koordinat hanya bila ada nilainya, agar edit tanpa menyentuh peta
   // tidak menimpa koordinat lama dengan null.
@@ -110,6 +120,19 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
         <div>
           <label :class="labelCls">Negara</label>
           <input v-model="form.country" type="text" :class="fieldCls" />
+        </div>
+        <div class="sm:col-span-2">
+          <label :class="labelCls">Toleransi Jarak (meter)</label>
+          <input
+            v-model="form.distanceTolerance"
+            type="number"
+            min="0"
+            :class="fieldCls"
+            placeholder="mis. 100"
+          />
+          <p class="mt-1 text-xs text-slate-400">
+            Radius maksimal absensi dianggap berada di lokasi cabang.
+          </p>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>

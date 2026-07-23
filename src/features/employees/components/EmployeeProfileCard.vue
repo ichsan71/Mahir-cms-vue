@@ -37,6 +37,11 @@ const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
 
 // Lightbox foto profil.
 const previewOpen = ref(false);
+
+// Jumlah hari kerja dalam pola kerja karyawan (untuk ringkasan jadwal).
+function workdayCount(wp) {
+  return (wp?.details ?? []).filter((d) => d.isWorkday).length;
+}
 </script>
 
 <template>
@@ -122,18 +127,14 @@ const previewOpen = ref(false);
           <div class="flex items-start gap-3">
             <ClockIcon class="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
             <div>
-              <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pola Shift & Jadwal</div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pola Kerja & Jadwal</div>
               <div class="mt-0.5 text-sm font-medium text-slate-800">
-                {{ employee.shift?.name ?? "—" }}
+                {{ employee.workPattern?.name ?? "—" }}
               </div>
-              <div v-if="employee.shift?.startTime" class="mt-1 flex flex-col gap-0.5 text-xs text-slate-500 bg-slate-50 p-1.5 rounded-md border border-slate-100/80">
+              <div v-if="employee.workPattern?.details?.length" class="mt-1 flex flex-col gap-0.5 text-xs text-slate-500 bg-slate-50 p-1.5 rounded-md border border-slate-100/80">
                 <span class="flex items-center gap-1">
                   <CalendarDaysIcon class="h-3 w-3" />
-                  {{ employee.shift.startDay ?? 'Senin' }} - {{ employee.shift.endDay ?? 'Jumat' }}
-                </span>
-                <span class="flex items-center gap-1">
-                  <ClockIcon class="h-3 w-3" />
-                  {{ employee.shift.startTime.substring(0, 5) }} - {{ employee.shift.endTime.substring(0, 5) }}
+                  {{ workdayCount(employee.workPattern) }} hari kerja / minggu
                 </span>
               </div>
             </div>

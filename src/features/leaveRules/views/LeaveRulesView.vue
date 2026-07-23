@@ -1,19 +1,19 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useShifts } from "../composables/useShifts";
-import { useShiftForm } from "../composables/useShiftForm";
-import ShiftToolbar from "../components/ShiftToolbar.vue";
-import ShiftTable from "../components/ShiftTable.vue";
-import ShiftFormModal from "../components/ShiftFormModal.vue";
+import { useLeaveRules } from "../composables/useLeaveRules";
+import { useLeaveRuleForm } from "../composables/useLeaveRuleForm";
+import LeaveRuleToolbar from "../components/LeaveRuleToolbar.vue";
+import LeaveRuleTable from "../components/LeaveRuleTable.vue";
+import LeaveRuleFormModal from "../components/LeaveRuleFormModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 
 const router = useRouter();
-const { shifts, pagination, loading, nextPage, prevPage, refetch } = useShifts();
-const { createShift, editShift, deleteShift, loading: saving } = useShiftForm();
+const { leaveRules, pagination, loading, nextPage, prevPage, refetch } = useLeaveRules();
+const { createLeaveRule, editLeaveRule, deleteLeaveRule, loading: saving } = useLeaveRuleForm();
 
 const modalOpen = ref(false);
-// Shift yang sedang diubah (diprefill langsung dari baris list).
+// Aturan cuti yang sedang diubah (diprefill via getLeaveRule di dalam modal).
 const editing = ref(null);
 
 function openAdd() {
@@ -21,17 +21,17 @@ function openAdd() {
   modalOpen.value = true;
 }
 
-function openEdit(shift) {
-  editing.value = shift;
+function openEdit(rule) {
+  editing.value = rule;
   modalOpen.value = true;
 }
 
-function handleDetail(shift) {
-  router.push({ name: "shift-detail", params: { id: shift.id } });
+function handleDetail(rule) {
+  router.push({ name: "aturan-cuti-detail", params: { id: rule.id } });
 }
 
 async function handleSave({ id, input }) {
-  const result = id ? await editShift(id, input) : await createShift(input);
+  const result = id ? await editLeaveRule(id, input) : await createLeaveRule(input);
   if (result) {
     modalOpen.value = false;
     refetch();
@@ -43,17 +43,18 @@ const confirmOpen = ref(false);
 const deleteTarget = ref(null);
 
 const deleteMessage = computed(
-  () => `Hapus shift "${deleteTarget.value?.name ?? ''}"? Tindakan ini dapat memengaruhi data terkait.`,
+  () =>
+    `Hapus aturan cuti "${deleteTarget.value?.leaveType?.name ?? ''}" (${deleteTarget.value?.company?.name ?? '—'})? Tindakan ini dapat memengaruhi data terkait.`,
 );
 
-function openDelete(shift) {
-  deleteTarget.value = shift;
+function openDelete(rule) {
+  deleteTarget.value = rule;
   confirmOpen.value = true;
 }
 
 async function handleDelete() {
   if (!deleteTarget.value) return;
-  const ok = await deleteShift(deleteTarget.value.id);
+  const ok = await deleteLeaveRule(deleteTarget.value.id);
   if (ok) {
     confirmOpen.value = false;
     deleteTarget.value = null;
@@ -67,14 +68,14 @@ async function handleDelete() {
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
-        Daftar Shift
+        Daftar Aturan Cuti
         <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
       </h2>
-      <ShiftToolbar @add="openAdd" />
+      <LeaveRuleToolbar @add="openAdd" />
     </div>
 
-    <ShiftTable
-      :shifts="shifts"
+    <LeaveRuleTable
+      :leave-rules="leaveRules"
       :loading="loading"
       @detail="handleDetail"
       @edit="openEdit"
@@ -84,7 +85,7 @@ async function handleDelete() {
     <!-- Footer / pagination -->
     <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
       <span class="text-[13px] text-mahir-muted"
-        >Menampilkan {{ shifts.length }} dari {{ pagination.count }} shift</span
+        >Menampilkan {{ leaveRules.length }} dari {{ pagination.count }} aturan cuti</span
       >
       <nav class="flex items-center gap-1">
         <button
@@ -109,18 +110,18 @@ async function handleDelete() {
     </div>
   </div>
 
-  <!-- Modal tambah/ubah shift -->
-  <ShiftFormModal
+  <!-- Modal tambah/ubah aturan cuti -->
+  <LeaveRuleFormModal
     v-model:open="modalOpen"
     :saving="saving"
-    :shift="editing"
+    :leave-rule="editing"
     @save="handleSave"
   />
 
-  <!-- Konfirmasi hapus shift -->
+  <!-- Konfirmasi hapus -->
   <ConfirmDialog
     v-model:open="confirmOpen"
-    title="Hapus Shift"
+    title="Hapus Aturan Cuti"
     :message="deleteMessage"
     confirm-text="Ya, Hapus"
     :loading="saving"

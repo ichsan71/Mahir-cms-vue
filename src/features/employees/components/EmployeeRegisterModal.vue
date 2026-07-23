@@ -1,6 +1,6 @@
 <script setup>
 // Form pendaftaran karyawan baru — kontrak registerEmployee(username, email, input).
-// Relasi (branch/company/unit/level/employmentType/shift/atasan) memakai
+// Relasi (branch/company/unit/level/employmentType/workPattern/atasan) memakai
 // SearchableSelect dengan query pencarian yang sudah ada (reusable).
 import { ref, computed, watch } from "vue";
 import { UserCircleIcon } from "@heroicons/vue/24/outline";
@@ -12,7 +12,7 @@ import { useUnitSearch } from "@/features/units/composables/useUnitSearch";
 import { useLevelSearch } from "@/features/levels/composables/useLevelSearch";
 import { useBranchSearch } from "@/features/branches/composables/useBranchSearch";
 import { useEmploymentTypeSearch } from "@/features/employmentTypes/composables/useEmploymentTypeSearch";
-import { useShiftSearch } from "@/features/shifts/composables/useShiftSearch";
+import { useWorkPatternSearch } from "@/features/workPatterns/composables/useWorkPatternSearch";
 import { useEmployeeSearch } from "../composables/useEmployeeSearch";
 
 const props = defineProps({
@@ -32,7 +32,7 @@ const { options: unitOptions, loading: unitLoading, setSearch: unitSearch } = us
 const { options: levelOptions, loading: levelLoading, setSearch: levelSearch } = useLevelSearch();
 const { options: branchOptions, loading: branchLoading, setSearch: branchSearch } = useBranchSearch();
 const { options: empTypeOptions, loading: empTypeLoading, setSearch: empTypeSearch } = useEmploymentTypeSearch();
-const { options: shiftOptions, loading: shiftLoading, setSearch: shiftSearch } = useShiftSearch();
+const { options: workPatternOptions, loading: workPatternLoading, setSearch: workPatternSearch } = useWorkPatternSearch();
 const { options: parentOptions, loading: parentLoading, setSearch: parentSearch } = useEmployeeSearch();
 
 // Pilihan enum backend (introspeksi) — agama & status pernikahan.
@@ -43,7 +43,7 @@ const { options: maritalStatusOptions, loading: maritalStatusLoading } = useEnum
 const branchSelected = ref(null);
 const empTypeSelected = ref(null);
 const levelSelected = ref(null);
-const shiftSelected = ref(null);
+const workPatternSelected = ref(null);
 const parentSelected = ref(null);
 const companiesSelected = ref([]);
 const unitsSelected = ref([]);
@@ -89,7 +89,7 @@ const blank = () => ({
   branchId: "",
   employmentTypeId: "",
   levelId: "",
-  shiftId: "",
+  workPatternId: "",
   parentId: "",
   companyIds: [],
   unitIds: [],
@@ -98,7 +98,7 @@ const blank = () => ({
 const form = ref(blank());
 
 // Pesan galat per field yang wajib diisi (branchId/companyIds/employmentTypeId/
-// levelId/shiftId/unitIds/fullName — sesuai field non-null di skema backend).
+// levelId/workPatternId/unitIds/fullName — sesuai field non-null di skema backend).
 // Divalidasi di sisi klien agar SearchableSelect (bukan input native) tetap wajib.
 const errors = ref({});
 
@@ -137,7 +137,7 @@ function fillForm() {
       branchId: e.branch?.id ?? "",
       employmentTypeId: e.employmentType?.id ?? "",
       levelId: e.level?.id ?? "",
-      shiftId: e.shift?.id ?? "",
+      workPatternId: e.workPattern?.id ?? "",
       parentId: e.parent?.id ?? "",
       companyIds: (e.companies ?? []).map((c) => c.id),
       unitIds: (e.units ?? []).map((u) => u.id),
@@ -148,7 +148,7 @@ function fillForm() {
     branchSelected.value = e.branch ?? null;
     empTypeSelected.value = e.employmentType ?? null;
     levelSelected.value = e.level ?? null;
-    shiftSelected.value = e.shift ?? null;
+    workPatternSelected.value = e.workPattern ?? null;
     parentSelected.value = e.parent ? { id: e.parent.id, name: e.parent.fullName } : null;
     companiesSelected.value = e.companies ?? [];
     unitsSelected.value = e.units ?? [];
@@ -159,7 +159,7 @@ function fillForm() {
     branchSelected.value = null;
     empTypeSelected.value = null;
     levelSelected.value = null;
-    shiftSelected.value = null;
+    workPatternSelected.value = null;
     parentSelected.value = null;
     companiesSelected.value = [];
     unitsSelected.value = [];
@@ -248,7 +248,7 @@ function validate(fullName) {
   if (!f.branchId) next.branchId = "Cabang wajib dipilih.";
   if (!f.employmentTypeId) next.employmentTypeId = "Tipe kepegawaian wajib dipilih.";
   if (!f.levelId) next.levelId = "Level wajib dipilih.";
-  if (!f.shiftId) next.shiftId = "Shift wajib dipilih.";
+  if (!f.workPatternId) next.workPatternId = "Pola kerja wajib dipilih.";
   if (!f.companyIds?.length) next.companyIds = "Minimal satu perusahaan wajib dipilih.";
   if (!f.unitIds?.length) next.unitIds = "Minimal satu unit wajib dipilih.";
   errors.value = next;
@@ -281,7 +281,7 @@ function onSubmit() {
     branchId: f.branchId || null,
     employmentTypeId: f.employmentTypeId || null,
     levelId: f.levelId || null,
-    shiftId: f.shiftId || null,
+    workPatternId: f.workPatternId || null,
     parentId: f.parentId || null,
     companyIds: f.companyIds?.length ? f.companyIds : null,
     unitIds: f.unitIds?.length ? f.unitIds : null,
@@ -491,17 +491,17 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
             <p v-if="errors.levelId" class="mt-1 text-xs text-rose-500">{{ errors.levelId }}</p>
           </div>
           <div>
-            <label :class="labelCls">Shift <span class="text-rose-500">*</span></label>
+            <label :class="labelCls">Pola Kerja <span class="text-rose-500">*</span></label>
             <SearchableSelect
-              v-model="form.shiftId"
-              :selected="shiftSelected"
-              :options="shiftOptions"
-              :loading="shiftLoading"
-              placeholder="Pilih shift"
-              search-placeholder="Cari shift…"
-              @search="shiftSearch"
+              v-model="form.workPatternId"
+              :selected="workPatternSelected"
+              :options="workPatternOptions"
+              :loading="workPatternLoading"
+              placeholder="Pilih pola kerja"
+              search-placeholder="Cari pola kerja…"
+              @search="workPatternSearch"
             />
-            <p v-if="errors.shiftId" class="mt-1 text-xs text-rose-500">{{ errors.shiftId }}</p>
+            <p v-if="errors.workPatternId" class="mt-1 text-xs text-rose-500">{{ errors.workPatternId }}</p>
           </div>
           <div>
             <label :class="labelCls">Atasan Langsung</label>

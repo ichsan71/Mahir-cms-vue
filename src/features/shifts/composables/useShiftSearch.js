@@ -8,7 +8,15 @@ export function useShiftSearch() {
 
   const { result, loading } = useQuery(
     LIST_SHIFT,
-    () => ({ params: { search: search.value || null, page: 1, pageSize: 10 } }),
+    () => ({
+      params: {
+        page: 1,
+        pageSize: 10,
+        search: search.value || null,
+        name: null,
+        isFlexible: null,
+      },
+    }),
     { fetchPolicy: "cache-and-network" },
   );
 

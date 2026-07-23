@@ -96,13 +96,27 @@ export const GET_EMPLOYEE = gql`
           fullName
         }
         roleName
-        shift {
+        workPattern {
           id
           name
-          startDay
-          endDay
-          startTime
-          endTime
+          details {
+            id
+            weekday
+            weekdayDisplay
+            isWorkday
+            shift {
+              id
+              name
+              code
+              startTime
+              endTime
+              breakStart
+              breakEnd
+              lateTolerance
+              earlyLeaveTolerance
+              isFlexible
+            }
+          }
         }
         talentaId
         units {

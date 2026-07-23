@@ -100,6 +100,9 @@ export const LIST_BRANCH_ADDRESS = gql`
           country
           state
           city
+          latitude
+          longitude
+          distanceTolerance
         }
       }
     }
@@ -107,7 +110,7 @@ export const LIST_BRANCH_ADDRESS = gql`
 `;
 
 // Tambah alamat cabang. `input` mengikuti BranchAddressInput:
-// branchId, city, country, latitude, longitude, line1, line2, state.
+// branchId, city, country, latitude, longitude, line1, line2, state, distanceTolerance.
 export const CREATE_BRANCH_ADDRESS = gql`
   mutation CreateBranchAddress($input: BranchAddressInput!) {
     createBranchAddress(input: $input) {

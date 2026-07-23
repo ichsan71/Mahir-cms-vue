@@ -1,19 +1,19 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useShifts } from "../composables/useShifts";
-import { useShiftForm } from "../composables/useShiftForm";
-import ShiftToolbar from "../components/ShiftToolbar.vue";
-import ShiftTable from "../components/ShiftTable.vue";
-import ShiftFormModal from "../components/ShiftFormModal.vue";
+import { useWorkPatterns } from "../composables/useWorkPatterns";
+import { useWorkPatternForm } from "../composables/useWorkPatternForm";
+import WorkPatternToolbar from "../components/WorkPatternToolbar.vue";
+import WorkPatternTable from "../components/WorkPatternTable.vue";
+import WorkPatternFormModal from "../components/WorkPatternFormModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 
 const router = useRouter();
-const { shifts, pagination, loading, nextPage, prevPage, refetch } = useShifts();
-const { createShift, editShift, deleteShift, loading: saving } = useShiftForm();
+const { workPatterns, pagination, loading, nextPage, prevPage, refetch } = useWorkPatterns();
+const { createWorkPattern, editWorkPattern, deleteWorkPattern, loading: saving } = useWorkPatternForm();
 
 const modalOpen = ref(false);
-// Shift yang sedang diubah (diprefill langsung dari baris list).
+// Pola kerja yang sedang diubah (diprefill via getWorkPattern di dalam modal).
 const editing = ref(null);
 
 function openAdd() {
@@ -21,17 +21,17 @@ function openAdd() {
   modalOpen.value = true;
 }
 
-function openEdit(shift) {
-  editing.value = shift;
+function openEdit(pattern) {
+  editing.value = pattern;
   modalOpen.value = true;
 }
 
-function handleDetail(shift) {
-  router.push({ name: "shift-detail", params: { id: shift.id } });
+function handleDetail(pattern) {
+  router.push({ name: "pola-kerja-detail", params: { id: pattern.id } });
 }
 
 async function handleSave({ id, input }) {
-  const result = id ? await editShift(id, input) : await createShift(input);
+  const result = id ? await editWorkPattern(id, input) : await createWorkPattern(input);
   if (result) {
     modalOpen.value = false;
     refetch();
@@ -43,17 +43,17 @@ const confirmOpen = ref(false);
 const deleteTarget = ref(null);
 
 const deleteMessage = computed(
-  () => `Hapus shift "${deleteTarget.value?.name ?? ''}"? Tindakan ini dapat memengaruhi data terkait.`,
+  () => `Hapus pola kerja "${deleteTarget.value?.name ?? ''}"? Tindakan ini dapat memengaruhi data terkait.`,
 );
 
-function openDelete(shift) {
-  deleteTarget.value = shift;
+function openDelete(pattern) {
+  deleteTarget.value = pattern;
   confirmOpen.value = true;
 }
 
 async function handleDelete() {
   if (!deleteTarget.value) return;
-  const ok = await deleteShift(deleteTarget.value.id);
+  const ok = await deleteWorkPattern(deleteTarget.value.id);
   if (ok) {
     confirmOpen.value = false;
     deleteTarget.value = null;
@@ -67,14 +67,14 @@ async function handleDelete() {
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
-        Daftar Shift
+        Daftar Pola Kerja
         <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
       </h2>
-      <ShiftToolbar @add="openAdd" />
+      <WorkPatternToolbar @add="openAdd" />
     </div>
 
-    <ShiftTable
-      :shifts="shifts"
+    <WorkPatternTable
+      :work-patterns="workPatterns"
       :loading="loading"
       @detail="handleDetail"
       @edit="openEdit"
@@ -84,7 +84,7 @@ async function handleDelete() {
     <!-- Footer / pagination -->
     <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
       <span class="text-[13px] text-mahir-muted"
-        >Menampilkan {{ shifts.length }} dari {{ pagination.count }} shift</span
+        >Menampilkan {{ workPatterns.length }} dari {{ pagination.count }} pola kerja</span
       >
       <nav class="flex items-center gap-1">
         <button
@@ -109,18 +109,18 @@ async function handleDelete() {
     </div>
   </div>
 
-  <!-- Modal tambah/ubah shift -->
-  <ShiftFormModal
+  <!-- Modal tambah/ubah pola kerja -->
+  <WorkPatternFormModal
     v-model:open="modalOpen"
     :saving="saving"
-    :shift="editing"
+    :work-pattern="editing"
     @save="handleSave"
   />
 
-  <!-- Konfirmasi hapus shift -->
+  <!-- Konfirmasi hapus pola kerja -->
   <ConfirmDialog
     v-model:open="confirmOpen"
-    title="Hapus Shift"
+    title="Hapus Pola Kerja"
     :message="deleteMessage"
     confirm-text="Ya, Hapus"
     :loading="saving"

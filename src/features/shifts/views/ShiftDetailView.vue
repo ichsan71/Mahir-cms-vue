@@ -2,7 +2,6 @@
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useShiftDetail } from "../composables/useShiftDetail";
-import { prettyEnum } from "@/shared/composables/useEnumChoices";
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -18,6 +17,11 @@ const { shift, loading } = useShiftDetail(id);
 
 function fmtTime(t) {
   return t ? String(t).slice(0, 5) : "—";
+}
+
+// Toleransi (menit) → "X menit" atau "—".
+function fmtMinutes(v) {
+  return v === null || v === undefined || v === "" ? "—" : `${v} menit`;
 }
 
 function goBack() {
@@ -65,9 +69,18 @@ function goBack() {
           <ClockIcon class="h-7 w-7" />
         </span>
         <div class="min-w-0 flex-1">
-          <h1 class="text-xl font-bold tracking-tight text-slate-900">{{ shift.name }}</h1>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">{{ shift.name }}</h1>
+            <span
+              v-if="shift.isFlexible"
+              class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-600"
+            >
+              Fleksibel
+            </span>
+          </div>
           <p class="mt-1 text-sm font-medium text-slate-600">
-            {{ prettyEnum(shift.startDay) }} – {{ prettyEnum(shift.endDay) }}
+            <span v-if="shift.code" class="font-mono">{{ shift.code }}</span>
+            <span v-else>—</span>
           </p>
         </div>
       </div>
@@ -80,15 +93,12 @@ function goBack() {
         <h2 class="font-display text-[15px] font-bold text-slate-900">Informasi Shift</h2>
       </div>
 
-      <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-8">
-        <div>
-          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Hari Mulai</dt>
-          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ prettyEnum(shift.startDay) || "—" }}</dd>
-        </div>
-        <div>
-          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Hari Selesai</dt>
-          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ prettyEnum(shift.endDay) || "—" }}</dd>
-        </div>
+      <!-- Shift fleksibel: tak ada jam tetap -->
+      <p v-if="shift.isFlexible" class="text-sm text-slate-500">
+        Shift ini fleksibel — tidak memiliki jam masuk, jam pulang, istirahat, maupun toleransi tetap.
+      </p>
+
+      <div v-else class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-8">
         <div>
           <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Jam Mulai</dt>
           <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.startTime) }}</dd>
@@ -96,6 +106,22 @@ function goBack() {
         <div>
           <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Jam Selesai</dt>
           <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.endTime) }}</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Istirahat Mulai</dt>
+          <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.breakStart) }}</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Istirahat Selesai</dt>
+          <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.breakEnd) }}</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toleransi Terlambat</dt>
+          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtMinutes(shift.lateTolerance) }}</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toleransi Pulang Cepat</dt>
+          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtMinutes(shift.earlyLeaveTolerance) }}</dd>
         </div>
       </div>
     </div>

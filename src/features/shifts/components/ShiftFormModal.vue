@@ -1,13 +1,15 @@
 <script setup>
-// Form tambah/ubah shift — kontrak ShiftInput (name, startDay, endDay, startTime, endTime).
+// Form tambah/ubah shift — kontrak ShiftInput baru:
+// name, startTime, endTime, breakStart, breakEnd, isFlexible,
+// lateTolerance, earlyLeaveTolerance.
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
-import { useEnumChoices } from "@/shared/composables/useEnumChoices";
+import { useShiftDetail } from "../composables/useShiftDetail";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   saving: { type: Boolean, default: false },
-  // Shift yang sedang diubah (diprefill langsung dari baris list). null = mode tambah.
+  // Shift yang sedang diubah (baris list hanya membawa id/name/jam). null = mode tambah.
   shift: { type: Object, default: null },
 });
 
@@ -15,15 +17,19 @@ const emit = defineEmits(["update:open", "save"]);
 
 const isEdit = computed(() => !!props.shift?.id);
 
-// Pilihan hari dari enum backend (DayChoices) — reusable.
-const { options: dayOptions, loading: dayLoading } = useEnumChoices("DayChoices");
+// Saat edit, ambil data lengkap (break, toleransi, isFlexible) yang tak ada di baris list.
+const editId = computed(() => (props.open && props.shift?.id ? props.shift.id : null));
+const { shift: fullShift } = useShiftDetail(editId);
 
 const blank = () => ({
   name: "",
-  startDay: "",
-  endDay: "",
+  isFlexible: false,
   startTime: "",
   endTime: "",
+  breakStart: "",
+  breakEnd: "",
+  lateTolerance: "",
+  earlyLeaveTolerance: "",
 });
 
 const form = ref(blank());
@@ -33,15 +39,24 @@ function toHHMM(t) {
   return t ? String(t).slice(0, 5) : "";
 }
 
+// Angka toleransi (menit) → string untuk input, "" bila kosong.
+function toNumStr(v) {
+  return v === null || v === undefined ? "" : String(v);
+}
+
 function fillForm() {
-  const s = props.shift;
-  form.value = s?.id
+  // Utamakan data lengkap dari GET_SHIFT; fallback ke baris list untuk tampil cepat.
+  const s = fullShift.value ?? props.shift;
+  form.value = props.shift?.id
     ? {
         name: s.name ?? "",
-        startDay: s.startDay ?? "",
-        endDay: s.endDay ?? "",
+        isFlexible: !!s.isFlexible,
         startTime: toHHMM(s.startTime),
         endTime: toHHMM(s.endTime),
+        breakStart: toHHMM(s.breakStart),
+        breakEnd: toHHMM(s.breakEnd),
+        lateTolerance: toNumStr(s.lateTolerance),
+        earlyLeaveTolerance: toNumStr(s.earlyLeaveTolerance),
       }
     : blank();
 }
@@ -51,15 +66,30 @@ watch(
   () => props.shift,
   () => props.open && fillForm(),
 );
+// Data lengkap tiba belakangan (async) → prefill ulang agar break/toleransi terisi.
+watch(fullShift, () => props.open && fillForm());
+
+// Menit → integer atau null.
+function toMinutes(v) {
+  const s = String(v ?? "").trim();
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
 
 function onSubmit() {
   const f = form.value;
+  const flexible = !!f.isFlexible;
   const input = {
     name: f.name?.trim() || null,
-    startDay: f.startDay || null,
-    endDay: f.endDay || null,
-    startTime: f.startTime || null,
-    endTime: f.endTime || null,
+    isFlexible: flexible,
+    // Shift fleksibel tak punya jam tetap → seluruh field jadwal dikosongkan.
+    startTime: flexible ? null : f.startTime || null,
+    endTime: flexible ? null : f.endTime || null,
+    breakStart: flexible ? null : f.breakStart || null,
+    breakEnd: flexible ? null : f.breakEnd || null,
+    lateTolerance: flexible ? null : toMinutes(f.lateTolerance),
+    earlyLeaveTolerance: flexible ? null : toMinutes(f.earlyLeaveTolerance),
   };
   emit("save", { id: props.shift?.id ?? null, input });
 }
@@ -81,32 +111,59 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div class="md:col-span-2">
         <label :class="labelCls">Nama Shift *</label>
-        <input v-model="form.name" type="text" required :class="fieldCls" />
+        <input v-model="form.name" type="text" required :class="fieldCls" placeholder="mis. Shift Pagi" />
       </div>
 
-      <div>
-        <label :class="labelCls">Hari Mulai *</label>
-        <select v-model="form.startDay" required :disabled="dayLoading" :class="fieldCls">
-          <option value="">{{ dayLoading ? "Memuat…" : "Pilih hari" }}</option>
-          <option v-for="d in dayOptions" :key="d.value" :value="d.value">{{ d.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label :class="labelCls">Hari Selesai *</label>
-        <select v-model="form.endDay" required :disabled="dayLoading" :class="fieldCls">
-          <option value="">{{ dayLoading ? "Memuat…" : "Pilih hari" }}</option>
-          <option v-for="d in dayOptions" :key="d.value" :value="d.value">{{ d.label }}</option>
-        </select>
+      <!-- Toggle fleksibel -->
+      <div class="md:col-span-2">
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-mahir-border p-3"
+        >
+          <input v-model="form.isFlexible" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
+          <span>
+            <span class="block text-sm font-medium text-slate-700">Shift Fleksibel</span>
+            <span class="block text-[12px] text-mahir-muted">
+              Tanpa jam masuk/pulang tetap. Jadwal, istirahat, dan toleransi tidak diperlukan.
+            </span>
+          </span>
+        </label>
       </div>
 
-      <div>
-        <label :class="labelCls">Jam Mulai *</label>
-        <input v-model="form.startTime" type="time" required :class="fieldCls" />
-      </div>
-      <div>
-        <label :class="labelCls">Jam Selesai *</label>
-        <input v-model="form.endTime" type="time" required :class="fieldCls" />
-      </div>
+      <!-- Field jadwal tetap — sembunyi saat fleksibel -->
+      <template v-if="!form.isFlexible">
+        <div>
+          <label :class="labelCls">Jam Mulai *</label>
+          <input v-model="form.startTime" type="time" required :class="fieldCls" />
+        </div>
+        <div>
+          <label :class="labelCls">Jam Selesai *</label>
+          <input v-model="form.endTime" type="time" required :class="fieldCls" />
+        </div>
+
+        <div>
+          <label :class="labelCls">Istirahat Mulai</label>
+          <input v-model="form.breakStart" type="time" :class="fieldCls" />
+        </div>
+        <div>
+          <label :class="labelCls">Istirahat Selesai</label>
+          <input v-model="form.breakEnd" type="time" :class="fieldCls" />
+        </div>
+
+        <div>
+          <label :class="labelCls">Toleransi Terlambat (Detik)</label>
+          <input v-model="form.lateTolerance" type="number" min="0" :class="fieldCls" placeholder="0" />
+        </div>
+        <div>
+          <label :class="labelCls">Toleransi Pulang Cepat (Detik)</label>
+          <input
+            v-model="form.earlyLeaveTolerance"
+            type="number"
+            min="0"
+            :class="fieldCls"
+            placeholder="0"
+          />
+        </div>
+      </template>
     </div>
   </BaseModal>
 </template>

@@ -1,30 +1,28 @@
 import { computed, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useQuery } from "@vue/apollo-composable";
-import { LIST_SHIFT } from "../graphql/shift.queries";
-import { useShiftFiltersStore } from "../stores/shiftFilters.store";
+import { LIST_LEAVE_RULE } from "../graphql/leaveRule.queries";
+import { useLeaveRuleFiltersStore } from "../stores/leaveRuleFilters.store";
 
-// Layer logika shift: daftar paginated (reaktif terhadap filter & halaman).
-export function useShifts() {
-  const filters = useShiftFiltersStore();
+// Layer logika aturan cuti: daftar paginated (reaktif terhadap filter & halaman).
+export function useLeaveRules() {
+  const filters = useLeaveRuleFiltersStore();
   const { search, page, pageSize } = storeToRefs(filters);
 
   const { result, loading, refetch } = useQuery(
-    LIST_SHIFT,
+    LIST_LEAVE_RULE,
     () => ({
       params: {
         page: page.value || null,
         pageSize: pageSize.value || null,
         search: search.value?.trim() || null,
-        name: null,
-        isFlexible: null,
       },
     }),
     { fetchPolicy: "cache-and-network" },
   );
 
-  const data = computed(() => result.value?.listShift?.data ?? null);
-  const shifts = computed(() => data.value?.results ?? []);
+  const data = computed(() => result.value?.listLeaveRule?.data ?? null);
+  const leaveRules = computed(() => data.value?.results ?? []);
   const pagination = computed(() => {
     const count = data.value?.count ?? 0;
     const size = pageSize.value || 10;
@@ -53,5 +51,5 @@ export function useShifts() {
     page.value = p;
   }
 
-  return { shifts, pagination, pageSize, loading, refetch, nextPage, prevPage, goToPage };
+  return { leaveRules, pagination, pageSize, loading, refetch, nextPage, prevPage, goToPage };
 }
