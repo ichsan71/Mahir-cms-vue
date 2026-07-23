@@ -51,21 +51,30 @@ function accent(s) {
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-[14px] font-semibold text-slate-800">
-              {{ formatDate(row.leave?.startDate) }} – {{ formatDate(row.leave?.endDate) }}
+              {{ row.leave?.employee?.fullName || "—" }}
             </span>
             <span
+              v-if="row.leave?.leaveType?.name"
               class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500"
             >
-              {{ row.leave?.totalDays ?? "—" }} hari
+              {{ row.leave.leaveType.name }}
             </span>
           </div>
-          <p class="mt-0.5 line-clamp-1 text-[13px] text-slate-500">
-            {{ row.leave?.reason || "Tanpa keterangan" }}
+          <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-slate-500">
+            <span class="inline-flex items-center gap-1">
+              <CalendarDaysIcon class="h-3.5 w-3.5 text-slate-400" />
+              {{ formatDate(row.leave?.startDate) }} – {{ formatDate(row.leave?.endDate) }}
+            </span>
+            <span class="text-slate-300">·</span>
+            <span>{{ row.leave?.totalDays ?? "—" }} hari</span>
+          </div>
+          <p v-if="row.leave?.reason" class="mt-0.5 line-clamp-1 text-[12.5px] text-slate-400">
+            {{ row.leave.reason }}
           </p>
           <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-mahir-muted">
             <span class="inline-flex items-center gap-1">
               <UserCircleIcon class="h-3.5 w-3.5" />
-              {{ row.approver?.fullName || "—" }}
+              Approver: {{ row.approver?.fullName || "—" }}
               <span v-if="row.approver?.level?.name" class="text-slate-400"
                 >· {{ row.approver.level.name }}</span
               >

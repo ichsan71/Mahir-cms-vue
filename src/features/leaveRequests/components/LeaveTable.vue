@@ -22,6 +22,15 @@ function badgeKey(s) {
 function isDraft(s) {
   return badgeKey(s).includes("draft");
 }
+function isCancelled(s) {
+  const k = badgeKey(s);
+  return k.includes("cancel") || k.includes("batal");
+}
+// Masih bisa dibatalkan selama belum disetujui & belum dibatalkan
+// (isApproved dideklarasikan di bawah — function declaration ter-hoist).
+function canCancel(s) {
+  return !isApproved(s) && !isCancelled(s);
+}
 
 // Aksen warna kiri kartu berdasarkan status pengajuan.
 function accent(s) {
@@ -151,9 +160,12 @@ function pendingNames(row) {
           >
             <PaperClipIcon class="h-3.5 w-3.5" /> Lampiran
           </a>
-          <div v-if="isDraft(row.status)" class="flex items-center gap-1.5">
+          <div
+            v-if="(canCancel(row.status) && auth.can(PERM.CANCEL)) || (isDraft(row.status) && auth.can(PERM.SUBMIT))"
+            class="flex items-center gap-1.5"
+          >
             <button
-              v-if="auth.can(PERM.CANCEL)"
+              v-if="canCancel(row.status) && auth.can(PERM.CANCEL)"
               class="inline-flex items-center gap-1 rounded-lg border border-mahir-border px-2.5 py-1 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
               title="Batalkan pengajuan"
               @click="emit('cancel', row)"
@@ -161,7 +173,7 @@ function pendingNames(row) {
               <XMarkIcon class="h-3.5 w-3.5" /> Batal
             </button>
             <button
-              v-if="auth.can(PERM.SUBMIT)"
+              v-if="isDraft(row.status) && auth.can(PERM.SUBMIT)"
               class="inline-flex items-center gap-1 rounded-lg bg-mahir-primary px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-mahir-primary/90"
               title="Kirim untuk persetujuan"
               @click="emit('submit', row)"

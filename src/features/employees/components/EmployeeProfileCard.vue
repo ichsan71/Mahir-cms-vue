@@ -152,6 +152,17 @@ function workdayCount(wp) {
               </div>
             </div>
           </div>
+
+          <div class="flex items-start gap-3 sm:col-span-2">
+            <UserCircleIcon class="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Approver Terdekat</div>
+              <div class="mt-0.5 text-sm font-medium text-slate-800">
+                <template v-if="employee.nearestResponse">{{ employee.nearestResponse.fullName }}</template>
+                <template v-else><span class="text-slate-400 italic">Tidak ada</span></template>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

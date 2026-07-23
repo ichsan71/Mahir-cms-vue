@@ -42,6 +42,10 @@ export const GET_EMPLOYEE = gql`
     getEmployee(id: $getEmployeeId) {
       data {
         id
+        nearestResponse {
+          id
+          fullName
+        }
         image
         addresses {
           city

@@ -33,12 +33,15 @@ const blank = () => ({
 const form = ref(blank());
 const attachment = ref(null); // File object (opsional)
 const fileInput = ref(null);
+// Pesan galat per field (validasi klien — SearchableSelect/datepicker bukan input native).
+const errors = ref({});
 
 function fillForm() {
   form.value = blank();
   attachment.value = null;
   if (fileInput.value) fileInput.value.value = "";
   leaveTypeSelected.value = null;
+  errors.value = {};
 }
 
 watch(() => props.open, (open) => open && fillForm());
@@ -54,7 +57,26 @@ function onFileChange(e) {
   attachment.value = e.target.files?.[0] ?? null;
 }
 
+// Validasi field wajib sebelum submit.
+function validate() {
+  const f = form.value;
+  const next = {};
+  if (!auth.employee?.id) next.employee = "Data karyawan akun tidak ditemukan.";
+  if (!f.leaveTypeId) next.leaveTypeId = "Tipe cuti wajib dipilih.";
+  if (!f.startDate) next.startDate = "Tanggal mulai wajib diisi.";
+  if (!f.endDate) next.endDate = "Tanggal selesai wajib diisi.";
+  if (f.startDate && f.endDate && new Date(f.endDate) < new Date(f.startDate)) {
+    next.endDate = "Tanggal selesai tidak boleh sebelum tanggal mulai.";
+  }
+  if (f.totalDays !== "" && Number(f.totalDays) <= 0) {
+    next.totalDays = "Total hari harus lebih dari 0.";
+  }
+  errors.value = next;
+  return Object.keys(next).length === 0;
+}
+
 function onSubmit() {
+  if (!validate()) return;
   const f = form.value;
   const input = {
     // Karyawan = akun login (read-only).
@@ -92,6 +114,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
       <div>
         <label :class="labelCls">Karyawan</label>
         <input :value="auth.employee?.fullName || '—'" type="text" readonly :class="readonlyCls" />
+        <p v-if="errors.employee" class="mt-1 text-xs text-rose-500">{{ errors.employee }}</p>
       </div>
       <div>
         <label :class="labelCls">Tipe Cuti *</label>
@@ -104,6 +127,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           search-placeholder="Cari tipe cuti…"
           @search="setLeaveTypeSearch"
         />
+        <p v-if="errors.leaveTypeId" class="mt-1 text-xs text-rose-500">{{ errors.leaveTypeId }}</p>
       </div>
 
       <div>
@@ -116,6 +140,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           auto-apply
           placeholder="Pilih tanggal"
         />
+        <p v-if="errors.startDate" class="mt-1 text-xs text-rose-500">{{ errors.startDate }}</p>
       </div>
       <div>
         <label :class="labelCls">Tanggal Selesai *</label>
@@ -128,11 +153,13 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           auto-apply
           placeholder="Pilih tanggal"
         />
+        <p v-if="errors.endDate" class="mt-1 text-xs text-rose-500">{{ errors.endDate }}</p>
       </div>
 
       <div class="md:col-span-2">
         <label :class="labelCls">Total Hari</label>
         <input v-model="form.totalDays" type="number" min="0" :class="fieldCls" placeholder="Otomatis dari tanggal" />
+        <p v-if="errors.totalDays" class="mt-1 text-xs text-rose-500">{{ errors.totalDays }}</p>
       </div>
 
       <div class="md:col-span-2">

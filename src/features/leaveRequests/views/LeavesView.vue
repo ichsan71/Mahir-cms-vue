@@ -50,7 +50,7 @@ const cancelTarget = ref(null);
 
 const cancelMessage = computed(
   () =>
-    `Batalkan pengajuan cuti "${cancelTarget.value?.leaveType?.name ?? ''}" (${cancelTarget.value?.totalDays ?? '—'} hari)? Pengajuan yang masih draft akan dibatalkan.`,
+    `Batalkan pengajuan cuti "${cancelTarget.value?.leaveType?.name ?? ''}" (${cancelTarget.value?.totalDays ?? '—'} hari)? Pengajuan hanya bisa dibatalkan selama belum disetujui.`,
 );
 
 function openCancel(leave) {

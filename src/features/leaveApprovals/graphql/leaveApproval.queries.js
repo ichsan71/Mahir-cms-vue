@@ -30,6 +30,12 @@ export const LIST_LEAVE_APPROVAL = gql`
             reason
             status
             totalDays
+            employee {
+              fullName
+            }
+            leaveType {
+              name
+            }
           }
         }
       }
