@@ -22,6 +22,10 @@ export const LIST_ATTENDANCE = gql`
           }
           date
           shift
+          holiday {
+            id
+            name
+          }
           status
           scheduledCheckIn
           scheduledCheckOut

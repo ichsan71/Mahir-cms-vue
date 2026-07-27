@@ -11,6 +11,7 @@ import {
   DevicePhoneMobileIcon,
   PencilSquareIcon,
   PhotoIcon,
+  CalendarDaysIcon,
 } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
@@ -91,6 +92,18 @@ function schedIn(row) {
 function schedOut(row) {
   return row.scheduledCheckOut || row.shift?.end_time || null;
 }
+
+// Penanda hari libur. `holiday` bisa berupa boolean, nama (string), atau objek
+// { name }. Truthy → hari libur.
+function isHoliday(row) {
+  return !!row.holiday;
+}
+function holidayLabel(row) {
+  const h = row.holiday;
+  if (typeof h === "string" && h.trim()) return h;
+  if (h && typeof h === "object" && h.name) return h.name;
+  return "Hari Libur";
+}
 </script>
 
 <template>
@@ -117,7 +130,10 @@ function schedOut(row) {
       <div
         v-for="row in g.rows"
         :key="row.id"
-        class="overflow-hidden rounded-xl border border-mahir-border bg-white transition hover:border-mahir-primary/40"
+        class="overflow-hidden rounded-xl border transition"
+        :class="isHoliday(row)
+          ? 'border-mahir-danger/30 bg-mahir-danger-soft/40'
+          : 'border-mahir-border bg-white hover:border-mahir-primary/40'"
       >
         <!-- Ringkasan baris -->
         <button
@@ -134,6 +150,12 @@ function schedOut(row) {
           <div class="w-[130px] flex-shrink-0">
             <div class="text-[13.5px] font-semibold text-slate-800">{{ formatDate(row.date) }}</div>
             <div class="text-[11.5px] text-slate-400">{{ weekday(row.date) }}</div>
+            <span
+              v-if="isHoliday(row)"
+              class="mt-1 inline-flex items-center gap-1 rounded bg-mahir-danger-soft px-1.5 py-0.5 text-[10px] font-semibold text-mahir-danger"
+            >
+              <CalendarDaysIcon class="h-3 w-3" /> {{ holidayLabel(row) }}
+            </span>
           </div>
 
           <!-- Shift -->
