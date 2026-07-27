@@ -24,6 +24,7 @@ export const LIST_LEAVE_APPROVAL = gql`
             }
           }
           leave {
+            id
             attachment
             startDate
             endDate
@@ -38,6 +39,28 @@ export const LIST_LEAVE_APPROVAL = gql`
             }
           }
         }
+      }
+    }
+  }
+`;
+
+// Setujui cuti (oleh approver). `id` = id baris LeaveApproval.
+export const APPROVE_LEAVE = gql`
+  mutation ApproveLeave($approveLeaveId: Int!) {
+    approveLeave(id: $approveLeaveId) {
+      data {
+        id
+      }
+    }
+  }
+`;
+
+// Tolak cuti (oleh approver). `id` = id baris LeaveApproval.
+export const REJECT_LEAVE = gql`
+  mutation RejectLeave($rejectLeaveId: Int!) {
+    rejectLeave(id: $rejectLeaveId) {
+      data {
+        id
       }
     }
   }

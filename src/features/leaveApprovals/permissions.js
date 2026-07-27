@@ -4,4 +4,6 @@
  */
 export const PERM = {
   LIST: "listLeaveApproval",
+  APPROVE: "approveLeave",
+  REJECT: "rejectLeave",
 };

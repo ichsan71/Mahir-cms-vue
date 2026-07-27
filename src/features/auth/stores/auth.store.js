@@ -33,6 +33,13 @@ export const useAuthStore = defineStore("auth", () => {
   // Foto profil karyawan (null bila tidak ada → UI jatuh ke inisial nama).
   const displayImage = computed(() => employee.value?.image || null);
 
+  // Bawahan langsung (childrens) dari data employee login — dipakai mis. agar
+  // atasan bisa memonitor kehadiran timnya. Kosong bila bukan atasan.
+  const subordinates = computed(() =>
+    (employee.value?.childrens || []).filter((c) => c?.id != null),
+  );
+  const childrenIds = computed(() => subordinates.value.map((c) => c.id));
+
   // payload = { token, user, employee } hasil mutation login.
   function setSession({ token: t, user: u, employee: e }) {
     token.value = t;
@@ -60,5 +67,5 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("mahir_employee");
   }
 
-  return { token, user, employee, isAuthenticated, permissionSet, can, displayName, displayRole, displayImage, setSession, patchEmployee, logout };
+  return { token, user, employee, isAuthenticated, permissionSet, can, subordinates, childrenIds, displayName, displayRole, displayImage, setSession, patchEmployee, logout };
 });

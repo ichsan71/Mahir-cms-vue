@@ -56,8 +56,8 @@ const navItems = [
   // termasuk super admin. Saat modul siap: buang `soon`, kembalikan `to` +
   // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
   { icon: BanknotesIcon, label: "Penggajian", soon: true },
-  { icon: CalendarDaysIcon, label: "Kehadiran", soon: true },
-  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction", "listLeaveMandatoryApprover"] },
+  { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", permissions: ["listAttendance"] },
+  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction"] },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
   // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).

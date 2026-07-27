@@ -64,3 +64,40 @@ export function formatDate(value) {
     year: "numeric",
   }).format(d);
 }
+
+/**
+ * Format jam dari sebuah nilai waktu → "07:15".
+ * Menerima ISO datetime ("2026-04-24T07:15:00Z"), string jam ("07:15:00"),
+ * atau Date. Mengembalikan "—" bila kosong/invalid.
+ */
+export function formatTime(value) {
+  if (!value) return "—";
+  // String jam murni "HH:mm" / "HH:mm:ss" (tanpa komponen tanggal).
+  if (typeof value === "string" && /^\d{1,2}:\d{2}(:\d{2})?$/.test(value.trim())) {
+    const [h, m] = value.trim().split(":");
+    return `${h.padStart(2, "0")}:${m}`;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
+/**
+ * Format durasi dari detik → "2j 15m" (atau "45m", "—" bila kosong/0 opsional).
+ * `zeroDash` = true mengembalikan "—" untuk nilai 0/kosong.
+ */
+export function formatDuration(seconds, { zeroDash = false } = {}) {
+  const s = Number(seconds);
+  if (!Number.isFinite(s) || s < 0) return "—";
+  if (s === 0) return zeroDash ? "—" : "0m";
+  const totalMin = Math.round(s / 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h && m) return `${h}j ${m}m`;
+  if (h) return `${h}j`;
+  return `${m}m`;
+}

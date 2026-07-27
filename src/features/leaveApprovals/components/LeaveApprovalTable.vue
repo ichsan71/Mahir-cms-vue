@@ -1,15 +1,27 @@
 <script setup>
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatDate } from "@/shared/utils/format";
-import { CalendarDaysIcon, PaperClipIcon, UserCircleIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
+import { CalendarDaysIcon, PaperClipIcon, UserCircleIcon, CheckIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
 defineProps({
   approvals: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
 });
 
+const emit = defineEmits(["approve", "reject"]);
+
+const auth = useAuthStore();
+
 function badgeKey(s) {
   return String(s ?? "").toLowerCase();
+}
+
+// Masih menunggu keputusan approver → tampilkan tombol setujui/tolak.
+function isPending(s) {
+  const k = badgeKey(s);
+  return !(k.includes("approve") || k.includes("setuju") || k.includes("reject") || k.includes("tolak"));
 }
 
 // Aksen warna kiri kartu berdasarkan status persetujuan.
@@ -91,9 +103,30 @@ function accent(s) {
           </div>
         </div>
 
-        <!-- Status -->
-        <div class="flex flex-shrink-0 items-start">
+        <!-- Status + aksi -->
+        <div class="flex flex-shrink-0 flex-col items-end gap-2">
           <StatusBadge :status="badgeKey(row.status)" />
+          <div
+            v-if="isPending(row.status) && (auth.can(PERM.APPROVE) || auth.can(PERM.REJECT))"
+            class="flex items-center gap-1.5"
+          >
+            <button
+              v-if="auth.can(PERM.REJECT)"
+              class="inline-flex items-center gap-1 rounded-lg border border-mahir-danger/30 px-2.5 py-1 text-[12px] font-semibold text-mahir-danger hover:bg-mahir-danger-soft"
+              title="Tolak"
+              @click="emit('reject', row)"
+            >
+              <XMarkIcon class="h-3.5 w-3.5" /> Tolak
+            </button>
+            <button
+              v-if="auth.can(PERM.APPROVE)"
+              class="inline-flex items-center gap-1 rounded-lg bg-mahir-success px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-mahir-success/90"
+              title="Setujui"
+              @click="emit('approve', row)"
+            >
+              <CheckIcon class="h-3.5 w-3.5" /> Setujui
+            </button>
+          </div>
         </div>
       </div>
     </div>

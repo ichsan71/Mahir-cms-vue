@@ -1,7 +1,7 @@
 <script setup>
 // Halaman transaksi "Cuti & Izin" — satu menu ber-tab. Tab aktif disinkron ke
 // query `?tab`. Pengajuan = listLeave (submission), Persetujuan = listLeaveApproval
-// (inbox approver), plus Saldo, Mutasi, Approver Wajib.
+// (inbox approver), plus Saldo & Mutasi.
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -9,7 +9,6 @@ import LeavesView from "@/features/leaveRequests/views/LeavesView.vue";
 import LeaveApprovalsView from "./LeaveApprovalsView.vue";
 import LeaveBalancesView from "@/features/leaveBalances/views/LeaveBalancesView.vue";
 import LeaveBalanceTransactionsView from "@/features/leaveBalanceTransactions/views/LeaveBalanceTransactionsView.vue";
-import LeaveMandatoryApproversView from "@/features/leaveMandatoryApprovers/views/LeaveMandatoryApproversView.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -21,7 +20,6 @@ const tabs = computed(() =>
     { key: "persetujuan", label: "Persetujuan", permission: "listLeaveApproval" },
     { key: "saldo", label: "Saldo Cuti", permission: "listLeaveBalance" },
     { key: "mutasi", label: "Mutasi Saldo", permission: "listLeaveBalanceTransaction" },
-    { key: "approver", label: "Approver Wajib", permission: "listLeaveMandatoryApprover" },
   ].filter((t) => auth.can(t.permission)),
 );
 
@@ -76,5 +74,4 @@ watch(
   <LeaveApprovalsView v-else-if="activeTab === 'persetujuan'" />
   <LeaveBalancesView v-else-if="activeTab === 'saldo'" />
   <LeaveBalanceTransactionsView v-else-if="activeTab === 'mutasi'" />
-  <LeaveMandatoryApproversView v-else-if="activeTab === 'approver'" />
 </template>
