@@ -7,6 +7,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import LeaveRulesView from "./LeaveRulesView.vue";
 import LeaveTypesView from "@/features/leaveTypes/views/LeaveTypesView.vue";
+import LeaveMandatoryApproversView from "@/features/leaveMandatoryApprovers/views/LeaveMandatoryApproversView.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const tabs = computed(() =>
   [
     { key: "aturan-cuti", label: "Aturan Cuti", permission: "listLeaveRule" },
     { key: "tipe-cuti", label: "Tipe Cuti", permission: "listLeaveType" },
+    { key: "approver-wajib", label: "Approver Wajib", permission: "listLeaveMandatoryApprover" },
   ].filter((t) => auth.can(t.permission)),
 );
 
@@ -70,4 +72,5 @@ watch(
   <!-- Konten tab aktif -->
   <LeaveRulesView v-if="activeTab === 'aturan-cuti'" />
   <LeaveTypesView v-else-if="activeTab === 'tipe-cuti'" />
+  <LeaveMandatoryApproversView v-else-if="activeTab === 'approver-wajib'" />
 </template>

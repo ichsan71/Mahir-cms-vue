@@ -49,17 +49,17 @@ const navItems = [
       { to: "/shift", icon: ClockIcon, label: "Shift & Pola Kerja", permissions: ["listShift", "listWorkPattern"] },
       { to: "/unit", icon: ShareIcon, label: "Unit", permissions: ["listUnit"] },
       { to: "/level", icon: ChartBarIcon, label: "Level", permissions: ["listLevel"] },
-      { to: "/pengaturan-cuti", icon: DocumentTextIcon, label: "Pengaturan Cuti", permissions: ["listLeaveRule", "listLeaveType"] },
+      { to: "/pengaturan-cuti", icon: DocumentTextIcon, label: "Pengaturan Cuti", permissions: ["listLeaveRule", "listLeaveType", "listLeaveMandatoryApprover"] },
     ],
   },
   // Modul operasional belum selesai → tampil "Soon" (disabled) untuk semua,
   // termasuk super admin. Saat modul siap: buang `soon`, kembalikan `to` +
   // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
-  { icon: BanknotesIcon, label: "Penggajian", soon: true },
   { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", permissions: ["listAttendance"] },
   { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction"] },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
+  { icon: BanknotesIcon, label: "Penggajian", soon: true },
   // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).
   { to: "/saya", icon: UserCircleIcon, label: "Profil Saya" },
 ];

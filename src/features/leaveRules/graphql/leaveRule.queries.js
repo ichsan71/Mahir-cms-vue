@@ -2,7 +2,7 @@ import gql from "graphql-tag";
 
 // Daftar aturan cuti (leave rule) paginated sesuai kontrak backend.
 // `params` (LeaveRuleParams) opsional: page, pageSize, search.
-// Tiap aturan terkait satu `leaveType` & satu `company`.
+// Tiap aturan terkait satu `leaveType` & bisa beberapa `companies` (list).
 export const LIST_LEAVE_RULE = gql`
   query ListLeaveRule($params: LeaveRuleParams) {
     listLeaveRule(params: $params) {
@@ -14,7 +14,7 @@ export const LIST_LEAVE_RULE = gql`
         hasPrev
         results {
           id
-          company {
+          companies {
             id
             name
           }
@@ -54,7 +54,7 @@ export const GET_LEAVE_RULE = gql`
         maxConsecutiveDays
         allowNegativeBalance
         minimumNoticeDays
-        company {
+        companies {
           id
           name
         }
@@ -68,7 +68,7 @@ export const GET_LEAVE_RULE = gql`
 `;
 
 // Tambah aturan cuti. `input` (LeaveRuleInput):
-// companyId(Int), leaveTypeId(Int), daysPerYear(Float), minServiceMonth(Int),
+// companyIds([Int]), leaveTypeId(Int), daysPerYear(Float), minServiceMonth(Int),
 // minimumNoticeDays(Int), maxConsecutiveDays(Int), allowHalfDay(Bool),
 // allowCarryForward(Bool), maxCarryForward(Float), carryForwardExpireAfterMonths(Int),
 // allowNegativeBalance(Bool).

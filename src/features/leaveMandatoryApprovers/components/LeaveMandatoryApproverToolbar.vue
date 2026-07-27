@@ -1,8 +1,13 @@
 <script setup>
 import { ref, watch, onUnmounted } from "vue";
 import { useLeaveMandatoryApproverFiltersStore } from "../stores/leaveMandatoryApproverFilters.store";
-import { MagnifyingGlassIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
+import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/vue/24/outline";
 
+const emit = defineEmits(["add"]);
+
+const auth = useAuthStore();
 const filters = useLeaveMandatoryApproverFiltersStore();
 const localSearch = ref(filters.search);
 
@@ -36,5 +41,13 @@ watch(
         class="w-[240px] rounded-lg border border-mahir-border py-2 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
       />
     </div>
+
+    <button
+      v-if="auth.can(PERM.CREATE)"
+      class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+      @click="emit('add')"
+    >
+      <PlusIcon class="h-4 w-4" /> Tambah Approver
+    </button>
   </div>
 </template>

@@ -42,10 +42,10 @@ async function handleSave({ id, input }) {
 const confirmOpen = ref(false);
 const deleteTarget = ref(null);
 
-const deleteMessage = computed(
-  () =>
-    `Hapus aturan cuti "${deleteTarget.value?.leaveType?.name ?? ''}" (${deleteTarget.value?.company?.name ?? '—'})? Tindakan ini dapat memengaruhi data terkait.`,
-);
+const deleteMessage = computed(() => {
+  const companies = (deleteTarget.value?.companies || []).map((c) => c.name).join(", ") || "—";
+  return `Hapus aturan cuti "${deleteTarget.value?.leaveType?.name ?? ''}" (${companies})? Tindakan ini dapat memengaruhi data terkait.`;
+});
 
 function openDelete(rule) {
   deleteTarget.value = rule;

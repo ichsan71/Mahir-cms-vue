@@ -70,9 +70,18 @@ function goBack() {
           <h1 class="text-xl font-bold tracking-tight text-slate-900">
             {{ leaveRule.leaveType?.name || "Aturan Cuti" }}
           </h1>
-          <p class="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-600">
-            <BuildingOffice2Icon class="h-4 w-4 text-slate-400" />
-            {{ leaveRule.company?.name || "—" }}
+          <p class="mt-1 flex flex-wrap items-center gap-1.5 text-sm font-medium text-slate-600">
+            <BuildingOffice2Icon class="h-4 w-4 flex-shrink-0 text-slate-400" />
+            <template v-if="leaveRule.companies?.length">
+              <span
+                v-for="c in leaveRule.companies"
+                :key="c.id"
+                class="rounded-full bg-mahir-primary-soft px-2 py-0.5 text-[12px] font-semibold text-mahir-primary"
+              >
+                {{ c.name }}
+              </span>
+            </template>
+            <span v-else>—</span>
           </p>
         </div>
       </div>

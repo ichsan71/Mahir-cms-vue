@@ -1,10 +1,21 @@
 <script setup>
-import { BuildingOffice2Icon, ShareIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
+import {
+  BuildingOffice2Icon,
+  ShareIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from "@heroicons/vue/24/outline";
 
 defineProps({
   approvers: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
 });
+
+const emit = defineEmits(["edit", "delete"]);
+
+const auth = useAuthStore();
 </script>
 
 <template>
@@ -20,7 +31,7 @@ defineProps({
       <div
         v-for="row in approvers"
         :key="row.id"
-        class="flex items-center gap-3.5 rounded-xl border border-mahir-border bg-white p-3.5 transition hover:border-mahir-primary/40 hover:shadow-sm"
+        class="group flex items-center gap-3.5 rounded-xl border border-mahir-border bg-white p-3.5 transition hover:border-mahir-primary/40 hover:shadow-sm"
       >
         <!-- Urutan (langkah) -->
         <span
@@ -39,6 +50,29 @@ defineProps({
             <ShareIcon class="h-3.5 w-3.5 flex-shrink-0" />
             <span class="truncate">{{ row.unit?.name || "Semua unit" }}</span>
           </div>
+        </div>
+
+        <!-- Aksi -->
+        <div
+          v-if="auth.can(PERM.EDIT) || auth.can(PERM.DELETE)"
+          class="flex flex-shrink-0 items-center gap-1"
+        >
+          <button
+            v-if="auth.can(PERM.EDIT)"
+            class="rounded-lg p-1.5 text-slate-400 hover:bg-mahir-primary-soft hover:text-mahir-primary"
+            title="Ubah"
+            @click="emit('edit', row)"
+          >
+            <PencilSquareIcon class="h-4 w-4" />
+          </button>
+          <button
+            v-if="auth.can(PERM.DELETE)"
+            class="rounded-lg p-1.5 text-slate-400 hover:bg-mahir-danger-soft hover:text-mahir-danger"
+            title="Hapus"
+            @click="emit('delete', row)"
+          >
+            <TrashIcon class="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

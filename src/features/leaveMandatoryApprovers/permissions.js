@@ -4,4 +4,7 @@
  */
 export const PERM = {
   LIST: "listLeaveMandatoryApprover",
+  CREATE: "createLeaveMandatoryApprover",
+  EDIT: "editLeaveMandatoryApprover",
+  DELETE: "deleteLeaveMandatoryApprover",
 };

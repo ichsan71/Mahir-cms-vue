@@ -63,7 +63,9 @@ function flags(rule) {
                 <div class="text-[13.5px] font-semibold text-slate-800">
                   {{ rule.leaveType?.name || "—" }}
                 </div>
-                <div class="text-[12px] text-mahir-muted">{{ rule.company?.name || "—" }}</div>
+                <div class="text-[12px] text-mahir-muted">
+                  {{ (rule.companies || []).map((c) => c.name).join(", ") || "—" }}
+                </div>
               </div>
             </div>
           </td>

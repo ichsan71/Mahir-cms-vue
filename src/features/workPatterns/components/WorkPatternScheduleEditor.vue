@@ -24,6 +24,12 @@ const WEEKDAY_ORDER = {
 function weekdayIndex(w) {
   return WEEKDAY_ORDER[String(w ?? "").toUpperCase().trim()] ?? 99;
 }
+// Indeks sebuah detail: pakai `weekday`, fallback ke `weekdayDisplay` — agar
+// cocok apa pun format backend (nama Inggris/Indonesia/display).
+function detailIndex(d) {
+  const byWeekday = weekdayIndex(d?.weekday);
+  return byWeekday !== 99 ? byWeekday : weekdayIndex(d?.weekdayDisplay);
+}
 
 const { options: weekdayOptions } = useEnumChoices("WeekdayChoices");
 const { options: shiftOptions, loading: shiftLoading, setSearch } = useShiftSearch();
@@ -38,11 +44,13 @@ const baseWeekdays = computed(() => {
 const rows = ref([]);
 
 function buildRows() {
-  const byWeekday = new Map();
-  (props.details ?? []).forEach((d) => byWeekday.set(String(d.weekday), d));
+  // Kunci per indeks hari (bukan string persis) agar nama enum & nilai `weekday`
+  // backend yang beda format tetap cocok.
+  const byIndex = new Map();
+  (props.details ?? []).forEach((d) => byIndex.set(detailIndex(d), d));
   rows.value = baseWeekdays.value
     .map((opt) => {
-      const d = byWeekday.get(String(opt.value));
+      const d = byIndex.get(weekdayIndex(opt.value));
       return {
         weekday: opt.value,
         label: d?.weekdayDisplay || opt.label,

@@ -22,14 +22,14 @@ const isEdit = computed(() => !!props.leaveRule?.id);
 const editId = computed(() => (props.open && props.leaveRule?.id ? props.leaveRule.id : null));
 const { leaveRule: fullRule } = useLeaveRuleDetail(editId);
 
-// Pencarian perusahaan & tipe cuti untuk pilihan companyId / leaveTypeId.
+// Pencarian perusahaan & tipe cuti untuk pilihan companyIds / leaveTypeId.
 const { options: companyOptions, loading: companyLoading, setSearch: setCompanySearch } = useCompanySearch();
 const { options: leaveTypeOptions, loading: leaveTypeLoading, setSearch: setLeaveTypeSearch } = useLeaveTypeSearch();
-const companySelected = ref(null);
+const companySelected = ref([]);
 const leaveTypeSelected = ref(null);
 
 const blank = () => ({
-  companyId: "",
+  companyIds: [],
   leaveTypeId: "",
   daysPerYear: "",
   minServiceMonth: "",
@@ -52,9 +52,11 @@ function toNumStr(v) {
 function fillForm() {
   // Utamakan data lengkap dari getLeaveRule; fallback ke baris list.
   const s = fullRule.value ?? props.leaveRule;
-  if (props.leaveRule?.id) {
+  if (props.leaveRule?.id && s) {
+    // `companies` = list; input create/edit pakai `companyIds` (bisa lebih dari satu).
+    const companies = s.companies ?? (s.company ? [s.company] : []);
     form.value = {
-      companyId: s.company?.id ?? "",
+      companyIds: companies.map((c) => c.id),
       leaveTypeId: s.leaveType?.id ?? "",
       daysPerYear: toNumStr(s.daysPerYear),
       minServiceMonth: toNumStr(s.minServiceMonth),
@@ -66,11 +68,11 @@ function fillForm() {
       carryForwardExpireAfterMonths: toNumStr(s.carryForwardExpireAfterMonths),
       allowNegativeBalance: !!s.allowNegativeBalance,
     };
-    companySelected.value = s.company ?? null;
+    companySelected.value = companies;
     leaveTypeSelected.value = s.leaveType ?? null;
   } else {
     form.value = blank();
-    companySelected.value = null;
+    companySelected.value = [];
     leaveTypeSelected.value = null;
   }
 }
@@ -98,7 +100,7 @@ function onSubmit() {
   const f = form.value;
   const carry = !!f.allowCarryForward;
   const input = {
-    companyId: toInt(f.companyId),
+    companyIds: (f.companyIds || []).map(toInt).filter((v) => v !== null),
     leaveTypeId: toInt(f.leaveTypeId),
     daysPerYear: toFloat(f.daysPerYear),
     minServiceMonth: toInt(f.minServiceMonth),
@@ -133,7 +135,8 @@ const toggleCls = "flex cursor-pointer items-center gap-2.5 rounded-lg border bo
       <div>
         <label :class="labelCls">Perusahaan *</label>
         <SearchableSelect
-          v-model="form.companyId"
+          v-model="form.companyIds"
+          multiple
           :selected="companySelected"
           :options="companyOptions"
           :loading="companyLoading"
