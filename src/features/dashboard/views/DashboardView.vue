@@ -7,6 +7,7 @@ import DeptDistributionChart from "../components/DeptDistributionChart.vue";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import PendingLeavesTable from "../components/PendingLeavesTable.vue";
 import EmployeeStructureCard from "../components/EmployeeStructureCard.vue";
+import AnnouncementDashboardCard from "@/features/announcements/components/AnnouncementDashboardCard.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "@/features/employees/permissions";
 import {
@@ -145,38 +146,30 @@ const {
       <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
     </div>
 
-    <EmployeeStructureCard />
+    <!-- Struktur (kiri) + Pengumuman terbaru (kanan) -->
+    <div class="grid items-start gap-6 lg:grid-cols-3">
+      <div class="lg:col-span-2">
+        <EmployeeStructureCard />
+      </div>
+      <AnnouncementDashboardCard />
+    </div>
 
     <p class="mt-6 text-center text-xs text-slate-400 sm:text-left">
       &copy; Mazta Group. All rights reserved.
     </p>
   </div>
 
-  <!-- Tanpa akses → tema awal "Dashboard Belum Siap" -->
-  <div
-    v-else
-    class="relative min-h-[80vh] w-full rounded-2xl border border-mahir-border bg-white p-6 flex flex-col justify-between"
-  >
-    <div class="absolute -right-10 -top-10 -z-10 h-64 w-64 rounded-full bg-mahir-primary/5 blur-[80px]"></div>
-
-    <div>
+  <!-- Tanpa akses struktur → header + pengumuman terbaru -->
+  <div v-else>
+    <div class="mb-6">
       <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
       <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
     </div>
 
-    <div class="my-auto py-12 flex flex-col items-center text-center max-w-md mx-auto">
-      <div class="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600 text-white ring-1 ring-slate-100">
-        <ClockIcon class="h-6 w-6 animate-spin" style="animation-duration: 2s;" />
-      </div>
+    <AnnouncementDashboardCard />
 
-      <h2 class="text-xl font-bold text-slate-900 mb-2">Dashboard Belum Siap</h2>
-      <p class="text-sm text-slate-500 leading-relaxed">
-        Halaman ini masih dalam proses pengembangan dan akan segera hadir (*coming soon*) untuk mempermudah pekerjaan Anda. Terima kasih atas kesabarannya!
-      </p>
-    </div>
-
-    <div class="border-t border-slate-100 pt-4 text-center sm:text-left text-xs text-slate-400">
+    <p class="mt-6 text-center text-xs text-slate-400 sm:text-left">
       &copy; Mazta Group. All rights reserved.
-    </div>
+    </p>
   </div>
 </template>

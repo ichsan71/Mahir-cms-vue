@@ -87,6 +87,19 @@ watch(announcement, (a) => {
   existingAttachments.value = a.attachments || [];
 });
 
+// Samakan nilai status ke value enum yang cocok. Opsi enum kadang termuat setelah
+// prefill, dan casing bisa berbeda (mis. "published" vs "PUBLISHED"); tanpa ini
+// <select> tidak menampilkan status terpilih saat edit.
+watch(
+  [statusOptions, () => form.value.status],
+  ([opts, cur]) => {
+    if (!cur || !opts.length) return;
+    const hit = opts.find((o) => String(o.value).toLowerCase() === String(cur).toLowerCase());
+    if (hit && hit.value !== cur) form.value.status = hit.value;
+  },
+  { immediate: true },
+);
+
 // Nama berkas dari URL lampiran yang sudah ada.
 function existingName(url) {
   if (!url) return "Lampiran";
@@ -265,7 +278,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
 
         <div class="mb-4">
           <label :class="labelCls">Status *</label>
-          <select v-model="form.status" :disabled="statusLoading" :class="fieldCls">
+          <select v-model="form.status" :key="statusOptions.length" :disabled="statusLoading" :class="fieldCls">
             <option value="">Pilih status</option>
             <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
           </select>
