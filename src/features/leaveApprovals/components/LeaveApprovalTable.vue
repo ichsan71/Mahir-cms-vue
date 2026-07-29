@@ -18,10 +18,17 @@ function badgeKey(s) {
   return String(s ?? "").toLowerCase();
 }
 
-// Masih menunggu keputusan approver → tampilkan tombol setujui/tolak.
+// Masih menunggu keputusan approver (status APPROVAL) → boleh setujui/tolak.
 function isPending(s) {
   const k = badgeKey(s);
   return !(k.includes("approve") || k.includes("setuju") || k.includes("reject") || k.includes("tolak"));
+}
+
+// Cuti-nya sudah dibatalkan (leave.status = CANCELLED) → tak ada yang perlu
+// disetujui/ditolak lagi, sembunyikan tombol aksi meski approval masih PENDING.
+function isLeaveCancelled(row) {
+  const k = badgeKey(row?.leave?.status);
+  return k.includes("cancel") || k.includes("batal");
 }
 
 // Aksen warna kiri kartu berdasarkan status persetujuan.
@@ -71,6 +78,7 @@ function accent(s) {
             >
               {{ row.leave.leaveType.name }}
             </span>
+            <StatusBadge v-if="row.leave?.status" :status="badgeKey(row.leave.status)" />
           </div>
           <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-slate-500">
             <span class="inline-flex items-center gap-1">
@@ -107,7 +115,7 @@ function accent(s) {
         <div class="flex flex-shrink-0 flex-col items-end gap-2">
           <StatusBadge :status="badgeKey(row.status)" />
           <div
-            v-if="isPending(row.status) && (auth.can(PERM.APPROVE) || auth.can(PERM.REJECT))"
+            v-if="isPending(row.status) && !isLeaveCancelled(row) && (auth.can(PERM.APPROVE) || auth.can(PERM.REJECT))"
             class="flex items-center gap-1.5"
           >
             <button

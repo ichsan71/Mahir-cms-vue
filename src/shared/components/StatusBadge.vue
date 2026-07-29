@@ -21,6 +21,14 @@ const MAP = {
   pending: { label: "Menunggu", cls: WARNING },
   approved: { label: "Disetujui", cls: SUCCESS },
   rejected: { label: "Ditolak", cls: DANGER },
+  cancelled: { label: "Dibatalkan", cls: MUTED },
+  canceled: { label: "Dibatalkan", cls: MUTED },
+  // Pengumuman
+  draft: { label: "Draf", cls: MUTED },
+  published: { label: "Terbit", cls: SUCCESS },
+  scheduled: { label: "Terjadwal", cls: INFO },
+  archived: { label: "Arsip", cls: MUTED },
+  expired: { label: "Kedaluwarsa", cls: DANGER },
   // Payroll
   paid: { label: "Lunas", cls: SUCCESS },
   unpaid: { label: "Belum Bayar", cls: DANGER },

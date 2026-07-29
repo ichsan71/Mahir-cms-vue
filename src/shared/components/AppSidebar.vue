@@ -24,6 +24,7 @@ import {
   ArrowLeftStartOnRectangleIcon,
   Cog6ToothIcon,
   UserCircleIcon,
+  MegaphoneIcon,
 } from "@heroicons/vue/24/outline";
 
 const ui = useUiStore();
@@ -57,6 +58,7 @@ const navItems = [
   // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
   { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", permissions: ["listAttendance"] },
   { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction"] },
+  { to: "/pengumuman", icon: MegaphoneIcon, label: "Pengumuman", permissions: ["listAnnouncement"] },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
   { icon: BanknotesIcon, label: "Penggajian", soon: true },
