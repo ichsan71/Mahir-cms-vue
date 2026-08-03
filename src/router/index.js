@@ -10,6 +10,18 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: "/kebijakan-privasi",
+    name: "kebijakan-privasi",
+    component: () => import("@/features/legal/views/PrivacyPolicyView.vue"),
+    meta: { public: true, title: "Kebijakan Privasi" },
+  },
+  {
+    path: "/hapus-data",
+    name: "hapus-data",
+    component: () => import("@/features/legal/views/DataDeletionView.vue"),
+    meta: { public: true, title: "Permintaan Hapus Data" },
+  },
+  {
     path: "/",
     component: AppLayout,
     children: [
