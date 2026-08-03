@@ -24,6 +24,9 @@ function goBack() {
 // ── Kelola alamat karyawan (CRUD, ditampilkan di kartu profil) ──────────────
 const { createAddress, editAddress, deleteAddress, loading: savingAddress } = useEmployeeAddresses();
 
+// NIK hanya untuk pemilik permission registerEmployee (data karyawan lain).
+const canViewNik = computed(() => auth.can(PERM.REGISTER));
+
 const canAddAddress = computed(() => auth.can(PERM.ADDRESS_CREATE));
 const canEditAddress = computed(() => auth.can(PERM.ADDRESS_EDIT));
 const canDeleteAddress = computed(() => auth.can(PERM.ADDRESS_DELETE));
@@ -102,6 +105,7 @@ async function handleDeleteAddress() {
   <EmployeeProfileCard
     v-else
     :employee="employee"
+    :show-nik="canViewNik"
     :editable-address="editableAddress"
     :can-add-address="canAddAddress"
     :can-edit-address="canEditAddress"

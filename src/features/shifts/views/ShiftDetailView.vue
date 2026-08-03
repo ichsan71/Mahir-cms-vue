@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useShiftDetail } from "../composables/useShiftDetail";
+import { prettyEnum } from "@/shared/composables/useEnumChoices";
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -19,9 +20,13 @@ function fmtTime(t) {
   return t ? String(t).slice(0, 5) : "—";
 }
 
-// Toleransi (menit) → "X menit" atau "—".
-function fmtMinutes(v) {
-  return v === null || v === undefined || v === "" ? "—" : `${v} menit`;
+function fmtValue(v) {
+  return v === null || v === undefined || v === "" ? "—" : v;
+}
+
+// Label periode target jam kerja dari nama enum backend (mis. PER_WEEK → "Per Week").
+function fmtPeriod(v) {
+  return v ? prettyEnum(v) : "—";
 }
 
 function goBack() {
@@ -72,10 +77,16 @@ function goBack() {
           <div class="flex flex-wrap items-center gap-2">
             <h1 class="text-xl font-bold tracking-tight text-slate-900">{{ shift.name }}</h1>
             <span
-              v-if="shift.isFlexible"
+              v-if="shift.flexibleByWorkingHours"
               class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-600"
             >
-              Fleksibel
+              Jam Fleksibel
+            </span>
+            <span
+              v-if="shift.flexibleByPlace"
+              class="rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-600"
+            >
+              Lokasi Fleksibel
             </span>
           </div>
           <p class="mt-1 text-sm font-medium text-slate-600">
@@ -93,12 +104,7 @@ function goBack() {
         <h2 class="font-display text-[15px] font-bold text-slate-900">Informasi Shift</h2>
       </div>
 
-      <!-- Shift fleksibel: tak ada jam tetap -->
-      <p v-if="shift.isFlexible" class="text-sm text-slate-500">
-        Shift ini fleksibel — tidak memiliki jam masuk, jam pulang, istirahat, maupun toleransi tetap.
-      </p>
-
-      <div v-else class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-8">
+      <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-8">
         <div>
           <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Jam Mulai</dt>
           <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.startTime) }}</dd>
@@ -116,12 +122,12 @@ function goBack() {
           <dd class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ fmtTime(shift.breakEnd) }}</dd>
         </div>
         <div>
-          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toleransi Terlambat</dt>
-          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtMinutes(shift.lateTolerance) }}</dd>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Target Jam Kerja</dt>
+          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtValue(shift.requiredHours) }}</dd>
         </div>
         <div>
-          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Toleransi Pulang Cepat</dt>
-          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtMinutes(shift.earlyLeaveTolerance) }}</dd>
+          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Periode Target Jam</dt>
+          <dd class="mt-0.5 text-sm font-medium text-slate-800">{{ fmtPeriod(shift.requiredHoursPeriod) }}</dd>
         </div>
       </div>
     </div>

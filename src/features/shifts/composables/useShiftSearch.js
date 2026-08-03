@@ -14,7 +14,6 @@ export function useShiftSearch() {
         pageSize: 10,
         search: search.value || null,
         name: null,
-        isFlexible: null,
       },
     }),
     { fetchPolicy: "cache-and-network" },

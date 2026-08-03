@@ -116,9 +116,10 @@ export const GET_EMPLOYEE = gql`
               endTime
               breakStart
               breakEnd
-              lateTolerance
-              earlyLeaveTolerance
-              isFlexible
+              requiredHours
+              requiredHoursPeriod
+              flexibleByPlace
+              flexibleByWorkingHours
             }
           }
         }

@@ -1,10 +1,14 @@
 <script setup>
 // Form tambah/ubah shift — kontrak ShiftInput baru:
-// name, startTime, endTime, breakStart, breakEnd, isFlexible,
-// lateTolerance, earlyLeaveTolerance.
+// name, startTime, endTime, breakStart, breakEnd,
+// flexibleByPlace, flexibleByWorkingHours, requiredHours, requiredHoursPeriod.
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import { useShiftDetail } from "../composables/useShiftDetail";
+import { useEnumChoices } from "@/shared/composables/useEnumChoices";
+
+// Pilihan periode target jam kerja dari enum backend (introspeksi) — tipe `RequiredHoursPeriod`.
+const { options: periodOptions, loading: periodLoading } = useEnumChoices("RequiredHoursPeriod");
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -17,19 +21,20 @@ const emit = defineEmits(["update:open", "save"]);
 
 const isEdit = computed(() => !!props.shift?.id);
 
-// Saat edit, ambil data lengkap (break, toleransi, isFlexible) yang tak ada di baris list.
+// Saat edit, ambil data lengkap (break, fleksibel, target jam) yang tak ada di baris list.
 const editId = computed(() => (props.open && props.shift?.id ? props.shift.id : null));
 const { shift: fullShift } = useShiftDetail(editId);
 
 const blank = () => ({
   name: "",
-  isFlexible: false,
+  flexibleByPlace: false,
+  flexibleByWorkingHours: false,
   startTime: "",
   endTime: "",
   breakStart: "",
   breakEnd: "",
-  lateTolerance: "",
-  earlyLeaveTolerance: "",
+  requiredHours: "",
+  requiredHoursPeriod: "",
 });
 
 const form = ref(blank());
@@ -39,8 +44,8 @@ function toHHMM(t) {
   return t ? String(t).slice(0, 5) : "";
 }
 
-// Angka toleransi (menit) → string untuk input, "" bila kosong.
-function toNumStr(v) {
+// Nilai apa pun → string untuk input, "" bila kosong.
+function toStr(v) {
   return v === null || v === undefined ? "" : String(v);
 }
 
@@ -50,13 +55,14 @@ function fillForm() {
   form.value = props.shift?.id
     ? {
         name: s.name ?? "",
-        isFlexible: !!s.isFlexible,
+        flexibleByPlace: !!s.flexibleByPlace,
+        flexibleByWorkingHours: !!s.flexibleByWorkingHours,
         startTime: toHHMM(s.startTime),
         endTime: toHHMM(s.endTime),
         breakStart: toHHMM(s.breakStart),
         breakEnd: toHHMM(s.breakEnd),
-        lateTolerance: toNumStr(s.lateTolerance),
-        earlyLeaveTolerance: toNumStr(s.earlyLeaveTolerance),
+        requiredHours: toStr(s.requiredHours),
+        requiredHoursPeriod: s.requiredHoursPeriod ?? "",
       }
     : blank();
 }
@@ -69,27 +75,33 @@ watch(
 // Data lengkap tiba belakangan (async) → prefill ulang agar break/toleransi terisi.
 watch(fullShift, () => props.open && fillForm());
 
-// Menit → integer atau null.
-function toMinutes(v) {
-  const s = String(v ?? "").trim();
-  if (s === "") return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null;
-}
+// Saat jam kerja fleksibel dicentang, kosongkan jadwal yang mungkin sudah terisi
+// agar nilai lama tak ikut terkirim atau muncul lagi saat toggle dimatikan.
+watch(
+  () => form.value.flexibleByWorkingHours,
+  (flexible) => {
+    if (!flexible) return;
+    form.value.startTime = "";
+    form.value.endTime = "";
+    form.value.breakStart = "";
+    form.value.breakEnd = "";
+  },
+);
 
 function onSubmit() {
   const f = form.value;
-  const flexible = !!f.isFlexible;
+  const flexibleHours = !!f.flexibleByWorkingHours;
   const input = {
     name: f.name?.trim() || null,
-    isFlexible: flexible,
-    // Shift fleksibel tak punya jam tetap → seluruh field jadwal dikosongkan.
-    startTime: flexible ? null : f.startTime || null,
-    endTime: flexible ? null : f.endTime || null,
-    breakStart: flexible ? null : f.breakStart || null,
-    breakEnd: flexible ? null : f.breakEnd || null,
-    lateTolerance: flexible ? null : toMinutes(f.lateTolerance),
-    earlyLeaveTolerance: flexible ? null : toMinutes(f.earlyLeaveTolerance),
+    flexibleByPlace: !!f.flexibleByPlace,
+    flexibleByWorkingHours: flexibleHours,
+    // Jam kerja fleksibel → tak ada jam tetap, seluruh field jadwal dikosongkan.
+    startTime: flexibleHours ? null : f.startTime || null,
+    endTime: flexibleHours ? null : f.endTime || null,
+    breakStart: flexibleHours ? null : f.breakStart || null,
+    breakEnd: flexibleHours ? null : f.breakEnd || null,
+    requiredHours: String(f.requiredHours ?? "").trim() || null,
+    requiredHoursPeriod: f.requiredHoursPeriod || null,
   };
   emit("save", { id: props.shift?.id ?? null, input });
 }
@@ -115,29 +127,40 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
       </div>
 
       <!-- Toggle fleksibel -->
-      <div class="md:col-span-2">
+      <div class="md:col-span-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label
           class="flex cursor-pointer items-start gap-3 rounded-lg border border-mahir-border p-3"
         >
-          <input v-model="form.isFlexible" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
+          <input v-model="form.flexibleByWorkingHours" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
           <span>
-            <span class="block text-sm font-medium text-slate-700">Shift Fleksibel</span>
+            <span class="block text-sm font-medium text-slate-700">Jam Kerja Fleksibel</span>
             <span class="block text-[12px] text-mahir-muted">
-              Tanpa jam masuk/pulang tetap. Jadwal, istirahat, dan toleransi tidak diperlukan.
+              Karyawan bebas mengatur jam kerja selama memenuhi target jam.
+            </span>
+          </span>
+        </label>
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-mahir-border p-3"
+        >
+          <input v-model="form.flexibleByPlace" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
+          <span>
+            <span class="block text-sm font-medium text-slate-700">Lokasi Fleksibel</span>
+            <span class="block text-[12px] text-mahir-muted">
+              Karyawan bebas bekerja dari lokasi mana pun.
             </span>
           </span>
         </label>
       </div>
 
-      <!-- Field jadwal tetap — sembunyi saat fleksibel -->
-      <template v-if="!form.isFlexible">
+      <!-- Field jadwal tetap — sembunyi saat jam kerja fleksibel -->
+      <template v-if="!form.flexibleByWorkingHours">
         <div>
-          <label :class="labelCls">Jam Mulai *</label>
-          <input v-model="form.startTime" type="time" required :class="fieldCls" />
+          <label :class="labelCls">Jam Mulai</label>
+          <input v-model="form.startTime" type="time" :class="fieldCls" />
         </div>
         <div>
-          <label :class="labelCls">Jam Selesai *</label>
-          <input v-model="form.endTime" type="time" required :class="fieldCls" />
+          <label :class="labelCls">Jam Selesai</label>
+          <input v-model="form.endTime" type="time" :class="fieldCls" />
         </div>
 
         <div>
@@ -148,22 +171,19 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           <label :class="labelCls">Istirahat Selesai</label>
           <input v-model="form.breakEnd" type="time" :class="fieldCls" />
         </div>
-
-        <div>
-          <label :class="labelCls">Toleransi Terlambat (Detik)</label>
-          <input v-model="form.lateTolerance" type="number" min="0" :class="fieldCls" placeholder="0" />
-        </div>
-        <div>
-          <label :class="labelCls">Toleransi Pulang Cepat (Detik)</label>
-          <input
-            v-model="form.earlyLeaveTolerance"
-            type="number"
-            min="0"
-            :class="fieldCls"
-            placeholder="0"
-          />
-        </div>
       </template>
+
+      <div>
+        <label :class="labelCls">Target Jam Kerja</label>
+        <input v-model="form.requiredHours" type="number" min="0" :class="fieldCls" placeholder="mis. 8" />
+      </div>
+      <div>
+        <label :class="labelCls">Periode Target Jam</label>
+        <select v-model="form.requiredHoursPeriod" :disabled="periodLoading" :class="fieldCls">
+          <option value="">{{ periodLoading ? "Memuat…" : "— Pilih periode —" }}</option>
+          <option v-for="opt in periodOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
     </div>
   </BaseModal>
 </template>

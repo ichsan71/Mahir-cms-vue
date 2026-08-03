@@ -108,7 +108,7 @@ watch(
               </span>
               <div>
                 <div class="text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
-                <div class="text-[11.5px] text-slate-400">NIK: {{ emp.nik || "—" }}</div>
+                <div v-if="auth.can(PERM.REGISTER)" class="text-[11.5px] text-slate-400">NIK: {{ emp.nik || "—" }}</div>
               </div>
             </div>
           </td>

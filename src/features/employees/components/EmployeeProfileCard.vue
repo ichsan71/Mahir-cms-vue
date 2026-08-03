@@ -31,6 +31,9 @@ defineProps({
   canAddAddress: { type: Boolean, default: false },
   canEditAddress: { type: Boolean, default: false },
   canDeleteAddress: { type: Boolean, default: false },
+  // Tampilkan NIK (KTP) — hanya untuk pemilik permission registerEmployee.
+  // Default true agar "Profil Saya" tetap menampilkan NIK sendiri.
+  showNik: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
@@ -78,8 +81,10 @@ function workdayCount(wp) {
             </p>
             <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
               <span>ID Karyawan: <strong class="font-mono text-slate-600">{{ employee.code || "—" }}</strong></span>
-              <span class="text-slate-300">|</span>
-              <span>NIK KTP: <strong class="font-mono text-slate-600">{{ employee.nik || "—" }}</strong></span>
+              <template v-if="showNik">
+                <span class="text-slate-300">|</span>
+                <span>NIK KTP: <strong class="font-mono text-slate-600">{{ employee.nik || "—" }}</strong></span>
+              </template>
               <span class="text-slate-300">|</span>
               <span>Masuk: <strong class="text-slate-600">{{ formatDate(employee.hiredDate) }}</strong></span>
             </div>
@@ -146,7 +151,7 @@ function workdayCount(wp) {
               <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Atasan Langsung</div>
               <div class="mt-0.5 text-sm font-medium text-slate-800">
                 <template v-if="employee.parent">
-                  {{ employee.parent.fullName }} <span class="text-xs text-slate-400">({{ employee.parent.nik }})</span>
+                  {{ employee.parent.fullName }} <span v-if="showNik" class="text-xs text-slate-400">({{ employee.parent.nik }})</span>
                 </template>
                 <template v-else><span class="text-slate-400 italic">Tidak ada atasan langsung</span></template>
               </div>
@@ -218,13 +223,13 @@ function workdayCount(wp) {
             <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400">
               <tr>
                 <th class="p-3">Nama Staff</th>
-                <th class="p-3">NIK</th>
+                <th v-if="showNik" class="p-3">NIK</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr v-for="child in employee.childrens" :key="child.id" class="hover:bg-slate-50/50">
                 <td class="p-3 font-medium text-slate-800">{{ child.fullName }}</td>
-                <td class="p-3 font-mono text-xs text-slate-500">{{ child.nik || '—' }}</td>
+                <td v-if="showNik" class="p-3 font-mono text-xs text-slate-500">{{ child.nik || '—' }}</td>
               </tr>
             </tbody>
           </table>

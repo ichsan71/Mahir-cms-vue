@@ -17,7 +17,6 @@ export function useShifts() {
         pageSize: pageSize.value || null,
         search: search.value?.trim() || null,
         name: null,
-        isFlexible: null,
       },
     }),
     { fetchPolicy: "cache-and-network" },
