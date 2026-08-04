@@ -50,34 +50,3 @@ export const LIST_ATTENDANCE = gql`
     }
   }
 `;
-
-// Riwayat kehadiran (snapshot) dalam rentang tanggal. Tiap `history` = satu
-// snapshot per tanggal (`snapshotDate`) berstatus tertentu, memuat kumpulan
-// karyawan yang tercakup (`employees` + `employeeCount`).
-// `params` (AttendanceHistoryParams): page, pageSize, search, status,
-// snapshotDateGte, snapshotDateLte, employeeIds.
-export const GET_RANGE_ATTENDANCE_HISTORY = gql`
-  query GetRangeAttendanceHistory($params: AttendanceHistoryParams) {
-    getRangeAttendanceHistory(params: $params) {
-      histories {
-        id
-        snapshotDate
-        status
-        employeeCount
-        employees {
-          id
-          fullName
-          nik
-          level {
-            id
-            name
-          }
-          units {
-            id
-            name
-          }
-        }
-      }
-    }
-  }
-`;

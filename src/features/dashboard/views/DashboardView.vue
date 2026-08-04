@@ -6,10 +6,8 @@ import AttendanceChart from "../components/AttendanceChart.vue";
 import DeptDistributionChart from "../components/DeptDistributionChart.vue";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import PendingLeavesTable from "../components/PendingLeavesTable.vue";
-import EmployeeStructureCard from "../components/EmployeeStructureCard.vue";
+import AttendanceSummaryCard from "../components/AttendanceSummaryCard.vue";
 import AnnouncementDashboardCard from "@/features/announcements/components/AnnouncementDashboardCard.vue";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
-import { PERM } from "@/features/employees/permissions";
 import {
   ClockIcon,
   ArrowDownTrayIcon,
@@ -20,8 +18,6 @@ import {
   DocumentTextIcon,
   BanknotesIcon,
 } from "@heroicons/vue/24/outline";
-
-const auth = useAuthStore();
 
 const {
   stats,
@@ -139,34 +135,18 @@ const {
     </div>
   </div> -->
   
-  <!-- Punya akses struktur organisasi → tampilkan pohon karyawan -->
-  <div v-if="auth.can(PERM.ROOT)">
+  <div>
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
       <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
     </div>
 
-    <!-- Struktur (kiri) + Pengumuman terbaru (kanan) -->
-    <div class="grid items-start gap-6 lg:grid-cols-3">
-      <div class="lg:col-span-2">
-        <EmployeeStructureCard />
-      </div>
+    <!-- Bagian kehadiran realtime (KPI + tren + komposisi) lalu pengumuman.
+         Masing-masing self-gating izinnya sendiri. -->
+    <div class="space-y-6">
       <AnnouncementDashboardCard />
+      <AttendanceSummaryCard />
     </div>
-
-    <p class="mt-6 text-center text-xs text-slate-400 sm:text-left">
-      &copy; Mazta Group. All rights reserved.
-    </p>
-  </div>
-
-  <!-- Tanpa akses struktur → header + pengumuman terbaru -->
-  <div v-else>
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
-      <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
-    </div>
-
-    <AnnouncementDashboardCard />
 
     <p class="mt-6 text-center text-xs text-slate-400 sm:text-left">
       &copy; Mazta Group. All rights reserved.

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useEmployeeDetail } from "../composables/useEmployeeDetail";
 import { useEmployeeAddresses } from "../composables/useEmployeeAddresses";
 import EmployeeProfileCard from "../components/EmployeeProfileCard.vue";
+import EmployeeAccessCard from "../components/EmployeeAccessCard.vue";
 import EmployeeAddressModal from "../components/EmployeeAddressModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -16,6 +17,9 @@ const auth = useAuthStore();
 
 const id = computed(() => route.params.id);
 const { employee, loading, refetch } = useEmployeeDetail(id);
+
+// Tab detail: profil vs hak akses.
+const tab = ref("profil");
 
 function goBack() {
   router.push({ name: "karyawan" });
@@ -102,18 +106,37 @@ async function handleDeleteAddress() {
     <p class="text-xs text-slate-400 mt-1">Pastikan ID yang Anda tuju sudah benar atau hubungi super admin.</p>
   </div>
 
-  <EmployeeProfileCard
-    v-else
-    :employee="employee"
-    :show-nik="canViewNik"
-    :editable-address="editableAddress"
-    :can-add-address="canAddAddress"
-    :can-edit-address="canEditAddress"
-    :can-delete-address="canDeleteAddress"
-    @add-address="openAddAddress"
-    @edit-address="openEditAddress"
-    @delete-address="openDeleteAddress"
-  />
+  <template v-else>
+    <!-- Tab: Profil / Hak Akses -->
+    <div class="mb-5 flex gap-1 border-b border-mahir-border">
+      <button
+        v-for="t in [{ id: 'profil', label: 'Profil' }, { id: 'akses', label: 'Hak Akses' }]"
+        :key="t.id"
+        class="-mb-px border-b-2 px-4 py-2.5 text-[13.5px] font-semibold transition-colors"
+        :class="tab === t.id
+          ? 'border-mahir-primary text-mahir-primary'
+          : 'border-transparent text-slate-500 hover:text-slate-800'"
+        @click="tab = t.id"
+      >
+        {{ t.label }}
+      </button>
+    </div>
+
+    <EmployeeProfileCard
+      v-show="tab === 'profil'"
+      :employee="employee"
+      :show-nik="canViewNik"
+      :editable-address="editableAddress"
+      :can-add-address="canAddAddress"
+      :can-edit-address="canEditAddress"
+      :can-delete-address="canDeleteAddress"
+      @add-address="openAddAddress"
+      @edit-address="openEditAddress"
+      @delete-address="openDeleteAddress"
+    />
+
+    <EmployeeAccessCard v-show="tab === 'akses'" :employee="employee" />
+  </template>
 
   <!-- Tambah / ubah alamat karyawan -->
   <EmployeeAddressModal

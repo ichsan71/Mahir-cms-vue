@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useAttendanceCalendar } from "../composables/useAttendanceCalendar";
 import AttendanceLeaveTodayCard from "./AttendanceLeaveTodayCard.vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatDate, formatTime, formatDuration } from "@/shared/utils/format";
@@ -18,17 +17,18 @@ import {
   XMarkIcon,
 } from "@heroicons/vue/24/outline";
 
-const { weeks, summary, monthLabel, loading, prevMonth, nextMonth, goToday } =
-  useAttendanceCalendar();
+// Presentasional: data & navigasi kalender diterima dari induk (AttendancePanel),
+// yang memegang satu instance useAttendanceCalendar sebagai sumber ringkasan.
+const props = defineProps({
+  weeks: { type: Array, default: () => [] },
+  monthLabel: { type: String, default: "" },
+  loading: { type: Boolean, default: false },
+  prevMonth: { type: Function, default: () => {} },
+  nextMonth: { type: Function, default: () => {} },
+  goToday: { type: Function, default: () => {} },
+});
 
 const WEEKDAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
-
-const cards = [
-  { key: "ontime", label: "Tepat Waktu", cls: "text-mahir-success" },
-  { key: "late", label: "Terlambat", cls: "text-mahir-warning" },
-  { key: "absent", label: "Tidak Hadir", cls: "text-mahir-danger" },
-  { key: "leave", label: "Cuti/Izin", cls: "text-mahir-info" },
-];
 
 // Titik status kehadiran (ditampilkan di pojok sel).
 const DOT = {
@@ -62,7 +62,7 @@ function closeDetail() {
   selected.value = null;
 }
 // Tutup modal saat pindah bulan (sel lama bisa hilang dari grid).
-watch(monthLabel, closeDetail);
+watch(() => props.monthLabel, closeDetail);
 const selectedRecord = computed(() => selected.value?.record ?? null);
 
 // Tutup modal dengan tombol Escape.
@@ -114,18 +114,6 @@ function mapsUrl(lat, lng) {
 </script>
 
 <template>
-  <!-- Ringkasan status (bulan aktif) -->
-  <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-    <div
-      v-for="c in cards"
-      :key="c.key"
-      class="rounded-2xl border border-mahir-border bg-white px-4 py-3 shadow-sm"
-    >
-      <div class="text-2xl font-bold leading-tight" :class="c.cls">{{ summary[c.key] }}</div>
-      <div class="text-[12.5px] text-mahir-muted">{{ c.label }}</div>
-    </div>
-  </div>
-
   <!-- Kalender (kiri, lebih ringkas) + Cuti hari ini (kanan) -->
   <div class="grid items-start gap-5 lg:grid-cols-3">
     <!-- Kartu kalender -->

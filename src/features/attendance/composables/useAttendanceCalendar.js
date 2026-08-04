@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { useQuery } from "@vue/apollo-composable";
 import { LIST_ATTENDANCE } from "../graphql/attendance.queries";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { summarizeAttendance } from "../summary";
 
 // Format Date lokal → "YYYY-MM-DD" (tanpa efek zona waktu dari toISOString).
 function ymd(d) {
@@ -90,14 +91,7 @@ export function useAttendanceCalendar() {
   });
 
   // Ringkasan status untuk bulan aktif.
-  const summary = computed(() => {
-    const acc = { ontime: 0, late: 0, absent: 0, leave: 0 };
-    for (const r of records.value) {
-      const k = String(r.status ?? "").toLowerCase();
-      if (k in acc) acc[k] += 1;
-    }
-    return acc;
-  });
+  const summary = computed(() => summarizeAttendance(records.value));
 
   const monthLabel = computed(() =>
     new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric" }).format(cursor.value),

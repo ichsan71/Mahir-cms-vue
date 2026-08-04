@@ -4,4 +4,6 @@
  */
 export const PERM = {
   LIST: "listAttendance",
+  // Subscription ringkasan kehadiran realtime untuk dashboard.
+  DASHBOARD: "attendanceDashboard",
 };

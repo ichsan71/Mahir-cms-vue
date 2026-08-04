@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { initials } from "@/shared/utils/format";
-import { CalendarDaysIcon } from "@heroicons/vue/24/outline";
+import { CalendarDaysIcon, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 
 // NOTE: data masih CONTOH (dummy) untuk kebutuhan desain UI.
 // TODO: ganti dengan query karyawan yang cuti hari ini (menyusul).
@@ -44,6 +44,12 @@ const dateLabel = new Intl.DateTimeFormat("id-ID", {
         <span class="text-3xl font-bold leading-none text-slate-900">{{ count }}</span>
         <span class="text-[13px] text-mahir-muted">karyawan sedang cuti</span>
       </div>
+    </div>
+
+    <!-- Penanda: fitur belum digarap / data dummy -->
+    <div class="flex items-start gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-[12px] text-amber-800">
+      <ExclamationTriangleIcon class="mt-0.5 h-4 w-4 flex-shrink-0" />
+      <span>Fitur belum selesai — data yang ditampilkan masih <b>contoh (dummy)</b>, belum terhubung ke data asli.</span>
     </div>
 
     <!-- Daftar karyawan cuti -->

@@ -4,6 +4,7 @@ import { useQuery } from "@vue/apollo-composable";
 import { LIST_ATTENDANCE } from "../graphql/attendance.queries";
 import { useAttendanceFiltersStore } from "../stores/attendanceFilters.store";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { summarizeAttendance } from "../summary";
 
 // Layer logika kehadiran: daftar paginated (reaktif terhadap filter & halaman).
 // `scope` menentukan ruang lingkup data:
@@ -52,14 +53,7 @@ export function useAttendance(scope = "self") {
   });
 
   // Ringkasan status dari baris yang termuat (halaman aktif) — bukan agregat global.
-  const summary = computed(() => {
-    const acc = { ontime: 0, late: 0, absent: 0, leave: 0 };
-    for (const r of records.value) {
-      const k = String(r.status ?? "").toLowerCase();
-      if (k in acc) acc[k] += 1;
-    }
-    return acc;
-  });
+  const summary = computed(() => summarizeAttendance(records.value));
 
   watch([search, dateGte, dateLte, teamMemberId, pageSize], () => {
     page.value = 1;

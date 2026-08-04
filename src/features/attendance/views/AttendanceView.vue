@@ -2,7 +2,6 @@
 import { ref, computed, watch } from "vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import AttendancePanel from "../components/AttendancePanel.vue";
-import AttendanceHistoryPanel from "../components/AttendanceHistoryPanel.vue";
 
 const auth = useAuthStore();
 
@@ -10,7 +9,6 @@ const auth = useAuthStore();
 const tabs = computed(() => {
   const list = [{ key: "self", label: "Kehadiran Saya" }];
   if (auth.childrenIds.length) list.push({ key: "team", label: "Kehadiran Tim" });
-  list.push({ key: "history", label: "Riwayat Kehadiran" });
   return list;
 });
 
@@ -53,6 +51,5 @@ watch(
   </div>
 
   <!-- Konten tab aktif. `key` memaksa remount saat pindah tab (reset ke halaman 1). -->
-  <AttendanceHistoryPanel v-if="activeTab === 'history'" key="history" />
-  <AttendancePanel v-else :key="activeTab" :scope="activeTab" />
+  <AttendancePanel :key="activeTab" :scope="activeTab" />
 </template>

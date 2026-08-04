@@ -6,16 +6,14 @@ import { useAttendanceFiltersStore } from "../stores/attendanceFilters.store";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import AttendanceToolbar from "./AttendanceToolbar.vue";
 import AttendanceTable from "./AttendanceTable.vue";
-import {
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  CalendarDaysIcon,
-} from "@heroicons/vue/24/outline";
+import AttendanceSummaryCards from "./AttendanceSummaryCards.vue";
 
 const props = defineProps({
   // "self" = kehadiran diri sendiri (employeeId); "team" = kehadiran tim (employeeIds).
   scope: { type: String, default: "self" },
+  // Tampilkan kartu ringkasan di dalam panel ini. Dimatikan saat induk sudah
+  // menampilkan ringkasan tunggal di atas toggle (scope self).
+  showSummary: { type: Boolean, default: true },
 });
 
 const { records, summary, pagination, loading, nextPage, prevPage } = useAttendance(props.scope);
@@ -35,13 +33,6 @@ onMounted(() => {
   if (props.scope === "team") teamMemberId.value = "";
 });
 
-// Ringkasan status (dihitung dari baris yang sedang tampil di halaman ini).
-const cards = [
-  { key: "ontime", label: "Tepat Waktu", icon: CheckCircleIcon, cls: "bg-mahir-success-soft text-mahir-success" },
-  { key: "late", label: "Terlambat", icon: ClockIcon, cls: "bg-mahir-warning-soft text-mahir-warning" },
-  { key: "absent", label: "Tidak Hadir", icon: XCircleIcon, cls: "bg-mahir-danger-soft text-mahir-danger" },
-  { key: "leave", label: "Cuti/Izin", icon: CalendarDaysIcon, cls: "bg-mahir-info-soft text-mahir-info" },
-];
 </script>
 
 <template>
@@ -71,22 +62,8 @@ const cards = [
     </button>
   </div>
 
-  <!-- Ringkasan status (halaman ini) -->
-  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <div
-      v-for="c in cards"
-      :key="c.key"
-      class="flex items-center gap-3 rounded-2xl border border-mahir-border bg-white p-4 shadow-sm"
-    >
-      <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" :class="c.cls">
-        <component :is="c.icon" class="h-5 w-5" />
-      </div>
-      <div class="min-w-0">
-        <div class="text-2xl font-bold leading-tight text-slate-900">{{ summary[c.key] }}</div>
-        <div class="text-[12.5px] text-mahir-muted">{{ c.label }}</div>
-      </div>
-    </div>
-  </div>
+  <!-- Ringkasan status (halaman ini) — bisa disembunyikan bila induk sudah menampilkan -->
+  <AttendanceSummaryCards v-if="showSummary" :summary="summary" class="mb-6" />
 
   <!-- Table card -->
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">

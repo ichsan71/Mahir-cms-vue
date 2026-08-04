@@ -96,3 +96,23 @@ export const REJECT_LEAVE = gql`
     }
   }
 `;
+
+// Subscription realtime ringkasan kehadiran untuk dashboard.
+// `histories`: satu baris per (tanggal, status) berisi jumlah & daftar karyawan.
+// Status: PRESENT, LATE, EARLY_LEAVE, ON_LEAVE, PENDING, WEEKEND, dst.
+export const ATTENDANCE_DASHBOARD_SUB = gql`
+  subscription AttendanceDashboard {
+    attendanceDashboard {
+      histories {
+        id
+        snapshotDate
+        status
+        employeeCount
+        employees {
+          id
+          fullName
+        }
+      }
+    }
+  }
+`;

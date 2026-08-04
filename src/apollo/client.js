@@ -8,10 +8,13 @@
 // - authLink menyisipkan header `Authorization: Bearer <token>` dari store.
 // - errorLink mendeteksi token kedaluwarsa/sesi invalid → logout + redirect.
 // ──────────────────────────────────────────────────────────────
-import { ApolloClient, InMemoryCache, from, setLogVerbosity } from "@apollo/client/core";
+import { ApolloClient, InMemoryCache, from, split, setLogVerbosity } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { SchemaLink } from "@apollo/client/link/schema";
+import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
+import { getMainDefinition } from "@apollo/client/utilities";
+import { createClient } from "graphql-ws";
 import { createUploadLink } from "apollo-upload-client";
 import { schema } from "./mock/schema";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -93,8 +96,41 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 // berkas, dan tetap menangani request biasa seperti HttpLink.
 const transportLink = uri ? createUploadLink({ uri: "/graphql" }) : new SchemaLink({ schema });
 
+// Link HTTP (query/mutation): errorLink → authLink → transport (upload/mock).
+const httpLink = from([errorLink, authLink, transportLink]);
+
+// Link WebSocket untuk subscription (graphql-ws). Hanya aktif saat memakai
+// backend nyata. URL memakai same-origin `/graphql` agar lewat proxy Vite
+// (server.proxy `ws: true`) sehingga tidak terkena CORS; token dikirim lewat
+// connectionParams (dibaca ulang tiap kali koneksi/ulang-sambung dibuat).
+const wsLink = uri
+  ? new GraphQLWsLink(
+      createClient({
+        url: `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/graphql`,
+        connectionParams: () => {
+          const token = useAuthStore().token;
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+        lazy: true,
+        retryAttempts: Infinity,
+      }),
+    )
+  : null;
+
+// Arahkan operasi subscription ke wsLink, sisanya ke httpLink.
+const link = wsLink
+  ? split(
+      ({ query }) => {
+        const def = getMainDefinition(query);
+        return def.kind === "OperationDefinition" && def.operation === "subscription";
+      },
+      wsLink,
+      httpLink,
+    )
+  : httpLink;
+
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, transportLink]),
+  link,
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: { fetchPolicy: "cache-and-network" },
