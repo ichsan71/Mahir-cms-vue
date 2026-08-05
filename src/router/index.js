@@ -10,6 +10,12 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: "/verify-email",
+    name: "verify-email",
+    component: () => import("@/features/auth/views/VerifyEmailView.vue"),
+    meta: { public: true, title: "Aktivasi Akun" },
+  },
+  {
     path: "/kebijakan-privasi",
     name: "kebijakan-privasi",
     component: () => import("@/features/legal/views/PrivacyPolicyView.vue"),

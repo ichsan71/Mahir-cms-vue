@@ -92,6 +92,40 @@ export function useAuth() {
     }
   }
 
+  // Set password PERTAMA KALI lewat token aktivasi dari link email.
+  // Alur backend: register (nonaktif, tanpa password) → klik link email
+  // (akun diaktifkan + token "employee" 7 hari dibawa di URL /verify-email?token=)
+  // → halaman ini memakai token itu untuk memanggil changePassword tanpa
+  // password lama. Backend (change_password_public) mendeteksi first-time via
+  // has_usable_password() sehingga cek "password lama" dilewati.
+  //
+  // Token dibawa sebagai header Authorization eksplisit (seperti logout()).
+  // Sesi lokal dikosongkan lebih dulu agar authLink tidak menimpa header ini
+  // dengan token sesi lama yang mungkin masih tersimpan.
+  async function setPasswordWithToken({ token, newPassword }) {
+    error.value = "";
+    loading.value = true;
+    try {
+      auth.logout();
+      const res = await changePasswordMut(
+        { input: { oldPassword: "", newPassword } },
+        { context: { headers: { Authorization: `Bearer ${token}` } } },
+      );
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      if (!res?.data?.changePassword?.data) throw new Error("Gagal mengatur password");
+      toast.success("Password berhasil diatur. Silakan masuk dengan password baru Anda.");
+      // Bersihkan cache agar tak ada data akun lain yang tersisa.
+      apolloClient.clearStore().catch(() => {});
+      return true;
+    } catch (e) {
+      error.value = cleanMessage(e) || "Gagal mengatur password. Coba lagi.";
+      toast.error(error.value);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function logout() {
     // Tangkap token saat ini untuk logout server, lalu bersihkan sesi lokal
     // segera (supaya guard langsung menganggap kita sudah keluar).
@@ -114,5 +148,5 @@ export function useAuth() {
     apolloClient.clearStore().catch(() => {});
   }
 
-  return { login, logout, changePassword, error, loading };
+  return { login, logout, changePassword, setPasswordWithToken, error, loading };
 }
