@@ -113,7 +113,7 @@ export function useAuth() {
       );
       if (res?.errors?.length) throw new Error(res.errors[0].message);
       if (!res?.data?.changePassword?.data) throw new Error("Gagal mengatur password");
-      toast.success("Password berhasil diatur. Silakan masuk dengan password baru Anda.");
+      toast.success("Password berhasil diatur. Silakan login menggunakan password yang baru Anda buat.");
       // Bersihkan cache agar tak ada data akun lain yang tersisa.
       apolloClient.clearStore().catch(() => {});
       return true;

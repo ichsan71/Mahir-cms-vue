@@ -1,8 +1,9 @@
 <script setup>
 // Halaman set password pertama kali setelah aktivasi akun.
 // Backend mengaktifkan akun lewat link email, lalu redirect ke
-// /verify-email?token=<internal_token> (token "employee" 7 hari). Halaman ini
-// menangkap token itu dan memakainya untuk mengatur password pertama kali.
+// /verify-email?token=<encoded>. Nilai token di URL MASIH ter-encode (urlsafe
+// base64) — halaman ini men-decode-nya dulu lewat decodeActivationToken(),
+// baru hasil decode itu dipakai sebagai Bearer untuk mengatur password.
 //
 // Catatan: tidak ada flag "must_change_password" di backend — kewajiban set
 // password hanya ditegakkan oleh UX ini. Karena itu halaman ini publik dan
@@ -10,6 +11,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
+import { decodeActivationToken } from "@/shared/utils/token";
 import logoUrl from "@/assets/mahir-logo 1-2.png";
 import {
   LockClosedIcon,
@@ -24,8 +26,8 @@ const route = useRoute();
 const router = useRouter();
 const { setPasswordWithToken, loading } = useAuth();
 
-// Token aktivasi dari query string (?token=...).
-const token = ref(route.query.token || "");
+// Token aktivasi dari query string (?token=...), sudah di-decode ke token asli.
+const token = ref(decodeActivationToken(route.query.token));
 
 const newPassword = ref("");
 const confirmPassword = ref("");
