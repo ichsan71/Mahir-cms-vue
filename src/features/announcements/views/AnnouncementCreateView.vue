@@ -1,7 +1,7 @@
 <script setup>
 // Halaman buat/ubah pengumuman (create/editAnnouncement). Mode ditentukan oleh
 // param rute `:id` — bila ada → mode edit (prefill dari getAnnouncement).
-// Field: judul, isi (CKEditor), status (enum), sematkan, jadwal tayang/kedaluwarsa,
+// Field: judul, isi (rich text), status (enum), sematkan, jadwal tayang/kedaluwarsa,
 // perusahaan & unit (multi-select), serta lampiran (multi-file).
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";

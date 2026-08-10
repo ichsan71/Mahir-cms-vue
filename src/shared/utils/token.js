@@ -1,55 +1,68 @@
 // Util token aktivasi (link verify-email).
 //
-// Alur backend: setelah akun diaktifkan, backend redirect ke
-// /verify-email?token=<encoded>. Nilai `token` di URL itu MASIH ter-encode
-// (urlsafe base64) — bukan token final. Frontend harus men-decode dulu; hasil
-// decode itulah token asli yang dipakai sebagai `Authorization: Bearer` ke
-// backend (mis. untuk mutation changePassword saat set password pertama kali).
-
-// Decode string urlsafe-base64 menjadi teks (UTF-8 aman).
-function urlsafeBase64Decode(input) {
-  // urlsafe base64: '-' ganti '+', '_' ganti '/', padding '=' boleh hilang.
-  let s = String(input).replace(/-/g, "+").replace(/_/g, "/");
-  const pad = s.length % 4;
-  if (pad) s += "=".repeat(4 - pad);
-  const bin = atob(s);
-  // Rangkai ulang byte → UTF-8 supaya karakter non-ASCII tidak korup.
-  try {
-    return decodeURIComponent(
-      Array.prototype.map
-        .call(bin, (c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
-        .join(""),
-    );
-  } catch {
-    return bin;
-  }
-}
+// Alur backend: setelah akun diaktifkan, backend menandatangani JWT (RS256)
+// berisi { user_id, sessionid, platform, exp, iat, iss } lalu redirect ke
+// /verify-email?token=<jwt>. Nilai `token` di URL itu adalah JWT MENTAH
+// (header.payload.signature), bukan dibungkus base64/JSON. Token ini dipakai
+// apa adanya sebagai `Authorization: Bearer` ke backend (mis. changePassword
+// saat set password pertama kali) — backend yang memverifikasi tanda tangannya.
 
 /**
- * Ambil token asli dari nilai `?token=` pada link verify-email.
- * - Decode urlsafe base64. Hasil decode adalah token yang dipakai ke backend.
- * - Bila hasil decode berupa JSON `{ token, ... }`, ambil field `token`-nya.
- * - Bila decode gagal (mis. nilai ternyata sudah token mentah), pakai apa adanya
- *   agar tidak mematahkan alur.
+ * Ambil token yang siap dipakai sebagai Bearer dari nilai `?token=` pada link
+ * verify-email. Tahan dua bentuk yang mungkin dikirim backend:
+ *   1. JWT final langsung (payload = claims: user_id, exp, dst.) → dipakai apa
+ *      adanya.
+ *   2. JWT yang payload-nya MEMBUNGKUS token lain, mis. { user, token } →
+ *      ambil field `token` di dalamnya.
+ * Catatan: "decode" di sini hanya membaca payload (base64url), TIDAK butuh kunci.
+ * Public key backend hanya untuk verifikasi tanda tangan, dan itu tugas backend.
  * @param {string} raw Nilai token dari query string.
  * @returns {string} Token siap pakai sebagai Bearer, atau "" bila tidak ada.
  */
 export function decodeActivationToken(raw) {
-  if (!raw) return "";
-  let decoded;
+  const token = raw ? String(raw).trim() : "";
+  if (!token) return "";
+  // Bila payload JWT membungkus token lain, ambil token bagian dalam (kasus 2).
+  const claims = readJwtClaims(token);
+  if (claims && typeof claims.token === "string" && claims.token.trim()) {
+    return claims.token.trim();
+  }
+  // Selain itu, token di URL adalah token final itu sendiri (kasus 1).
+  return token;
+}
+
+/**
+ * Baca payload (claims) sebuah JWT TANPA verifikasi tanda tangan.
+ * Hanya untuk kebutuhan UX (mis. cek `exp`) — bukan untuk keputusan keamanan.
+ * Keamanan sesungguhnya tetap ditegakkan backend saat token dipakai.
+ * @param {string} jwt Token JWT mentah.
+ * @returns {object|null} Objek claims, atau null bila gagal.
+ */
+export function readJwtClaims(jwt) {
   try {
-    decoded = urlsafeBase64Decode(raw).trim();
+    let s = String(jwt).split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const pad = s.length % 4;
+    if (pad) s += "=".repeat(4 - pad);
+    const bin = atob(s);
+    // Rangkai ulang byte → UTF-8 supaya karakter non-ASCII tidak korup.
+    const json = decodeURIComponent(
+      Array.prototype.map
+        .call(bin, (c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+        .join(""),
+    );
+    return JSON.parse(json);
   } catch {
-    // Tidak bisa di-decode → anggap nilainya sudah token mentah.
-    return String(raw).trim();
+    return null;
   }
-  if (decoded.startsWith("{")) {
-    try {
-      const obj = JSON.parse(decoded);
-      if (obj && typeof obj.token === "string") return obj.token;
-    } catch {
-      // Bukan JSON valid — pakai hasil decode apa adanya.
-    }
-  }
-  return decoded;
+}
+
+/**
+ * Cek apakah JWT sudah kadaluarsa berdasar claim `exp` (detik epoch).
+ * Token tanpa `exp` atau tidak bisa dibaca dianggap kadaluarsa.
+ * @param {string} jwt Token JWT mentah.
+ * @returns {boolean} true bila kadaluarsa / tidak valid.
+ */
+export function isTokenExpired(jwt) {
+  const claims = readJwtClaims(jwt);
+  return !claims?.exp || claims.exp * 1000 < Date.now();
 }

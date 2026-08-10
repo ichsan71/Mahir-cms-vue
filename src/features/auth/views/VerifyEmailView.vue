@@ -11,7 +11,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuth } from "../composables/useAuth";
-import { decodeActivationToken } from "@/shared/utils/token";
+import { decodeActivationToken, isTokenExpired } from "@/shared/utils/token";
 import logoUrl from "@/assets/mahir-logo 1-2.png";
 import {
   LockClosedIcon,
@@ -26,8 +26,13 @@ const route = useRoute();
 const router = useRouter();
 const { setPasswordWithToken, loading } = useAuth();
 
-// Token aktivasi dari query string (?token=...), sudah di-decode ke token asli.
+// Token aktivasi dari query string (?token=...), berupa JWT mentah dari backend.
 const token = ref(decodeActivationToken(route.query.token));
+
+// Cek kadaluarsa dari claim `exp` (hanya UX fail-fast; backend tetap otoritas
+// verifikasi saat token dipakai). Token kosong tidak dianggap "expired" agar
+// pesannya tetap "Link Tidak Valid", bukan "kadaluarsa".
+const expired = computed(() => !!token.value && isTokenExpired(token.value));
 
 const newPassword = ref("");
 const confirmPassword = ref("");
@@ -90,6 +95,27 @@ async function submit() {
         <p class="mt-2 text-[13px] text-mahir-muted">
           Token aktivasi tidak ditemukan pada tautan ini. Silakan buka kembali tautan aktivasi dari
           email Anda, atau hubungi Administrator.
+        </p>
+        <router-link
+          to="/login"
+          class="mt-5 inline-block rounded-lg bg-mahir-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+        >
+          Ke Halaman Masuk
+        </router-link>
+      </div>
+
+      <!-- Token kadaluarsa -->
+      <div
+        v-else-if="expired"
+        class="rounded-[20px] border border-slate-200 bg-white p-9 text-center shadow-sm"
+      >
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+          <ExclamationTriangleIcon class="h-7 w-7 text-amber-500" />
+        </div>
+        <h2 class="font-display text-[20px] font-extrabold text-slate-900">Link Kedaluwarsa</h2>
+        <p class="mt-2 text-[13px] text-mahir-muted">
+          Tautan aktivasi ini sudah kedaluwarsa. Silakan minta tautan aktivasi baru kepada
+          Administrator, lalu buka kembali dari email Anda.
         </p>
         <router-link
           to="/login"
