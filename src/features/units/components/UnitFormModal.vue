@@ -46,6 +46,15 @@ const prefixAbbr = computed(() => abbreviatePrefix(form.value.name));
 // Pilihan tipe unit dari enum backend (UnitTypeChoices) — reusable.
 const { options: unitTypeOptions, loading: unitTypeLoading } = useEnumChoices("UnitTypeChoices");
 
+// Field `unitType` pada output backend berupa String biasa (bukan enum), sehingga
+// nilainya bisa beda format/kapitalisasi dari value opsi enum ("EXECUTIVE",
+// "SUB_DIVISION", …). Normalisasi agar cocok dengan <option> → select terisi saat edit.
+function matchUnitType(raw) {
+  if (!raw) return "";
+  const key = String(raw).trim().toUpperCase().replace(/[\s-]+/g, "_");
+  return unitTypeOptions.value.find((o) => o.value.toUpperCase() === key)?.value ?? String(raw);
+}
+
 // Isi form dari data unit (mode ubah) atau kosongkan (mode tambah).
 // Bila unit sudah punya induk → status "memiliki induk" dengan induk terpilih
 // ditampilkan langsung.
@@ -54,7 +63,7 @@ function fillForm() {
   if (u?.id) {
     form.value = {
       name: u.name ?? "",
-      unitType: u.unitType ?? "",
+      unitType: matchUnitType(u.unitType),
       parentId: u.parent?.id ?? "",
     };
     parent.value = !!u.parent;
@@ -72,6 +81,14 @@ watch(
   () => props.unit,
   () => props.open && fillForm(),
 );
+
+// Opsi enum tiba async (cache/network). Bila unit sudah terisi lebih dulu,
+// resolve ulang unitType agar select tetap cocok saat opsi baru tersedia.
+watch(unitTypeOptions, () => {
+  if (props.open && props.unit?.id && form.value.unitType) {
+    form.value.unitType = matchUnitType(form.value.unitType);
+  }
+});
 
 // Kosongkan pilihan induk ketika beralih ke "tanpa induk".
 watch(parent, (val) => {

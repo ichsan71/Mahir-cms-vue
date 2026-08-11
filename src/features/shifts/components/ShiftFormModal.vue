@@ -21,6 +21,12 @@ const emit = defineEmits(["update:open", "save"]);
 
 const isEdit = computed(() => !!props.shift?.id);
 
+// Saat kedua mode fleksibel aktif, tak ada jadwal & lokasi tetap sebagai acuan,
+// sehingga target jam + periodenya wajib diisi sebagai satu-satunya patokan kerja.
+const targetRequired = computed(
+  () => !!form.value.flexibleByWorkingHours && !!form.value.flexibleByPlace,
+);
+
 // Saat edit, ambil data lengkap (break, fleksibel, target jam) yang tak ada di baris list.
 const editId = computed(() => (props.open && props.shift?.id ? props.shift.id : null));
 const { shift: fullShift } = useShiftDetail(editId);
@@ -174,16 +180,33 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
       </template>
 
       <div>
-        <label :class="labelCls">Target Jam Kerja</label>
-        <input v-model="form.requiredHours" type="number" min="0" :class="fieldCls" placeholder="mis. 8" />
+        <label :class="labelCls">Target Jam Kerja <span v-if="targetRequired" class="text-red-500">*</span></label>
+        <input
+          v-model="form.requiredHours"
+          type="number"
+          min="0"
+          :required="targetRequired"
+          :class="fieldCls"
+          placeholder="mis. 8"
+        />
       </div>
       <div>
-        <label :class="labelCls">Periode Target Jam</label>
-        <select v-model="form.requiredHoursPeriod" :disabled="periodLoading" :class="fieldCls">
+        <label :class="labelCls">Periode Target Jam <span v-if="targetRequired" class="text-red-500">*</span></label>
+        <select
+          v-model="form.requiredHoursPeriod"
+          :disabled="periodLoading"
+          :required="targetRequired"
+          :class="fieldCls"
+        >
           <option value="">{{ periodLoading ? "Memuat…" : "— Pilih periode —" }}</option>
           <option v-for="opt in periodOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
       </div>
+
+      <!-- Penjelasan kenapa target jam jadi wajib saat kedua mode fleksibel aktif -->
+      <p v-if="targetRequired" class="md:col-span-2 -mt-1 text-[12px] text-mahir-muted">
+        Karena Jam Kerja Fleksibel dan Lokasi Fleksibel keduanya aktif, Target Jam Kerja dan Periode Target Jam wajib diisi sebagai patokan kerja karyawan.
+      </p>
     </div>
   </BaseModal>
 </template>

@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from "vue";
-import { CalendarDaysIcon, EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { CalendarDaysIcon, AdjustmentsHorizontalIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "../permissions";
 import WorkPatternWeekStrip from "./WorkPatternWeekStrip.vue";
@@ -64,10 +64,10 @@ function workdayCount(pattern) {
             <div class="flex items-center justify-center gap-1.5">
               <button
                 class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
-                title="Detail"
+                title="Atur Jadwal"
                 @click="emit('detail', pattern)"
               >
-                <EyeIcon class="h-4 w-4" />
+                <AdjustmentsHorizontalIcon class="h-4 w-4" />
               </button>
               <button
                 v-if="auth.can(PERM.EDIT)"

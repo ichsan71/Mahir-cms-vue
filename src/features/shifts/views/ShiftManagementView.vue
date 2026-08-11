@@ -15,8 +15,8 @@ const auth = useAuthStore();
 // Tab hanya tampil bila user punya izin list-nya (superuser lolos otomatis).
 const tabs = computed(() =>
   [
-    { key: "shift", label: "Shift", permission: "listShift" },
     { key: "pola-kerja", label: "Pola Kerja", permission: "listWorkPattern" },
+    { key: "shift", label: "Shift", permission: "listShift" },
   ].filter((t) => auth.can(t.permission)),
 );
 
