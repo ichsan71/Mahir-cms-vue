@@ -28,8 +28,9 @@ function goBack() {
 // ── Kelola alamat karyawan (CRUD, ditampilkan di kartu profil) ──────────────
 const { createAddress, editAddress, deleteAddress, loading: savingAddress } = useEmployeeAddresses();
 
-// NIK hanya untuk pemilik permission registerEmployee (data karyawan lain).
-const canViewNik = computed(() => auth.can(PERM.REGISTER));
+// NIK adalah data konfidensial: tidak pernah ditampilkan di detail karyawan lain.
+// (NIK milik sendiri tetap tampil di "Profil Saya" via default showNik.)
+const canViewNik = false;
 
 const canAddAddress = computed(() => auth.can(PERM.ADDRESS_CREATE));
 const canEditAddress = computed(() => auth.can(PERM.ADDRESS_EDIT));
