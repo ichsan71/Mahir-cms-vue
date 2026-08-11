@@ -24,3 +24,17 @@ export const LIST_GROUP = gql`
     }
   }
 `;
+
+// Setel (ganti seluruh) group milik seorang user. `userId` = id akun user
+// (employee.user.id, BUKAN id karyawan), `groupIds` = daftar id group terpilih.
+// Bersifat replace: himpunan yang dikirim menjadi group final user tsb.
+export const SET_USER_GROUPS = gql`
+  mutation SetUserGroups($input: SetUserGroupsInput!) {
+    setUserGroups(input: $input) {
+      data {
+        id
+        email
+      }
+    }
+  }
+`;

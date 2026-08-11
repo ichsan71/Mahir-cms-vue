@@ -16,4 +16,7 @@ export const PERM = {
   ADDRESS_CREATE: "createEmployeeAddress",
   ADDRESS_EDIT: "editEmployeeAddress",
   ADDRESS_DELETE: "deleteEmployeeAddress",
+  // Hak akses (tab Hak Akses di detail karyawan): melihat katalog group & menyetel group user.
+  GROUP_LIST: "listGroup",
+  GROUP_SET: "setUserGroups",
 };

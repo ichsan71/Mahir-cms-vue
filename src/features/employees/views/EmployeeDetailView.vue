@@ -18,7 +18,13 @@ const auth = useAuthStore();
 const id = computed(() => route.params.id);
 const { employee, loading, refetch } = useEmployeeDetail(id);
 
-// Tab detail: profil vs hak akses.
+// Tab detail: profil vs hak akses. Tab "Hak Akses" hanya muncul bila user boleh
+// melihat katalog group (listGroup).
+const canViewAccess = computed(() => auth.can(PERM.GROUP_LIST));
+const tabs = computed(() => [
+  { id: "profil", label: "Profil" },
+  ...(canViewAccess.value ? [{ id: "akses", label: "Hak Akses" }] : []),
+]);
 const tab = ref("profil");
 
 function goBack() {
@@ -111,7 +117,7 @@ async function handleDeleteAddress() {
     <!-- Tab: Profil / Hak Akses -->
     <div class="mb-5 flex gap-1 border-b border-mahir-border">
       <button
-        v-for="t in [{ id: 'profil', label: 'Profil' }, { id: 'akses', label: 'Hak Akses' }]"
+        v-for="t in tabs"
         :key="t.id"
         class="-mb-px border-b-2 px-4 py-2.5 text-[13.5px] font-semibold transition-colors"
         :class="tab === t.id
@@ -136,7 +142,7 @@ async function handleDeleteAddress() {
       @delete-address="openDeleteAddress"
     />
 
-    <EmployeeAccessCard v-show="tab === 'akses'" :employee="employee" />
+    <EmployeeAccessCard v-if="canViewAccess" v-show="tab === 'akses'" :employee="employee" />
   </template>
 
   <!-- Tambah / ubah alamat karyawan -->

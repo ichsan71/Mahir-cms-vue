@@ -2,17 +2,22 @@
 // Tab "Hak Akses" pada Detail Karyawan. Menampilkan katalog Group (role) dari
 // listGroup: tiap GROUP jadi satu checkbox yang bisa dipilih; permission di
 // dalamnya ditampilkan read-only sebagai info isi group.
-// CATATAN: tahap ini HANYA menampilkan daftar (belum menyimpan) — centang masih
-// state lokal, tombol Simpan dinonaktifkan sampai mutation backend tersedia.
+// Centang lalu Simpan → setUserGroups (replace seluruh group user tsb).
 import { computed, reactive, ref } from "vue";
-import { useQuery } from "@vue/apollo-composable";
-import { LIST_GROUP } from "../graphql/access.queries";
+import { useQuery, useMutation } from "@vue/apollo-composable";
+import { LIST_GROUP, SET_USER_GROUPS } from "../graphql/access.queries";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useToastStore } from "@/stores/toast.store";
+import { PERM } from "../permissions";
 import { MagnifyingGlassIcon, ShieldCheckIcon, ArrowPathIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
-  // Karyawan yang sedang dibuka (dipakai nanti untuk menyimpan grupnya).
+  // Karyawan yang sedang dibuka — grupnya diset lewat akun user-nya.
   employee: { type: Object, default: null },
 });
+
+const auth = useAuthStore();
+const toast = useToastStore();
 
 // Ambil seluruh katalog group (pageSize besar; jumlah role umumnya sedikit).
 const { result, loading } = useQuery(
@@ -44,6 +49,43 @@ function toggle(id) {
   checkedMap[id] = !checkedMap[id];
 }
 const checkedCount = computed(() => Object.values(checkedMap).filter(Boolean).length);
+
+// ── Simpan grup user ────────────────────────────────────────────────────────
+// setUserGroups butuh id AKUN USER (employee.user.id), bukan id karyawan.
+const userId = computed(() => {
+  const n = Number(props.employee?.user?.id);
+  return Number.isInteger(n) && n > 0 ? n : null;
+});
+
+// Id group yang tercentang (dikirim apa adanya sebagai himpunan final — replace).
+const selectedGroupIds = computed(() =>
+  Object.entries(checkedMap)
+    .filter(([, v]) => v)
+    .map(([id]) => Number(id)),
+);
+
+const canSet = computed(() => auth.can(PERM.GROUP_SET));
+
+const { mutate: setUserGroups, loading: saving } = useMutation(SET_USER_GROUPS);
+
+async function save() {
+  if (!userId.value || !canSet.value) return;
+  try {
+    const res = await setUserGroups({
+      input: { userId: userId.value, groupIds: selectedGroupIds.value },
+    });
+    if (res?.errors?.length) throw new Error(res.errors[0].message);
+    if (!res?.data?.setUserGroups?.data) throw new Error("Gagal menyimpan hak akses");
+    toast.success("Hak akses berhasil disimpan");
+  } catch (e) {
+    const msg =
+      e?.graphQLErrors?.[0]?.message ||
+      e?.networkError?.message ||
+      e?.message ||
+      "Gagal menyimpan hak akses. Coba lagi.";
+    toast.error(msg.replace(/^GraphQL error:\s*/i, "").trim());
+  }
+}
 </script>
 
 <template>
@@ -73,12 +115,18 @@ const checkedCount = computed(() => Object.values(checkedMap).filter(Boolean).le
           />
         </div>
         <button
+          v-if="canSet"
           type="button"
-          disabled
-          title="Penyimpanan belum aktif — menunggu API backend"
-          class="cursor-not-allowed rounded-lg bg-mahir-primary/40 px-4 py-2 text-[13.5px] font-semibold text-white"
+          :disabled="saving || !userId"
+          :title="!userId ? 'Karyawan ini belum punya akun user' : ''"
+          class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[13.5px] font-semibold text-white transition"
+          :class="saving || !userId
+            ? 'cursor-not-allowed bg-mahir-primary/40'
+            : 'bg-mahir-primary hover:bg-mahir-primary/90'"
+          @click="save"
         >
-          Simpan
+          <ArrowPathIcon v-if="saving" class="h-4 w-4 animate-spin" />
+          {{ saving ? "Menyimpan…" : "Simpan" }}
         </button>
       </div>
     </div>
