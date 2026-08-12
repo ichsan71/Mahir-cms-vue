@@ -135,6 +135,10 @@ export const GET_EMPLOYEE = gql`
           isSuperuser
           email
           username
+          groups {
+            id
+            name
+          }
         }
       }
     }

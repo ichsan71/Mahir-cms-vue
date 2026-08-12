@@ -3,7 +3,7 @@
 // listGroup: tiap GROUP jadi satu checkbox yang bisa dipilih; permission di
 // dalamnya ditampilkan read-only sebagai info isi group.
 // Centang lalu Simpan → setUserGroups (replace seluruh group user tsb).
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useQuery, useMutation } from "@vue/apollo-composable";
 import { LIST_GROUP, SET_USER_GROUPS } from "../graphql/access.queries";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -40,8 +40,51 @@ const filteredGroups = computed(() => {
   );
 });
 
+// Himpunan id group yang ADA di katalog listGroup (yang bisa ditampilkan sbg checkbox).
+const catalogIds = computed(() => new Set(groups.value.map((g) => Number(g.id))));
+
+// Id group yang saat ini dimiliki user (dari employee.user.groups).
+const userGroupIds = computed(() =>
+  (props.employee?.user?.groups ?? [])
+    .map((g) => Number(g?.id))
+    .filter((n) => Number.isInteger(n)),
+);
+
+// Grup user yang TIDAK ada di katalog (mis. grup dari aplikasi lain). Tak bisa
+// ditampilkan sbg checkbox, TAPI harus dipertahankan saat Simpan agar tidak
+// ikut terhapus (setUserGroups bersifat replace seluruh himpunan).
+const unmanagedGroupIds = computed(() =>
+  userGroupIds.value.filter((id) => !catalogIds.value.has(id)),
+);
+
+// Grup di luar katalog (untuk info ke user) — nama + id.
+const unmanagedGroups = computed(() =>
+  (props.employee?.user?.groups ?? []).filter(
+    (g) => !catalogIds.value.has(Number(g?.id)),
+  ),
+);
+
 // State centang lokal (per ID group).
 const checkedMap = reactive({});
+
+// Prefill: centang otomatis grup milik user yang ADA di katalog. Re-run saat
+// karyawan berganti, data user termuat, atau katalog termuat (cache→network),
+// supaya centang awal selalu mencerminkan kondisi tersimpan.
+watch(
+  [
+    () => props.employee?.user?.id,
+    () => userGroupIds.value.join(","),
+    () => [...catalogIds.value].join(","),
+  ],
+  () => {
+    for (const k of Object.keys(checkedMap)) delete checkedMap[k];
+    for (const id of userGroupIds.value) {
+      if (catalogIds.value.has(id)) checkedMap[id] = true;
+    }
+  },
+  { immediate: true },
+);
+
 function isChecked(id) {
   return !!checkedMap[id];
 }
@@ -57,12 +100,18 @@ const userId = computed(() => {
   return Number.isInteger(n) && n > 0 ? n : null;
 });
 
-// Id group yang tercentang (dikirim apa adanya sebagai himpunan final — replace).
+// Id group tercentang (dari katalog).
 const selectedGroupIds = computed(() =>
   Object.entries(checkedMap)
     .filter(([, v]) => v)
     .map(([id]) => Number(id)),
 );
+
+// Himpunan final yang dikirim ke setUserGroups = pilihan katalog + grup di luar
+// katalog yang dipertahankan (agar tidak terhapus).
+const finalGroupIds = computed(() => [
+  ...new Set([...selectedGroupIds.value, ...unmanagedGroupIds.value]),
+]);
 
 const canSet = computed(() => auth.can(PERM.GROUP_SET));
 
@@ -72,7 +121,7 @@ async function save() {
   if (!userId.value || !canSet.value) return;
   try {
     const res = await setUserGroups({
-      input: { userId: userId.value, groupIds: selectedGroupIds.value },
+      input: { userId: userId.value, groupIds: finalGroupIds.value },
     });
     if (res?.errors?.length) throw new Error(res.errors[0].message);
     if (!res?.data?.setUserGroups?.data) throw new Error("Gagal menyimpan hak akses");
@@ -132,6 +181,19 @@ async function save() {
     </div>
 
     <div class="p-5">
+      <!-- Info: grup di luar katalog yang tetap dipertahankan saat Simpan -->
+      <div
+        v-if="unmanagedGroups.length"
+        class="mb-4 flex items-start gap-2 rounded-xl border border-mahir-info-soft bg-mahir-info-soft/40 px-3.5 py-2.5 text-[12.5px] text-slate-600"
+      >
+        <ShieldCheckIcon class="mt-0.5 h-4 w-4 flex-shrink-0 text-mahir-info" />
+        <span>
+          {{ unmanagedGroups.length }} grup lain tidak ada di daftar ini
+          ({{ unmanagedGroups.map((g) => g.name).join(", ") }}) — grup tersebut
+          <b>tetap dipertahankan</b> saat menyimpan.
+        </span>
+      </div>
+
       <!-- Loading -->
       <div v-if="loading && !groups.length" class="flex items-center justify-center gap-2 py-12 text-sm text-slate-400">
         <ArrowPathIcon class="h-4 w-4 animate-spin" /> Memuat daftar hak akses…
