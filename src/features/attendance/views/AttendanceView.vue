@@ -2,8 +2,14 @@
 import { ref, computed, watch } from "vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import AttendancePanel from "../components/AttendancePanel.vue";
+import AttendanceCheckInCard from "../components/AttendanceCheckInCard.vue";
+import { PERM } from "../permissions";
 
 const auth = useAuthStore();
+
+// Kartu absen hanya untuk akun yang punya izin catat log & terhubung ke data
+// karyawan (mis. superadmin employee=null tidak bisa absen).
+const canCheckIn = computed(() => auth.can(PERM.LOG_CREATE) && auth.employee?.id != null);
 
 // Tab "Tim" hanya untuk atasan (punya bawahan langsung / childrens).
 const tabs = computed(() => {
@@ -32,6 +38,9 @@ watch(
       <p class="text-sm text-mahir-muted">Rekap kehadiran harian beserta riwayat tap masuk & keluar</p>
     </div>
   </div>
+
+  <!-- Kartu absen mandiri (check-in / check-out berbasis GPS) -->
+  <AttendanceCheckInCard v-if="canCheckIn" class="mb-6" />
 
   <!-- Tab bar (hanya bila lebih dari satu tab tersedia) -->
   <div v-if="tabs.length > 1" class="mb-5 flex flex-wrap gap-1 border-b border-mahir-border">

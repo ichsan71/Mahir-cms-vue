@@ -13,7 +13,7 @@ export const LIST_COMPANY = gql`
         results {
           id
           name
-          npwp
+          website
           logo
           phone
         }
@@ -31,7 +31,6 @@ export const GET_COMPANY = gql`
         legalName
         logo
         name
-        npwp
         phone
         website
         email

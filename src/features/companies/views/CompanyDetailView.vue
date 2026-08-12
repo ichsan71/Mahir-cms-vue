@@ -10,7 +10,6 @@ import {
   BuildingOfficeIcon,
   InformationCircleIcon,
   DocumentTextIcon,
-  ReceiptPercentIcon,
   PhoneIcon,
   GlobeAltIcon,
   ShareIcon,
@@ -88,9 +87,6 @@ function goBack() {
               <p v-if="company.legalName" class="mt-1 text-sm font-medium text-slate-600">
                 {{ company.legalName }}
               </p>
-              <div class="mt-2 flex items-center gap-3 text-xs text-slate-400">
-                <span>NPWP: <strong class="font-mono text-slate-600">{{ company.npwp || "—" }}</strong></span>
-              </div>
             </div>
           </div>
         </div>
@@ -108,14 +104,6 @@ function goBack() {
               <div>
                 <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Nama Legal</div>
                 <div class="mt-0.5 text-sm font-medium text-slate-800">{{ company.legalName || "—" }}</div>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-3">
-              <ReceiptPercentIcon class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-              <div>
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">NPWP</div>
-                <div class="mt-0.5 font-mono text-sm font-medium text-slate-800">{{ company.npwp || "—" }}</div>
               </div>
             </div>
 

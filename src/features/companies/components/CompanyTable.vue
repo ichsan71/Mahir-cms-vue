@@ -12,6 +12,13 @@ defineProps({
 const emit = defineEmits(["detail", "edit", "delete"]);
 
 const auth = useAuthStore();
+
+// Normalkan website menjadi URL yang bisa diklik.
+function websiteHref(website) {
+  const w = website?.trim();
+  if (!w) return null;
+  return /^https?:\/\//i.test(w) ? w : `https://${w}`;
+}
 </script>
 
 <template>
@@ -20,7 +27,7 @@ const auth = useAuthStore();
       <thead>
         <tr class="border-b border-mahir-border text-xs uppercase tracking-wide text-slate-400">
           <th class="px-4 py-3 font-semibold">Perusahaan</th>
-          <th class="px-4 py-3 font-semibold">NPWP</th>
+          <th class="px-4 py-3 font-semibold">Website</th>
           <th class="px-4 py-3 font-semibold">Telepon</th>
           <th class="px-4 py-3 text-center font-semibold">Aksi</th>
         </tr>
@@ -55,7 +62,18 @@ const auth = useAuthStore();
               <div class="text-[13.5px] font-semibold text-slate-800">{{ company.name }}</div>
             </div>
           </td>
-          <td class="px-4 py-3 text-slate-600">{{ company.npwp || "—" }}</td>
+          <td class="px-4 py-3">
+            <a
+              v-if="company.website"
+              :href="websiteHref(company.website)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-mahir-primary hover:underline"
+              @click.stop
+              >{{ company.website }}</a
+            >
+            <span v-else class="text-slate-600">—</span>
+          </td>
           <td class="px-4 py-3 text-slate-600">{{ company.phone || "—" }}</td>
           <td class="px-4 py-3">
             <div class="flex items-center justify-center gap-1.5">
