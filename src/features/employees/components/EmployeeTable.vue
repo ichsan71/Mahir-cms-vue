@@ -62,6 +62,7 @@ watch(
             />
           </th>
           <th class="px-4 py-3 font-semibold">Karyawan</th>
+          <th class="px-4 py-3 font-semibold">Kode</th>
           <th class="px-4 py-3 font-semibold">Unit</th>
           <th class="px-4 py-3 font-semibold">Level</th>
           <th class="px-4 py-3 font-semibold">Tanggal Masuk</th>
@@ -71,10 +72,10 @@ watch(
       </thead>
       <tbody>
         <tr v-if="loading && !employees.length">
-          <td colspan="7" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
+          <td colspan="8" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
         </tr>
         <tr v-else-if="!employees.length">
-          <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+          <td colspan="8" class="px-4 py-8 text-center text-slate-400">
             Tidak ada karyawan yang cocok.
           </td>
         </tr>
@@ -110,6 +111,9 @@ watch(
                 <div class="text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
               </div>
             </div>
+          </td>
+          <td class="px-4 py-3">
+            <span class="font-mono text-xs text-slate-600">{{ emp.code || "—" }}</span>
           </td>
           <td class="px-4 py-3 text-slate-600">{{ unitNames(emp) }}</td>
           <td class="px-4 py-3 text-slate-600">{{ emp.level?.name ?? "—" }}</td>

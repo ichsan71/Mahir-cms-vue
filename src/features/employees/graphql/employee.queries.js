@@ -15,6 +15,7 @@ export const LIST_EMPLOYEE = gql`
           id
           fullName
           image
+          code
           nik
           units {
             id
