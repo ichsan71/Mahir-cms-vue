@@ -29,7 +29,7 @@ watch(
 );
 
 // Status (enum) + filter tujuan (company/unit).
-const { options: statusOptions, loading: statusLoading } = useEnumChoices("AnnouncementStatusChoices");
+const { options: statusOptions, loading: statusLoading } = useEnumChoices("ANNOUNCEMENT_STATUS");
 const { options: companyOptions, loading: companyLoading, setSearch: setCompanySearch } = useCompanySearch();
 const { options: unitOptions, loading: unitLoading, setSearch: setUnitSearch } = useUnitSearch();
 const companySelected = ref([]);

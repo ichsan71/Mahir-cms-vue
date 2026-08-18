@@ -7,8 +7,8 @@ import BaseModal from "@/shared/components/BaseModal.vue";
 import { useShiftDetail } from "../composables/useShiftDetail";
 import { useEnumChoices } from "@/shared/composables/useEnumChoices";
 
-// Pilihan periode target jam kerja dari enum backend (introspeksi) — tipe `RequiredHoursPeriod`.
-const { options: periodOptions, loading: periodLoading } = useEnumChoices("RequiredHoursPeriod");
+// Pilihan periode target jam kerja dari enum backend — group `REQUIRED_HOURS_PERIOD`.
+const { options: periodOptions, loading: periodLoading } = useEnumChoices("REQUIRED_HOURS_PERIOD");
 
 const props = defineProps({
   open: { type: Boolean, default: false },

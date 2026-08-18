@@ -1,6 +1,6 @@
 import { computed, unref } from "vue";
 import { useQuery } from "@vue/apollo-composable";
-import { ENUM_VALUES } from "@/shared/graphql/enum.queries";
+import { CHOICES } from "@/shared/graphql/enum.queries";
 
 // Ubah nama enum (UPPER_SNAKE_CASE) → label terbaca, mis. SUB_DIVISION → "Sub Division".
 export function prettyEnum(name) {
@@ -12,20 +12,21 @@ export function prettyEnum(name) {
     .join(" ");
 }
 
-// Ambil pilihan dari enum backend lewat introspeksi (reusable).
-// `typeName` boleh berupa string atau ref. Mengembalikan options [{ value, label }].
-export function useEnumChoices(typeName) {
+// Ambil pilihan dari enum backend lewat query `choices(group)` (reusable).
+// `group` (EmployeeChoiceGroup, mis. "RELIGION") boleh berupa string atau ref.
+// Mengembalikan options [{ value, label }].
+export function useEnumChoices(group) {
   const { result, loading } = useQuery(
-    ENUM_VALUES,
-    () => ({ name: unref(typeName) }),
-    // Enum jarang berubah → cukup cache-first.
-    { fetchPolicy: "cache-first" },
+    CHOICES,
+    () => ({ group: unref(group) }),
+    // Enum jarang berubah → cukup cache-first. Skip bila group belum ada.
+    () => ({ fetchPolicy: "cache-first", enabled: !!unref(group) }),
   );
 
   const options = computed(() =>
-    (result.value?.__type?.enumValues ?? []).map((e) => ({
-      value: e.name,
-      label: prettyEnum(e.name),
+    (result.value?.choices ?? []).map((e) => ({
+      value: e.value,
+      label: prettyEnum(e.label ?? e.value),
     })),
   );
 

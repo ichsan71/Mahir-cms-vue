@@ -28,7 +28,7 @@ const parentChoices = computed(() =>
 const parentSelected = ref(null);
 
 // Pilihan tipe level dari enum backend (LevelTypeChoices) — reusable.
-const { options: levelTypeOptions, loading: levelTypeLoading } = useEnumChoices("LevelTypeChoices");
+const { options: levelTypeOptions, loading: levelTypeLoading } = useEnumChoices("LEVEL_TYPE");
 
 // Mode ubah bila ada level dengan id valid.
 const isEdit = computed(() => !!props.level?.id);

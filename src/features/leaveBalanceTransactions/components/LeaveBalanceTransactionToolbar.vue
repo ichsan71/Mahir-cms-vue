@@ -10,7 +10,7 @@ const localSearch = ref(filters.search);
 // Pilihan jenis transaksi dari enum backend. Nama tipe enum mengikuti pola
 // Graphene {Model}{Field}Choices — PERLU DIKONFIRMASI; bila salah, dropdown
 // hanya menampilkan "Semua Jenis" (tidak error).
-const { options: typeOptions } = useEnumChoices("LeaveBalanceTransactionTransactionTypeChoices");
+const { options: typeOptions } = useEnumChoices("LEAVE_BALANCE_TRANSACTION_TYPE");
 
 let timeoutId = null;
 function debouncedCommit() {

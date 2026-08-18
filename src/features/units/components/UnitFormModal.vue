@@ -44,7 +44,7 @@ const form = ref(blank());
 const prefixAbbr = computed(() => abbreviatePrefix(form.value.name));
 
 // Pilihan tipe unit dari enum backend (UnitTypeChoices) — reusable.
-const { options: unitTypeOptions, loading: unitTypeLoading } = useEnumChoices("UnitTypeChoices");
+const { options: unitTypeOptions, loading: unitTypeLoading } = useEnumChoices("UNIT_TYPE");
 
 // Field `unitType` pada output backend berupa String biasa (bukan enum), sehingga
 // nilainya bisa beda format/kapitalisasi dari value opsi enum ("EXECUTIVE",

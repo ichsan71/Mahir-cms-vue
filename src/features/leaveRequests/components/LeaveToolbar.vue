@@ -13,7 +13,7 @@ const filters = useLeaveFiltersStore();
 const localSearch = ref(filters.search);
 
 // Pilihan status dari enum backend (LeaveStatusChoices).
-const { options: statusOptions, loading: statusLoading } = useEnumChoices("LeaveStatusChoices");
+const { options: statusOptions, loading: statusLoading } = useEnumChoices("LEAVE_STATUS");
 
 let timeoutId = null;
 function debouncedCommit() {

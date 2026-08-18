@@ -31,7 +31,7 @@ const companySelected = ref([]);
 const unitSelected = ref([]);
 
 // Status dari enum backend.
-const { options: statusOptions, loading: statusLoading } = useEnumChoices("AnnouncementStatusChoices");
+const { options: statusOptions, loading: statusLoading } = useEnumChoices("ANNOUNCEMENT_STATUS");
 
 const { createAnnouncement, editAnnouncement, loading: saving } = useAnnouncementForm();
 

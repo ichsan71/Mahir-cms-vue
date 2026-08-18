@@ -36,8 +36,8 @@ const { options: workPatternOptions, loading: workPatternLoading, setSearch: wor
 const { options: parentOptions, loading: parentLoading, setSearch: parentSearch } = useEmployeeSearch();
 
 // Pilihan enum backend (introspeksi) — agama & status pernikahan.
-const { options: religionOptions, loading: religionLoading } = useEnumChoices("ReligionChoices");
-const { options: maritalStatusOptions, loading: maritalStatusLoading } = useEnumChoices("MaritalStatusChoices");
+const { options: religionOptions, loading: religionLoading } = useEnumChoices("RELIGION");
+const { options: maritalStatusOptions, loading: maritalStatusLoading } = useEnumChoices("MARITAL_STATUS");
 
 // Item terpilih (untuk menampilkan label langsung saat edit).
 const branchSelected = ref(null);

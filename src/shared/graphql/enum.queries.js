@@ -1,13 +1,10 @@
 import gql from "graphql-tag";
 
-// Introspeksi nilai enum dari skema backend — reusable untuk semua pilihan
-// berbasis enum (mis. LevelTypeChoices, UnitTypeChoices).
-export const ENUM_VALUES = gql`
-  query EnumValues($name: String!) {
-    __type(name: $name) {
-      enumValues {
-        name
-      }
-    }
+// Pilihan enum backend via query `choices(group)` — reusable untuk semua pilihan
+// berbasis enum (mis. RELIGION, UNIT_TYPE, LEAVE_STATUS).
+// `group` bertipe EmployeeChoiceGroup!, mengembalikan [{ value, label }].
+export const CHOICES = gql`
+  query Choices($group: EmployeeChoiceGroup!) {
+    choices(group: $group)
   }
 `;

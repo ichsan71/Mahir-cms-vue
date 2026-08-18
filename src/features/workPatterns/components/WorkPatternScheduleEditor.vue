@@ -1,5 +1,5 @@
 <script setup>
-// Editor jadwal mingguan sebuah pola kerja. Menggabungkan enum WeekdayChoices
+// Editor jadwal mingguan sebuah pola kerja. Menggabungkan enum WEEKDAY
 // dengan `details` yang sudah ada: baris ber-`detailId` → edit, sisanya → create.
 import { ref, computed, watch } from "vue";
 import SearchableSelect from "@/shared/components/SearchableSelect.vue";
@@ -31,7 +31,7 @@ function detailIndex(d) {
   return byWeekday !== 99 ? byWeekday : weekdayIndex(d?.weekdayDisplay);
 }
 
-const { options: weekdayOptions } = useEnumChoices("WeekdayChoices");
+const { options: weekdayOptions } = useEnumChoices("WEEKDAY");
 const { options: shiftOptions, loading: shiftLoading, setSearch } = useShiftSearch();
 const { saveSchedule, loading: saving } = useWorkPatternSchedule();
 

@@ -8,7 +8,7 @@ const filters = useLeaveApprovalFiltersStore();
 const localSearch = ref(filters.search);
 
 // Pilihan status dari enum backend (LeaveApprovalStatusChoices).
-const { options: statusOptions, loading: statusLoading } = useEnumChoices("LeaveApprovalStatusChoices");
+const { options: statusOptions, loading: statusLoading } = useEnumChoices("LEAVE_APPROVAL_STATUS");
 
 let timeoutId = null;
 function debouncedCommit() {
