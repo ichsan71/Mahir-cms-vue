@@ -105,6 +105,22 @@ export const CREATE_ATTENDANCE_LOG = gql`
   }
 `;
 
+// Ekspor data kehadiran ke berkas & kirim ke email (proses async di backend).
+// `input` (AttendanceExportInput): dateFrom, dateTo (rentang tanggal kehadiran),
+// email tujuan. Respons hanya metadata antrean; hasil dikirim ke email.
+export const EXPORT_ATTENDANCE = gql`
+  mutation ExportAttendance($input: AttendanceExportInput!) {
+    exportAttendance(input: $input) {
+      data {
+        attendanceCount
+        detail
+        estimatedSeconds
+        requestId
+      }
+    }
+  }
+`;
+
 // Daftar kehadiran (attendance) paginated sesuai kontrak backend.
 // Tiap baris = satu hari kehadiran untuk seorang karyawan: jadwal shift,
 // jam terjadwal, durasi kerja/keterlambatan, status, plus `logs` (kejadian

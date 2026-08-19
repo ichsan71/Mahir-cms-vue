@@ -12,6 +12,8 @@ export const PERM = {
   REGISTER: "registerEmployee",
   EDIT: "editEmployee",
   DELETE: "deleteEmployee",
+  // Ekspor data karyawan ke email (proses async di backend).
+  EXPORT: "exportEmployee",
   // Alamat karyawan (dikelola di halaman detail karyawan).
   ADDRESS_CREATE: "createEmployeeAddress",
   ADDRESS_EDIT: "editEmployeeAddress",

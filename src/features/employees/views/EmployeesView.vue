@@ -3,11 +3,13 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useEmployees } from "../composables/useEmployees";
 import { useEmployeeRegister } from "../composables/useEmployeeRegister";
+import { useEmployeeExport } from "../composables/useEmployeeExport";
 import { useEmployeeDetail } from "../composables/useEmployeeDetail";
 import EmployeeStats from "../components/EmployeeStats.vue";
 import EmployeeToolbar from "../components/EmployeeToolbar.vue";
 import EmployeeTable from "../components/EmployeeTable.vue";
 import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
+import EmployeeExportModal from "../components/EmployeeExportModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { PlusIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -17,6 +19,7 @@ const auth = useAuthStore();
 const router = useRouter();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
 const { registerEmployee, editEmployee, deleteEmployee, loading: saving } = useEmployeeRegister();
+const { exportEmployee, loading: exporting } = useEmployeeExport();
 
 // Statistik dari metadata pagination (backend belum sediakan endpoint stats khusus).
 const stats = computed(() => ({ total: pagination.value.count }));
@@ -55,6 +58,14 @@ async function handleSave({ id, username, email, input }) {
     modalOpen.value = false;
     refetch();
   }
+}
+
+// Ekspor karyawan ke email (proses async di backend).
+const exportOpen = ref(false);
+
+async function handleExport(payload) {
+  const result = await exportEmployee(payload);
+  if (result) exportOpen.value = false;
 }
 
 // Hapus: tampung target lalu konfirmasi dulu sebelum eksekusi.
@@ -109,7 +120,7 @@ async function handleDelete() {
         Daftar Karyawan
         <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
       </h2>
-      <EmployeeToolbar />
+      <EmployeeToolbar @export="exportOpen = true" />
     </div>
 
     <EmployeeTable
@@ -154,6 +165,13 @@ async function handleDelete() {
     :saving="saving"
     :employee="editId ? editingEmployee : null"
     @save="handleSave"
+  />
+
+  <!-- Modal ekspor karyawan ke email -->
+  <EmployeeExportModal
+    v-model:open="exportOpen"
+    :saving="exporting"
+    @submit="handleExport"
   />
 
   <!-- Konfirmasi hapus karyawan -->

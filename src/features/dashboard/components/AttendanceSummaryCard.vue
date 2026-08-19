@@ -3,7 +3,7 @@
 // tren harian (stacked bar) + komposisi hari ini (doughnut). Data via GraphQL
 // subscription (attendanceDashboard) — lihat useAttendanceDashboard.
 // Self-gating: hanya tampil bila akun punya izin attendanceDashboard.
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Bar, Doughnut } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -19,18 +19,31 @@ import StatsCard from "@/shared/components/StatsCard.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "@/features/attendance/permissions";
 import { useAttendanceDashboard } from "../composables/useAttendanceDashboard";
+import { useAttendanceExport } from "@/features/attendance/composables/useAttendanceExport";
+import AttendanceExportModal from "@/features/attendance/components/AttendanceExportModal.vue";
 import {
   CheckCircleIcon,
   ClockIcon,
   CalendarDaysIcon,
   ExclamationCircleIcon,
   UserGroupIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/vue/24/outline";
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, ArcElement, CategoryScale, LinearScale);
 
 const auth = useAuthStore();
 const canView = computed(() => auth.can(PERM.DASHBOARD));
+const canExport = computed(() => auth.can(PERM.EXPORT));
+
+// Ekspor kehadiran ke email (proses async di backend).
+const { exportAttendance, loading: exporting } = useAttendanceExport();
+const exportOpen = ref(false);
+
+async function handleExport(payload) {
+  const result = await exportAttendance(payload);
+  if (result) exportOpen.value = false;
+}
 
 // Subscription hanya aktif saat punya izin (hindari koneksi WS sia-sia).
 const { loading, error, dates, latestDate, latestSummary, latestTotal, trend } =
@@ -141,13 +154,23 @@ const doughnutOptions = {
           <p v-if="latestLabel" class="text-[11.5px] text-slate-400">Per {{ latestLabel }}</p>
         </div>
       </div>
-      <span class="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-mahir-success">
-        <span class="relative flex h-2 w-2">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-mahir-success opacity-60"></span>
-          <span class="relative inline-flex h-2 w-2 rounded-full bg-mahir-success"></span>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="canExport"
+          type="button"
+          class="flex items-center gap-1.5 rounded-lg border border-mahir-border bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          @click="exportOpen = true"
+        >
+          <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
+        </button>
+        <span class="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-mahir-success">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-mahir-success opacity-60"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-mahir-success"></span>
+          </span>
+          Realtime
         </span>
-        Realtime
-      </span>
+      </div>
     </div>
 
     <!-- State: loading / error / kosong -->
@@ -198,5 +221,12 @@ const doughnutOptions = {
         </div>
       </div>
     </template>
+
+    <!-- Modal ekspor kehadiran ke email -->
+    <AttendanceExportModal
+      v-model:open="exportOpen"
+      :saving="exporting"
+      @submit="handleExport"
+    />
   </section>
 </template>

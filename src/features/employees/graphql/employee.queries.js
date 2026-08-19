@@ -177,6 +177,22 @@ export const DELETE_EMPLOYEE = gql`
   }
 `;
 
+// Ekspor data karyawan ke berkas & kirim ke email (proses async di backend).
+// `input` (EmployeeExportInput): dateFrom, dateTo (rentang tgl daftar), filters, email tujuan.
+// Respons hanya metadata antrean; hasil ekspor dikirim ke email.
+export const EXPORT_EMPLOYEE = gql`
+  mutation ExportEmployee($input: EmployeeExportInput!) {
+    exportEmployee(input: $input) {
+      data {
+        detail
+        employeeCount
+        estimatedSeconds
+        requestId
+      }
+    }
+  }
+`;
+
 // Daftarkan karyawan baru (sekaligus membuat akun user).
 // `username` & `email` di level atas; sisanya di `input` (EmployeeInput).
 export const REGISTER_EMPLOYEE = gql`

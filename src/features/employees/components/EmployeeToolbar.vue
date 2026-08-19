@@ -2,7 +2,12 @@
 import { ref, watch, onUnmounted } from "vue";
 import { useEmployeeFiltersStore } from "../stores/employeeFilters.store";
 import { MagnifyingGlassIcon, ShareIcon, ArrowDownTrayIcon } from "@heroicons/vue/24/outline";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 
+const emit = defineEmits(["export"]);
+
+const auth = useAuthStore();
 const filters = useEmployeeFiltersStore();
 
 // Input lokal sebagai penampung sementara: pengetikan tidak langsung memicu
@@ -63,7 +68,10 @@ watch(
 
     <!-- Export -->
     <button
+      v-if="auth.can(PERM.EXPORT)"
+      type="button"
       class="flex items-center gap-1.5 rounded-lg border border-mahir-border bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      @click="emit('export')"
     >
       <ArrowDownTrayIcon class="h-4 w-4" /> Ekspor
     </button>

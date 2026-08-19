@@ -10,4 +10,6 @@ export const PERM = {
   LEAVE_LIST: "listLeave",
   // Catat log absen (check-in / check-out).
   LOG_CREATE: "createAttendanceLog",
+  // Ekspor data kehadiran ke email (proses async di backend).
+  EXPORT: "exportAttendance",
 };

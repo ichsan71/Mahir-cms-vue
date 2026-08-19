@@ -12,7 +12,7 @@ export function prettyEnum(name) {
     .join(" ");
 }
 
-// Ambil pilihan dari enum backend lewat query `choices(group)` (reusable).
+// Ambil pilihan dari enum backend lewat query `employeeChoices(group)` (reusable).
 // `group` (EmployeeChoiceGroup, mis. "RELIGION") boleh berupa string atau ref.
 // Mengembalikan options [{ value, label }].
 export function useEnumChoices(group) {
@@ -24,7 +24,7 @@ export function useEnumChoices(group) {
   );
 
   const options = computed(() =>
-    (result.value?.choices ?? []).map((e) => ({
+    (result.value?.employeeChoices ?? []).map((e) => ({
       value: e.value,
       label: prettyEnum(e.label ?? e.value),
     })),
