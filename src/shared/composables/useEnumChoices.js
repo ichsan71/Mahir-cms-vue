@@ -25,8 +25,12 @@ export function useEnumChoices(group) {
 
   const options = computed(() =>
     (result.value?.employeeChoices ?? []).map((e) => ({
-      value: e.value,
-      label: prettyEnum(e.label ?? e.value),
+      // Nilai yang DIKIRIM ke backend saat create/update = `label` (nama enum,
+      // mis. "ISLAM"), bukan `value` (teks tampilan "Islam").
+      value: e.label,
+      // Teks yang DITAMPILKAN ke pengguna = `value` (sudah terbaca); bila kosong
+      // jatuh ke prettyEnum dari nama enum.
+      label: e.value ?? prettyEnum(e.label),
     })),
   );
 
