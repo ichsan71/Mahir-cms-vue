@@ -15,7 +15,6 @@ import {
   CategoryScale,
   LinearScale,
 } from "chart.js";
-import StatsCard from "@/shared/components/StatsCard.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "@/features/attendance/permissions";
 import { useAttendanceDashboard } from "../composables/useAttendanceDashboard";
@@ -46,7 +45,7 @@ async function handleExport(payload) {
 }
 
 // Subscription hanya aktif saat punya izin (hindari koneksi WS sia-sia).
-const { loading, error, dates, latestDate, latestSummary, latestTotal, trend } =
+const { loading, error, dates, latestDate, latestSummary, trend } =
   useAttendanceDashboard(() => ({ enabled: canView.value }));
 
 const hasData = computed(() => dates.value.length > 0);
@@ -60,11 +59,14 @@ const countByStatus = computed(() => {
 function countFor(status) {
   return countByStatus.value[status] ?? 0;
 }
-function pctText(status) {
-  const total = latestTotal.value;
-  if (!total) return null;
-  return `${Math.round((countFor(status) / total) * 100)}% dari ${total}`;
+
+// Daftar karyawan per status pada hari terbaru (dari baris status terkait).
+function employeesFor(status) {
+  const row = latestSummary.value.find((s) => s.status === status);
+  return row?.employees ?? [];
 }
+const lateEmployees = computed(() => employeesFor("LATE"));
+const leaveEmployees = computed(() => employeesFor("ON_LEAVE"));
 
 // Empat KPI utama (gaya HRIS).
 const KPIS = [
@@ -142,9 +144,9 @@ const doughnutOptions = {
 </script>
 
 <template>
-  <section v-if="canView" class="space-y-4">
-    <!-- Header bagian -->
-    <div class="flex items-center justify-between gap-2">
+  <section v-if="canView || $slots.default" class="space-y-5">
+    <!-- Header bagian (hanya bila punya izin kehadiran) -->
+    <div v-if="canView" class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-mahir-primary-soft text-mahir-primary">
           <UserGroupIcon class="h-5 w-5" />
@@ -173,54 +175,116 @@ const doughnutOptions = {
       </div>
     </div>
 
-    <!-- State: loading / error / kosong -->
-    <div
-      v-if="(loading || error) && !hasData"
-      class="rounded-2xl border border-mahir-border bg-white py-12 text-center text-sm"
-      :class="error ? 'text-mahir-danger' : 'text-slate-400'"
-    >
-      {{ error ? "Gagal memuat ringkasan kehadiran." : "Menyambungkan data kehadiran…" }}
-    </div>
-    <div
-      v-else-if="!hasData"
-      class="rounded-2xl border border-mahir-border bg-white py-12 text-center text-sm text-slate-400"
-    >
-      Belum ada data kehadiran.
-    </div>
-
-    <template v-else>
-      <!-- Kartu KPI -->
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatsCard
-          v-for="kpi in KPIS"
-          :key="kpi.status"
-          :value="countFor(kpi.status)"
-          :label="kpi.label"
-          :icon="kpi.icon"
-          :color="kpi.color"
-          :bg-color="kpi.bg"
-          :delta="pctText(kpi.status)"
-          delta-dir="up"
-        />
-      </div>
-
-      <!-- Tren (kiri, lebar) + Komposisi hari ini (kanan) -->
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div class="rounded-2xl border border-mahir-border bg-white p-5 lg:col-span-2">
-          <h3 class="mb-4 font-semibold text-slate-900">Tren Kehadiran</h3>
-          <div class="h-64">
-            <Bar :data="barData" :options="barOptions" />
-          </div>
+    <!-- Ringkasan (KPI + daftar telat/cuti) di kiri, pengumuman (slot) di kanan -->
+    <div class="grid grid-cols-1 items-start gap-5 xl:grid-cols-3">
+      <div class="space-y-4 xl:col-span-2">
+        <!-- State: loading / error / kosong -->
+        <div
+          v-if="canView && (loading || error) && !hasData"
+          class="rounded-2xl border border-mahir-border bg-white py-12 text-center text-sm"
+          :class="error ? 'text-mahir-danger' : 'text-slate-400'"
+        >
+          {{ error ? "Gagal memuat ringkasan kehadiran." : "Menyambungkan data kehadiran…" }}
+        </div>
+        <div
+          v-else-if="canView && !hasData"
+          class="rounded-2xl border border-mahir-border bg-white py-12 text-center text-sm text-slate-400"
+        >
+          Belum ada data kehadiran.
         </div>
 
-        <div class="rounded-2xl border border-mahir-border bg-white p-5">
-          <h3 class="mb-4 font-semibold text-slate-900">Komposisi Hari Ini</h3>
-          <div class="h-64">
-            <Doughnut :data="doughnutData" :options="doughnutOptions" />
+        <template v-else-if="canView">
+          <!-- Kartu KPI (simple) -->
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div
+              v-for="kpi in KPIS"
+              :key="kpi.status"
+              class="rounded-xl border border-mahir-border bg-white p-4 shadow-sm"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                  :style="{ backgroundColor: kpi.bg, color: kpi.color }"
+                >
+                  <component :is="kpi.icon" class="h-4 w-4" />
+                </span>
+                <span class="text-2xl font-bold leading-none text-slate-900">{{ countFor(kpi.status) }}</span>
+              </div>
+              <p class="mt-2 text-[13px] text-slate-500">{{ kpi.label }}</p>
+            </div>
           </div>
+
+          <!-- Daftar telat & cuti (simple: chip nama) -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <!-- Terlambat hari ini -->
+            <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
+              <div class="mb-3 flex items-center gap-2">
+                <ClockIcon class="h-4 w-4 text-amber-500" />
+                <h3 class="text-sm font-semibold text-slate-900">Terlambat Hari Ini</h3>
+                <span class="ml-auto rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-600">
+                  {{ lateEmployees.length }}
+                </span>
+              </div>
+              <div v-if="lateEmployees.length" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="e in lateEmployees"
+                  :key="e.id"
+                  class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[13px] font-medium text-amber-700"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                  {{ e.fullName }}
+                </span>
+              </div>
+              <p v-else class="text-[13px] text-slate-400">Tidak ada keterlambatan hari ini</p>
+            </div>
+
+            <!-- Cuti / izin hari ini -->
+            <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
+              <div class="mb-3 flex items-center gap-2">
+                <CalendarDaysIcon class="h-4 w-4 text-blue-500" />
+                <h3 class="text-sm font-semibold text-slate-900">Cuti / Izin Hari Ini</h3>
+                <span class="ml-auto rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600">
+                  {{ leaveEmployees.length }}
+                </span>
+              </div>
+              <div v-if="leaveEmployees.length" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="e in leaveEmployees"
+                  :key="e.id"
+                  class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[13px] font-medium text-blue-700"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                  {{ e.fullName }}
+                </span>
+              </div>
+              <p v-else class="text-[13px] text-slate-400">Tidak ada yang cuti / izin hari ini</p>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Pengumuman (dari slot) -->
+      <div class="xl:col-span-1">
+        <slot />
+      </div>
+    </div>
+
+    <!-- Grafik full-width: Tren + Komposisi -->
+    <div v-if="canView && hasData" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div class="min-w-0 rounded-2xl border border-mahir-border bg-white p-5 shadow-sm lg:col-span-2">
+        <h3 class="mb-4 font-semibold text-slate-900">Tren Kehadiran</h3>
+        <div class="h-64">
+          <Bar :data="barData" :options="barOptions" />
         </div>
       </div>
-    </template>
+
+      <div class="min-w-0 rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
+        <h3 class="mb-4 font-semibold text-slate-900">Komposisi Hari Ini</h3>
+        <div class="h-64">
+          <Doughnut :data="doughnutData" :options="doughnutOptions" />
+        </div>
+      </div>
+    </div>
 
     <!-- Modal ekspor kehadiran ke email -->
     <AttendanceExportModal

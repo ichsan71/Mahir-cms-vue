@@ -5,7 +5,6 @@ import { useEmployees } from "../composables/useEmployees";
 import { useEmployeeRegister } from "../composables/useEmployeeRegister";
 import { useEmployeeExport } from "../composables/useEmployeeExport";
 import { useEmployeeDetail } from "../composables/useEmployeeDetail";
-import EmployeeStats from "../components/EmployeeStats.vue";
 import EmployeeToolbar from "../components/EmployeeToolbar.vue";
 import EmployeeTable from "../components/EmployeeTable.vue";
 import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
@@ -20,9 +19,6 @@ const router = useRouter();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
 const { registerEmployee, editEmployee, deleteEmployee, resendVerification, loading: saving, resending } = useEmployeeRegister();
 const { exportEmployee, loading: exporting } = useEmployeeExport();
-
-// Statistik dari metadata pagination (backend belum sediakan endpoint stats khusus).
-const stats = computed(() => ({ total: pagination.value.count }));
 
 const modalOpen = ref(false);
 
@@ -130,17 +126,11 @@ async function handleResend() {
     </button>
   </div>
 
-  <!-- Stats -->
-  <div class="mb-6">
-    <EmployeeStats :stats="stats" />
-  </div>
-
   <!-- Table card -->
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
         Daftar Karyawan
-        <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
       </h2>
       <EmployeeToolbar @export="exportOpen = true" />
     </div>

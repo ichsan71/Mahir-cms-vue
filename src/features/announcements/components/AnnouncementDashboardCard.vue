@@ -4,7 +4,6 @@
 import { ref, computed } from "vue";
 import { useQuery } from "@vue/apollo-composable";
 import { RouterLink } from "vue-router";
-import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatDate } from "@/shared/utils/format";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { LIST_ANNOUNCEMENT } from "../graphql/announcement.queries";
@@ -18,7 +17,7 @@ const canList = computed(() => auth.can(PERM.LIST));
 // Ambil beberapa pengumuman terbaru (hanya bila diizinkan).
 const { result, loading } = useQuery(
   LIST_ANNOUNCEMENT,
-  () => ({ params: { page: 1, pageSize: 4 } }),
+  () => ({ params: { page: 1, pageSize: 3 } }),
   () => ({ enabled: canList.value, fetchPolicy: "cache-and-network" }),
 );
 
@@ -34,10 +33,6 @@ const items = computed(() => {
     })
     .map((entry) => entry.row);
 });
-
-function badgeKey(s) {
-  return String(s ?? "").toLowerCase();
-}
 
 // Detail modal.
 const detailOpen = ref(false);
@@ -88,10 +83,9 @@ function openDetail(row) {
             <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-800">
               {{ row.title || "—" }}
             </span>
-            <span v-if="row.publishedAt" class="hidden flex-shrink-0 text-[11.5px] text-slate-400 sm:block">
+            <span v-if="row.publishedAt" class="flex-shrink-0 text-[11.5px] text-slate-400">
               {{ formatDate(row.publishedAt) }}
             </span>
-            <StatusBadge v-if="row.status" :status="badgeKey(row.status)" />
           </button>
         </li>
       </ul>

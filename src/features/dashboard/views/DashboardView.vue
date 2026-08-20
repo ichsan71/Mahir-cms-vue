@@ -141,12 +141,12 @@ const {
       <p class="text-sm text-mahir-muted">Employee Manajemen Mazta Group</p>
     </div>
 
-    <!-- Bagian kehadiran realtime (KPI + tren + komposisi) lalu pengumuman.
-         Masing-masing self-gating izinnya sendiri. -->
-    <div class="space-y-6">
+    <!-- Kartu kehadiran mengatur tata letak: KPI + daftar telat/cuti di kiri,
+         pengumuman (slot) di kanan, lalu grafik full-width di bawah. Keduanya
+         tetap self-gating izinnya masing-masing. -->
+    <AttendanceSummaryCard>
       <AnnouncementDashboardCard />
-      <AttendanceSummaryCard />
-    </div>
+    </AttendanceSummaryCard>
 
     <p class="mt-6 text-center text-xs text-slate-400 sm:text-left">
       &copy; Mazta Group. All rights reserved.

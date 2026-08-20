@@ -10,7 +10,7 @@ defineProps({
   color: { type: String, default: "#243B8F" },
   bgColor: { type: String, default: "#E7EEFF" },
   delta: { type: String, default: null },
-  deltaDir: { type: String, default: "up" }, // 'up' | 'down'
+  deltaDir: { type: String, default: "up" }, // 'up' | 'down' | 'flat'
 });
 </script>
 
@@ -29,10 +29,18 @@ defineProps({
       <div class="text-[13px] text-mahir-muted">{{ label }}</div>
       <div
         v-if="delta"
-        class="mt-1 flex items-center gap-0.5 text-xs font-semibold"
-        :class="deltaDir === 'up' ? 'text-mahir-success' : 'text-mahir-danger'"
+        class="mt-1 flex items-center gap-0.5 text-xs"
+        :class="{
+          'font-semibold text-mahir-success': deltaDir === 'up',
+          'font-semibold text-mahir-danger': deltaDir === 'down',
+          'font-medium text-slate-400': deltaDir === 'flat',
+        }"
       >
-        <component :is="deltaDir === 'up' ? ArrowUpIcon : ArrowDownIcon" class="h-3.5 w-3.5" />
+        <component
+          v-if="deltaDir !== 'flat'"
+          :is="deltaDir === 'up' ? ArrowUpIcon : ArrowDownIcon"
+          class="h-3.5 w-3.5"
+        />
         {{ delta }}
       </div>
     </div>
