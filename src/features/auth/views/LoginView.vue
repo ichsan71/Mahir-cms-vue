@@ -29,9 +29,9 @@ function submit() {
 
 const features = [
   { icon: UsersIcon, color: "#4D7BFF", title: "Manajemen Karyawan", sub: "Data terpusat & terstruktur", isDev : false },
-  { icon: CalendarDaysIcon, color: "#1B9C67", title: "Monitoring Kehadiran", sub: "Realtime & akurat", isDev : true },
-  { icon: BanknotesIcon, color: "#D98E18", title: "Penggajian Otomatis", sub: "Slip gaji digital", isDev : true },
-  { icon: DocumentTextIcon, color: "#2884E8", title: "Cuti & Izin Digital", sub: "Approval workflow cepat", isDev:true },
+  { icon: CalendarDaysIcon, color: "#1B9C67", title: "Monitoring Kehadiran", sub: "Realtime & akurat", isDev : false },
+  { icon: DocumentTextIcon, color: "#2884E8", title: "Cuti & Izin Digital", sub: "Approval workflow cepat", isDev:false },
+  { icon: BanknotesIcon, color: "#D98E18", title: "Penggajian Otomatis", sub: "Slip gaji digital", isDev : true }
 ];
 </script>
 
@@ -121,7 +121,7 @@ const features = [
           <div class="mb-3">
             <div class="mb-1 flex items-center justify-between">
               <label class="text-sm font-medium text-slate-700">Password</label>
-              <a href="#" class="text-xs text-mahir-primary">Lupa password?</a>
+              <router-link to="/lupa-password" class="text-xs text-mahir-primary hover:underline">Lupa password?</router-link>
             </div>
             <div class="flex overflow-hidden rounded-lg border border-slate-300 focus-within:border-mahir-primary">
               <span class="flex items-center px-3 text-slate-400"><LockClosedIcon class="h-4 w-4" /></span>

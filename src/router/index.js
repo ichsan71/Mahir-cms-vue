@@ -10,6 +10,12 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: "/lupa-password",
+    name: "lupa-password",
+    component: () => import("@/features/auth/views/ForgotPasswordView.vue"),
+    meta: { public: true, title: "Lupa Password" },
+  },
+  {
     path: "/verify-email",
     name: "verify-email",
     component: () => import("@/features/auth/views/VerifyEmailView.vue"),

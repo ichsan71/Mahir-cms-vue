@@ -5,6 +5,7 @@ import {
   EDIT_EMPLOYEE,
   DELETE_EMPLOYEE,
   LIST_EMPLOYEE,
+  RESEND_VERIFICATION_EMAIL,
 } from "../graphql/employee.queries";
 import { useToastStore } from "@/stores/toast.store";
 
@@ -29,6 +30,11 @@ export function useEmployeeRegister() {
   const { mutate: registerMut } = useMutation(REGISTER_EMPLOYEE, { refetchQueries, awaitRefetchQueries: true });
   const { mutate: editMut } = useMutation(EDIT_EMPLOYEE, { refetchQueries, awaitRefetchQueries: true });
   const { mutate: deleteMut } = useMutation(DELETE_EMPLOYEE, { refetchQueries, awaitRefetchQueries: true });
+  // Resend tak mengubah data list (status tetap non-aktif) → tanpa refetch.
+  const { mutate: resendMut } = useMutation(RESEND_VERIFICATION_EMAIL);
+
+  // Loading terpisah agar tombol resend per-baris tidak ikut men-disable form.
+  const resending = ref(false);
 
   async function registerEmployee({ username, email, input }) {
     error.value = "";
@@ -86,5 +92,26 @@ export function useEmployeeRegister() {
     }
   }
 
-  return { registerEmployee, editEmployee, deleteEmployee, error, loading };
+  // Kirim ulang email verifikasi/aktivasi untuk user yang belum aktif.
+  // `userId` = id akun user (emp.user.id). Pesan diambil dari `detail` backend.
+  async function resendVerification(userId) {
+    error.value = "";
+    resending.value = true;
+    try {
+      const res = await resendMut({ userId: Number(userId) });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      const data = res?.data?.resendVerificationEmail?.data;
+      if (!data?.success) throw new Error(data?.detail || "Gagal mengirim ulang email verifikasi");
+      toast.success(data.detail || "Email verifikasi berhasil dikirim ulang");
+      return true;
+    } catch (e) {
+      error.value = cleanMessage(e) || "Gagal mengirim ulang email verifikasi. Coba lagi.";
+      toast.error(error.value);
+      return false;
+    } finally {
+      resending.value = false;
+    }
+  }
+
+  return { registerEmployee, editEmployee, deleteEmployee, resendVerification, error, loading, resending };
 }

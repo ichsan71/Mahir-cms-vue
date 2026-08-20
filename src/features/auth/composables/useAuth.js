@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMutation } from "@vue/apollo-composable";
-import { LOGIN, LOGOUT, CHANGE_PASSWORD } from "../graphql/auth.queries";
+import { LOGIN, LOGOUT, CHANGE_PASSWORD, FORGOT_PASSWORD } from "../graphql/auth.queries";
 import { useAuthStore } from "../stores/auth.store";
 import { useToastStore } from "@/stores/toast.store";
 import { apolloClient } from "@/apollo/client";
@@ -27,6 +27,7 @@ export function useAuth() {
   const { mutate: loginMut } = useMutation(LOGIN);
   const { mutate: logoutMut } = useMutation(LOGOUT);
   const { mutate: changePasswordMut } = useMutation(CHANGE_PASSWORD);
+  const { mutate: forgotPasswordMut } = useMutation(FORGOT_PASSWORD);
 
   async function login({ username, password }) {
     error.value = "";
@@ -126,6 +127,28 @@ export function useAuth() {
     }
   }
 
+  // Minta tautan reset password. User cukup memasukkan email; backend yang
+  // memutuskan (dan mengirim email bila terdaftar). Mengembalikan true bila
+  // backend membalas success. Route ini publik (belum login).
+  async function forgotPassword({ email }) {
+    error.value = "";
+    loading.value = true;
+    try {
+      const res = await forgotPasswordMut({ input: { email } });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      const data = res?.data?.forgotPassword?.data;
+      if (!data?.success) throw new Error(data?.detail || "Gagal mengirim tautan reset password");
+      toast.success(data.detail || "Tautan reset password telah dikirim ke email Anda.");
+      return true;
+    } catch (e) {
+      error.value = cleanMessage(e) || "Gagal mengirim tautan reset password. Coba lagi.";
+      toast.error(error.value);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function logout() {
     // Tangkap token saat ini untuk logout server, lalu bersihkan sesi lokal
     // segera (supaya guard langsung menganggap kita sudah keluar).
@@ -148,5 +171,5 @@ export function useAuth() {
     apolloClient.clearStore().catch(() => {});
   }
 
-  return { login, logout, changePassword, setPasswordWithToken, error, loading };
+  return { login, logout, changePassword, setPasswordWithToken, forgotPassword, error, loading };
 }

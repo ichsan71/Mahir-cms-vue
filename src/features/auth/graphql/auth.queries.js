@@ -52,6 +52,19 @@ export const CHANGE_PASSWORD = gql`
   }
 `;
 
+// Minta tautan reset password: user cukup kirim email, sisanya diurus backend
+// (kirim email berisi tautan). Mengembalikan { detail, success }.
+export const FORGOT_PASSWORD = gql`
+  mutation ForgotPassword($input: ForgotPasswordInput!) {
+    forgotPassword(input: $input) {
+      data {
+        detail
+        success
+      }
+    }
+  }
+`;
+
 // Logout di sisi server: menginvalidasi token. authLink otomatis membawa header
 // `Authorization: Bearer <token>` selama token masih ada di store (dipanggil
 // sebelum sesi lokal dibersihkan), atau via context header eksplisit.

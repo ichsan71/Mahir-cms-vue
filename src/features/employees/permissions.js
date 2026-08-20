@@ -14,6 +14,8 @@ export const PERM = {
   DELETE: "deleteEmployee",
   // Ekspor data karyawan ke email (proses async di backend).
   EXPORT: "exportEmployee",
+  // Kirim ulang email verifikasi untuk user yang belum aktif.
+  RESEND_VERIFICATION: "resendVerificationEmail",
   // Alamat karyawan (dikelola di halaman detail karyawan).
   ADDRESS_CREATE: "createEmployeeAddress",
   ADDRESS_EDIT: "editEmployeeAddress",

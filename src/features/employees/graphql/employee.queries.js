@@ -193,6 +193,19 @@ export const EXPORT_EMPLOYEE = gql`
   }
 `;
 
+// Kirim ulang email verifikasi/aktivasi untuk user yang belum aktif.
+// `userId` = id akun user (emp.user.id). Mengembalikan { detail, success }.
+export const RESEND_VERIFICATION_EMAIL = gql`
+  mutation ResendVerificationEmail($userId: Int!) {
+    resendVerificationEmail(userId: $userId) {
+      data {
+        detail
+        success
+      }
+    }
+  }
+`;
+
 // Daftarkan karyawan baru (sekaligus membuat akun user).
 // `username` & `email` di level atas; sisanya di `input` (EmployeeInput).
 export const REGISTER_EMPLOYEE = gql`

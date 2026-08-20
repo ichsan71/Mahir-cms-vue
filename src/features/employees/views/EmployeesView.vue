@@ -18,7 +18,7 @@ import { PERM } from "../permissions";
 const auth = useAuthStore();
 const router = useRouter();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
-const { registerEmployee, editEmployee, deleteEmployee, loading: saving } = useEmployeeRegister();
+const { registerEmployee, editEmployee, deleteEmployee, resendVerification, loading: saving, resending } = useEmployeeRegister();
 const { exportEmployee, loading: exporting } = useEmployeeExport();
 
 // Statistik dari metadata pagination (backend belum sediakan endpoint stats khusus).
@@ -90,6 +90,28 @@ async function handleDelete() {
     refetch();
   }
 }
+
+// Kirim ulang email verifikasi untuk karyawan yang belum aktif.
+const resendOpen = ref(false);
+const resendTarget = ref(null);
+
+const resendMessage = computed(
+  () => `Kirim ulang email verifikasi ke "${resendTarget.value?.fullName ?? ''}"? Karyawan akan menerima tautan aktivasi baru di emailnya.`,
+);
+
+function openResend(emp) {
+  resendTarget.value = emp;
+  resendOpen.value = true;
+}
+
+async function handleResend() {
+  if (!resendTarget.value?.user?.id) return;
+  const ok = await resendVerification(resendTarget.value.user.id);
+  if (ok) {
+    resendOpen.value = false;
+    resendTarget.value = null;
+  }
+}
 </script>
 
 <template>
@@ -129,6 +151,7 @@ async function handleDelete() {
       @detail="handleDetail"
       @edit="openEdit"
       @delete="openDelete"
+      @resend="openResend"
     />
 
     <!-- Footer / pagination -->
@@ -182,5 +205,16 @@ async function handleDelete() {
     confirm-text="Ya, Hapus"
     :loading="saving"
     @confirm="handleDelete"
+  />
+
+  <!-- Konfirmasi kirim ulang email verifikasi -->
+  <ConfirmDialog
+    v-model:open="resendOpen"
+    title="Kirim Ulang Verifikasi"
+    :message="resendMessage"
+    confirm-text="Ya, Kirim"
+    variant="primary"
+    :loading="resending"
+    @confirm="handleResend"
   />
 </template>

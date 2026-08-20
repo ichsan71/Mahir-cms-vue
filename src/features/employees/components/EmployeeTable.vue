@@ -3,7 +3,7 @@ import { ref, computed, watch } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import ImagePreview from "@/shared/components/ImagePreview.vue";
 import { initials, formatDate } from "@/shared/utils/format";
-import { EyeIcon, PencilIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { EyeIcon, PencilIcon, TrashIcon, EnvelopeIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "../permissions";
 
@@ -12,7 +12,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["detail", "edit", "delete"]);
+const emit = defineEmits(["detail", "edit", "delete", "resend"]);
 
 const auth = useAuthStore();
 
@@ -129,6 +129,14 @@ watch(
                 @click="emit('detail', emp)"
               >
                 <EyeIcon class="h-4 w-4" />
+              </button>
+              <button
+                v-if="!emp.user?.isActive && emp.user?.id && auth.can(PERM.RESEND_VERIFICATION)"
+                class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100"
+                title="Kirim ulang email verifikasi"
+                @click="emit('resend', emp)"
+              >
+                <EnvelopeIcon class="h-4 w-4" />
               </button>
               <button
                 v-if="auth.can(PERM.EDIT)"
