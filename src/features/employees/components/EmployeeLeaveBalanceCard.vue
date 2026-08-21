@@ -8,6 +8,7 @@ import { useQuery, useMutation } from "@vue/apollo-composable";
 import {
   LIST_EMPLOYEE_LEAVE_BALANCE,
   LIST_EMPLOYEE_LEAVE_BALANCE_YEARS,
+  CREATE_LEAVE_BALANCE,
   EDIT_LEAVE_BALANCE,
 } from "../graphql/leaveBalance.queries";
 import BaseModal from "@/shared/components/BaseModal.vue";
@@ -16,7 +17,7 @@ import { useLeaveTypeSearch } from "@/features/leaveTypes/composables/useLeaveTy
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useToastStore } from "@/stores/toast.store";
 import { PERM } from "../permissions";
-import { CalendarDaysIcon, ArrowPathIcon, PencilSquareIcon } from "@heroicons/vue/24/outline";
+import { CalendarDaysIcon, ArrowPathIcon, PencilSquareIcon, PlusIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
   // Karyawan yang sedang dibuka — saldonya diambil via employeeId.
@@ -38,7 +39,7 @@ const pageSize = ref(10);
 
 // Pilihan tahun diambil dari data saldo karyawan (bukan hardcode): ambil semua
 // saldo (tanpa filter tahun), lalu distinct & urut menurun.
-const { result: yearsResult } = useQuery(
+const { result: yearsResult, refetch: refetchYears } = useQuery(
   LIST_EMPLOYEE_LEAVE_BALANCE_YEARS,
   () => ({ params: { employeeId: employeeId.value, page: 1, pageSize: 1000 } }),
   () => ({ enabled: !!employeeId.value, fetchPolicy: "cache-and-network" }),
@@ -91,14 +92,16 @@ function prevPage() {
   if (pagination.value.hasPrev) page.value -= 1;
 }
 
+const canCreate = computed(() => auth.can(PERM.BALANCE_CREATE));
 const canEdit = computed(() => auth.can(PERM.BALANCE_EDIT));
 
-// ── Modal edit ──────────────────────────────────────────────────────────────
+// ── Modal tambah / edit ─────────────────────────────────────────────────────
 const { options: leaveTypeOptions, loading: leaveTypeLoading, setSearch: setLeaveTypeSearch } =
   useLeaveTypeSearch();
 
 const modalOpen = ref(false);
-const editingId = ref(null);
+const editingId = ref(null); // null = mode tambah
+const isEdit = computed(() => editingId.value != null);
 const leaveTypeSelected = ref(null);
 
 const blank = () => ({ leaveTypeId: "", year: "", allocated: "", used: "" });
@@ -106,6 +109,13 @@ const form = ref(blank());
 
 function toNumStr(v) {
   return v === null || v === undefined ? "" : String(v);
+}
+
+function openCreate() {
+  editingId.value = null;
+  form.value = blank();
+  leaveTypeSelected.value = null;
+  modalOpen.value = true;
 }
 
 function openEdit(row) {
@@ -141,10 +151,14 @@ function toFloat(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-const { mutate: editLeaveBalance, loading: saving } = useMutation(EDIT_LEAVE_BALANCE);
+const { mutate: createLeaveBalance, loading: creating } = useMutation(CREATE_LEAVE_BALANCE);
+const { mutate: editLeaveBalance, loading: editingSave } = useMutation(EDIT_LEAVE_BALANCE);
+const saving = computed(() => creating.value || editingSave.value);
 
 async function save() {
-  if (!editingId.value || !employeeId.value || !canEdit.value) return;
+  if (!employeeId.value) return;
+  // Gate sesuai mode: tambah butuh createLeaveBalance, edit butuh editLeaveBalance.
+  if (isEdit.value ? !canEdit.value : !canCreate.value) return;
   const f = form.value;
   const input = {
     employeeId: employeeId.value,
@@ -154,12 +168,19 @@ async function save() {
     used: toFloat(f.used),
   };
   try {
-    const res = await editLeaveBalance({ editLeaveBalanceId: Number(editingId.value), input });
-    if (res?.errors?.length) throw new Error(res.errors[0].message);
-    if (!res?.data?.editLeaveBalance?.data) throw new Error("Gagal menyimpan saldo cuti");
+    if (isEdit.value) {
+      const res = await editLeaveBalance({ editLeaveBalanceId: Number(editingId.value), input });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      if (!res?.data?.editLeaveBalance?.data) throw new Error("Gagal menyimpan saldo cuti");
+    } else {
+      const res = await createLeaveBalance({ input });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      if (!res?.data?.createLeaveBalance?.data) throw new Error("Gagal menyimpan saldo cuti");
+    }
     toast.success("Saldo cuti berhasil disimpan");
     modalOpen.value = false;
     refetch();
+    refetchYears();
   } catch (e) {
     const msg =
       e?.graphQLErrors?.[0]?.message ||
@@ -192,14 +213,26 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
         </div>
       </div>
 
-      <!-- Filter tahun -->
-      <select
-        v-model="year"
-        class="rounded-lg border border-mahir-border px-3 py-2 text-sm text-slate-700 focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
-      >
-        <option value="">Semua Tahun</option>
-        <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-      </select>
+      <div class="flex items-center gap-2">
+        <!-- Filter tahun -->
+        <select
+          v-model="year"
+          class="rounded-lg border border-mahir-border px-3 py-2 text-sm text-slate-700 focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
+        >
+          <option value="">Semua Tahun</option>
+          <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+        </select>
+
+        <!-- Tambah saldo -->
+        <button
+          v-if="canCreate"
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white transition hover:bg-mahir-primary/90"
+          @click="openCreate"
+        >
+          <PlusIcon class="h-4 w-4" /> Tambah
+        </button>
+      </div>
     </div>
 
     <div class="p-5">
@@ -286,7 +319,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
   <!-- Modal edit saldo cuti -->
   <BaseModal
     :open="modalOpen"
-    title="Edit Saldo Cuti"
+    :title="isEdit ? 'Edit Saldo Cuti' : 'Tambah Saldo Cuti'"
     size="md"
     :loading="saving"
     @update:open="modalOpen = $event"

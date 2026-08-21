@@ -23,7 +23,8 @@ export const PERM = {
   // Hak akses (tab Hak Akses di detail karyawan): melihat katalog group & menyetel group user.
   GROUP_LIST: "listGroup",
   GROUP_SET: "setUserGroups",
-  // Saldo cuti (tab Saldo Cuti di detail karyawan): melihat & mengubah saldo cuti karyawan.
+  // Saldo cuti (tab Saldo Cuti di detail karyawan): melihat, menambah & mengubah saldo cuti karyawan.
   BALANCE_LIST: "listLeaveBalance",
+  BALANCE_CREATE: "createLeaveBalance",
   BALANCE_EDIT: "editLeaveBalance",
 };

@@ -43,6 +43,24 @@ export const LIST_EMPLOYEE_LEAVE_BALANCE_YEARS = gql`
   }
 `;
 
+// Tambah saldo cuti baru. `input` (LeaveBalanceInput): employeeId, leaveTypeId,
+// year, allocated, used.
+export const CREATE_LEAVE_BALANCE = gql`
+  mutation CreateLeaveBalance($input: LeaveBalanceInput!) {
+    createLeaveBalance(input: $input) {
+      data {
+        id
+        employee {
+          fullName
+        }
+        leaveType {
+          name
+        }
+      }
+    }
+  }
+`;
+
 // Ubah satu saldo cuti. `editLeaveBalanceId` = id record saldo (dari baris list).
 // `input` (LeaveBalanceInput): employeeId, leaveTypeId, year, allocated, used.
 export const EDIT_LEAVE_BALANCE = gql`
