@@ -42,7 +42,7 @@ function onSubmitted() {
   refetchToday();
 }
 
-// Jam berjalan (HH.MM.SS) & tanggal untuk header kartu.
+// Jam berjalan (HH:MM:SS) & tanggal untuk header kartu.
 const now = ref(new Date());
 let timer = null;
 onMounted(() => {
@@ -52,12 +52,10 @@ onMounted(() => {
 });
 onUnmounted(() => clearInterval(timer));
 
+// Format manual agar pemisah pakai ":" (locale id-ID memakai "." → 14.30.05).
 function fmtTime(d) {
-  return new Intl.DateTimeFormat("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(d);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 function fmtDate(d) {
   return new Intl.DateTimeFormat("id-ID", {
