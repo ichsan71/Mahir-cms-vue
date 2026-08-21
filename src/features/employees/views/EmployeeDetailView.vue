@@ -3,8 +3,10 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEmployeeDetail } from "../composables/useEmployeeDetail";
 import { useEmployeeAddresses } from "../composables/useEmployeeAddresses";
+import EmployeeIdentityHeader from "../components/EmployeeIdentityHeader.vue";
 import EmployeeProfileCard from "../components/EmployeeProfileCard.vue";
 import EmployeeAccessCard from "../components/EmployeeAccessCard.vue";
+import EmployeeLeaveBalanceCard from "../components/EmployeeLeaveBalanceCard.vue";
 import EmployeeAddressModal from "../components/EmployeeAddressModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -21,9 +23,12 @@ const { employee, loading, refetch } = useEmployeeDetail(id);
 // Tab detail: profil vs hak akses. Tab "Hak Akses" hanya muncul bila user boleh
 // melihat katalog group (listGroup).
 const canViewAccess = computed(() => auth.can(PERM.GROUP_LIST));
+// Tab "Saldo Cuti" hanya muncul bila user boleh melihat saldo cuti (listLeaveBalance).
+const canViewBalance = computed(() => auth.can(PERM.BALANCE_LIST));
 const tabs = computed(() => [
   { id: "profil", label: "Profil" },
   ...(canViewAccess.value ? [{ id: "akses", label: "Hak Akses" }] : []),
+  ...(canViewBalance.value ? [{ id: "saldo-cuti", label: "Saldo Cuti" }] : []),
 ]);
 const tab = ref("profil");
 
@@ -114,7 +119,10 @@ async function handleDeleteAddress() {
   </div>
 
   <template v-else>
-    <!-- Tab: Profil / Hak Akses -->
+    <!-- Header identitas persisten: tetap tampil di semua tab -->
+    <EmployeeIdentityHeader :employee="employee" :show-nik="canViewNik" class="mb-5" />
+
+    <!-- Tab: Profil / Hak Akses / Saldo Cuti -->
     <div class="mb-5 flex gap-1 border-b border-mahir-border">
       <button
         v-for="t in tabs"
@@ -133,6 +141,7 @@ async function handleDeleteAddress() {
       v-show="tab === 'profil'"
       :employee="employee"
       :show-nik="canViewNik"
+      :show-identity="false"
       :editable-address="editableAddress"
       :can-add-address="canAddAddress"
       :can-edit-address="canEditAddress"
@@ -143,6 +152,8 @@ async function handleDeleteAddress() {
     />
 
     <EmployeeAccessCard v-if="canViewAccess" v-show="tab === 'akses'" :employee="employee" />
+
+    <EmployeeLeaveBalanceCard v-if="canViewBalance" v-show="tab === 'saldo-cuti'" :employee="employee" />
   </template>
 
   <!-- Tambah / ubah alamat karyawan -->

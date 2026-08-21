@@ -1,10 +1,8 @@
 <script setup>
 // Kartu profil karyawan (read-only). Dipakai ulang di EmployeeDetailView
 // (mode super admin) dan MyProfileView (mode "profil saya" non-superadmin).
-import { ref } from "vue";
-import StatusBadge from "@/shared/components/StatusBadge.vue";
-import ImagePreview from "@/shared/components/ImagePreview.vue";
-import { initials, formatDate } from "@/shared/utils/format";
+import EmployeeIdentityHeader from "./EmployeeIdentityHeader.vue";
+import { formatDate } from "@/shared/utils/format";
 import {
   BriefcaseIcon,
   BuildingOffice2Icon,
@@ -34,12 +32,12 @@ defineProps({
   // Tampilkan NIK (KTP) — hanya untuk pemilik permission registerEmployee.
   // Default true agar "Profil Saya" tetap menampilkan NIK sendiri.
   showNik: { type: Boolean, default: true },
+  // Tampilkan blok identitas (avatar, nama, posisi) di atas kartu. Di detail
+  // karyawan blok ini dipindah jadi header persisten, jadi disembunyikan di sini.
+  showIdentity: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(["add-address", "edit-address", "delete-address"]);
-
-// Lightbox foto profil.
-const previewOpen = ref(false);
 
 // Jumlah hari kerja dalam pola kerja karyawan (untuk ringkasan jadwal).
 function workdayCount(wp) {
@@ -52,45 +50,7 @@ function workdayCount(wp) {
 
     <div class="space-y-6 lg:col-span-2">
 
-      <div class="relative overflow-hidden rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
-        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-mahir-primary/[0.02]"></div>
-
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span
-            class="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-mahir-primary-soft text-xl font-bold text-mahir-primary tracking-wide shadow-inner"
-            :class="employee.image ? 'cursor-zoom-in ring-1 ring-transparent transition hover:ring-mahir-primary' : ''"
-            @click="employee.image && (previewOpen = true)"
-          >
-            <img
-              v-if="employee.image"
-              :src="employee.image"
-              :alt="employee.fullName"
-              class="h-full w-full object-cover"
-            />
-            <template v-else>{{ initials(employee.fullName) }}</template>
-          </span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2.5">
-              <h1 class="text-xl font-bold tracking-tight text-slate-900">{{ employee.fullName }}</h1>
-              <StatusBadge :status="employee.user?.isActive ? 'active' : 'inactive'" />
-            </div>
-            <p class="mt-1 text-sm font-medium text-slate-600">
-              {{ employee.level?.name ?? "—" }}
-              <span class="mx-1.5 text-slate-300">·</span>
-              <span>{{ employee.units?.map(u => u.name).join(', ') || '—' }}</span>
-            </p>
-            <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-              <span>ID Karyawan: <strong class="font-mono text-slate-600">{{ employee.code || "—" }}</strong></span>
-              <template v-if="showNik">
-                <span class="text-slate-300">|</span>
-                <span>NIK KTP: <strong class="font-mono text-slate-600">{{ employee.nik || "—" }}</strong></span>
-              </template>
-              <span class="text-slate-300">|</span>
-              <span>Masuk: <strong class="text-slate-600">{{ formatDate(employee.hiredDate) }}</strong></span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <EmployeeIdentityHeader v-if="showIdentity" :employee="employee" :show-nik="showNik" />
 
       <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
         <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -371,11 +331,5 @@ function workdayCount(wp) {
       </div>
 
     </div>
-
-    <ImagePreview
-      v-model:open="previewOpen"
-      :src="employee.image"
-      :alt="employee.fullName"
-    />
   </div>
 </template>
