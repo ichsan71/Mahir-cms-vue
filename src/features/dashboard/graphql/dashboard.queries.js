@@ -113,6 +113,7 @@ export const ATTENDANCE_DASHBOARD_SUB = gql`
           fullName
         }
       }
+      totalEmployee
     }
   }
 `;

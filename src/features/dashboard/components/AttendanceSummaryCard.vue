@@ -25,6 +25,7 @@ import {
   ClockIcon,
   CalendarDaysIcon,
   ExclamationCircleIcon,
+  XCircleIcon,
   UserGroupIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/vue/24/outline";
@@ -45,7 +46,7 @@ async function handleExport(payload) {
 }
 
 // Subscription hanya aktif saat punya izin (hindari koneksi WS sia-sia).
-const { loading, error, dates, latestDate, latestSummary, trend } =
+const { loading, error, dates, latestDate, latestSummary, trend, totalEmployee } =
   useAttendanceDashboard(() => ({ enabled: canView.value }));
 
 const hasData = computed(() => dates.value.length > 0);
@@ -68,11 +69,12 @@ function employeesFor(status) {
 const lateEmployees = computed(() => employeesFor("LATE"));
 const leaveEmployees = computed(() => employeesFor("ON_LEAVE"));
 
-// Empat KPI utama (gaya HRIS).
+// KPI utama (gaya HRIS).
 const KPIS = [
   { status: "PRESENT", label: "Hadir Hari Ini", icon: CheckCircleIcon, color: "#1B9C67", bg: "#E2F8EC" },
   { status: "LATE", label: "Terlambat", icon: ClockIcon, color: "#D98E18", bg: "#FFF3DA" },
   { status: "ON_LEAVE", label: "Cuti / Izin", icon: CalendarDaysIcon, color: "#2884E8", bg: "#E0EDFF" },
+  { status: "ABSENT", label: "Tidak Hadir", icon: XCircleIcon, color: "#EF4444", bg: "#FEE2E2" },
   { status: "PENDING", label: "Belum Absen", icon: ExclamationCircleIcon, color: "#64748B", bg: "#F1F5F9" },
 ];
 
@@ -153,7 +155,10 @@ const doughnutOptions = {
         </span>
         <div>
           <h2 class="font-semibold text-slate-900">Ringkasan Kehadiran</h2>
-          <p v-if="latestLabel" class="text-[11.5px] text-slate-400">Per {{ latestLabel }}</p>
+          <p v-if="latestLabel" class="text-[11.5px] text-slate-400">
+            Per {{ latestLabel }}
+            <span v-if="totalEmployee"> · {{ totalEmployee }} karyawan</span>
+          </p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -195,7 +200,7 @@ const doughnutOptions = {
 
         <template v-else-if="canView">
           <!-- Kartu KPI (simple) -->
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div
               v-for="kpi in KPIS"
               :key="kpi.status"

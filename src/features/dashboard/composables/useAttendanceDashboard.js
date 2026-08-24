@@ -10,18 +10,22 @@ export const STATUS_META = {
   LATE: { label: "Terlambat", color: "#F59E0B", soft: "#FFF3DA" },
   EARLY_LEAVE: { label: "Pulang Cepat", color: "#FB923C", soft: "#FFEDD5" },
   ON_LEAVE: { label: "Cuti / Izin", color: "#3B82F6", soft: "#E0EDFF" },
+  ABSENT: { label: "Tidak Hadir", color: "#EF4444", soft: "#FEE2E2" },
   PENDING: { label: "Belum Absen", color: "#94A3B8", soft: "#F1F5F9" },
   WEEKEND: { label: "Libur", color: "#CBD5E1", soft: "#F1F5F9" },
 };
 
 // Urutan status yang dipakai untuk tumpukan chart & kartu ringkas.
-export const STATUS_ORDER = ["PRESENT", "LATE", "EARLY_LEAVE", "ON_LEAVE", "PENDING", "WEEKEND"];
+export const STATUS_ORDER = ["PRESENT", "LATE", "EARLY_LEAVE", "ON_LEAVE", "ABSENT", "PENDING", "WEEKEND"];
 
 export function useAttendanceDashboard(options = {}) {
   const { result, loading, error } = useSubscription(ATTENDANCE_DASHBOARD_SUB, null, options);
 
   // Baris mentah dari subscription.
   const histories = computed(() => result.value?.attendanceDashboard?.histories ?? []);
+
+  // Total karyawan yang dipantau (dari backend, bukan hasil penjumlahan status).
+  const totalEmployee = computed(() => result.value?.attendanceDashboard?.totalEmployee ?? 0);
 
   // Kelompokkan per tanggal → { [date]: { [status]: row } }, urut menaik.
   const byDate = computed(() => {
@@ -80,6 +84,7 @@ export function useAttendanceDashboard(options = {}) {
     loading,
     error,
     histories,
+    totalEmployee,
     dates,
     latestDate,
     latestSummary,
