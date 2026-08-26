@@ -9,6 +9,7 @@ import EmployeeToolbar from "../components/EmployeeToolbar.vue";
 import EmployeeTable from "../components/EmployeeTable.vue";
 import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
 import EmployeeExportModal from "../components/EmployeeExportModal.vue";
+import EmployeeOrgChart from "../components/EmployeeOrgChart.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { PlusIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -19,6 +20,13 @@ const router = useRouter();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
 const { registerEmployee, editEmployee, deleteEmployee, resendVerification, loading: saving, resending } = useEmployeeRegister();
 const { exportEmployee, loading: exporting } = useEmployeeExport();
+
+// Tab halaman: daftar tabel vs bagan hierarki (struktur organisasi).
+const tab = ref("daftar");
+const tabs = [
+  { id: "daftar", label: "Daftar Karyawan" },
+  { id: "hirarki", label: "Hirarki" },
+];
 
 const modalOpen = ref(false);
 
@@ -118,7 +126,7 @@ async function handleResend() {
       <p class="text-sm text-mahir-muted">Data seluruh karyawan aktif & non-aktif Mazta Group</p>
     </div>
     <button
-      v-if="auth.can([PERM.REGISTER, PERM.CREATE])"
+      v-if="tab === 'daftar' && auth.can([PERM.REGISTER, PERM.CREATE])"
       class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3.5 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
       @click="openAdd"
     >
@@ -126,8 +134,26 @@ async function handleResend() {
     </button>
   </div>
 
+  <!-- Tab: Daftar Karyawan / Hirarki -->
+  <div class="mb-5 flex gap-1 border-b border-mahir-border">
+    <button
+      v-for="t in tabs"
+      :key="t.id"
+      class="-mb-px border-b-2 px-4 py-2.5 text-[13.5px] font-semibold transition-colors"
+      :class="tab === t.id
+        ? 'border-mahir-primary text-mahir-primary'
+        : 'border-transparent text-slate-500 hover:text-slate-800'"
+      @click="tab = t.id"
+    >
+      {{ t.label }}
+    </button>
+  </div>
+
+  <!-- Bagan hierarki -->
+  <EmployeeOrgChart v-if="tab === 'hirarki'" />
+
   <!-- Table card -->
-  <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
+  <div v-show="tab === 'daftar'" class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
         Daftar Karyawan
