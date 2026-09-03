@@ -20,6 +20,7 @@ import { PERM } from "@/features/attendance/permissions";
 import { useAttendanceDashboard } from "../composables/useAttendanceDashboard";
 import { useAttendanceExport } from "@/features/attendance/composables/useAttendanceExport";
 import AttendanceExportModal from "@/features/attendance/components/AttendanceExportModal.vue";
+import AttendancePeopleCard from "./AttendancePeopleCard.vue";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -68,6 +69,13 @@ function employeesFor(status) {
 }
 const lateEmployees = computed(() => employeesFor("LATE"));
 const leaveEmployees = computed(() => employeesFor("ON_LEAVE"));
+const pendingEmployees = computed(() => employeesFor("PENDING"));
+
+// Accordion buka satu-satu: hanya satu kartu terbuka (klik lagi → tutup).
+const openCard = ref(null);
+function toggleCard(key) {
+  openCard.value = openCard.value === key ? null : key;
+}
 
 // KPI utama (gaya HRIS).
 const KPIS = [
@@ -219,51 +227,35 @@ const doughnutOptions = {
             </div>
           </div>
 
-          <!-- Daftar telat & cuti (simple: chip nama) -->
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <!-- Terlambat hari ini -->
-            <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
-              <div class="mb-3 flex items-center gap-2">
-                <ClockIcon class="h-4 w-4 text-amber-500" />
-                <h3 class="text-sm font-semibold text-slate-900">Terlambat Hari Ini</h3>
-                <span class="ml-auto rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-600">
-                  {{ lateEmployees.length }}
-                </span>
-              </div>
-              <div v-if="lateEmployees.length" class="flex flex-wrap gap-1.5">
-                <span
-                  v-for="e in lateEmployees"
-                  :key="e.id"
-                  class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[13px] font-medium text-amber-700"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                  {{ e.fullName }}
-                </span>
-              </div>
-              <p v-else class="text-[13px] text-slate-400">Tidak ada keterlambatan hari ini</p>
-            </div>
-
-            <!-- Cuti / izin hari ini -->
-            <div class="rounded-2xl border border-mahir-border bg-white p-5 shadow-sm">
-              <div class="mb-3 flex items-center gap-2">
-                <CalendarDaysIcon class="h-4 w-4 text-blue-500" />
-                <h3 class="text-sm font-semibold text-slate-900">Cuti / Izin Hari Ini</h3>
-                <span class="ml-auto rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600">
-                  {{ leaveEmployees.length }}
-                </span>
-              </div>
-              <div v-if="leaveEmployees.length" class="flex flex-wrap gap-1.5">
-                <span
-                  v-for="e in leaveEmployees"
-                  :key="e.id"
-                  class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[13px] font-medium text-blue-700"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-                  {{ e.fullName }}
-                </span>
-              </div>
-              <p v-else class="text-[13px] text-slate-400">Tidak ada yang cuti / izin hari ini</p>
-            </div>
+          <!-- Daftar telat / cuti / belum absen (tampil 5 + "Lihat semua") -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <AttendancePeopleCard
+              title="Terlambat Hari Ini"
+              :icon="ClockIcon"
+              :employees="lateEmployees"
+              variant="amber"
+              empty-text="Tidak ada keterlambatan hari ini"
+              :expanded="openCard === 'late'"
+              @toggle="toggleCard('late')"
+            />
+            <AttendancePeopleCard
+              title="Cuti / Izin Hari Ini"
+              :icon="CalendarDaysIcon"
+              :employees="leaveEmployees"
+              variant="blue"
+              empty-text="Tidak ada yang cuti / izin hari ini"
+              :expanded="openCard === 'leave'"
+              @toggle="toggleCard('leave')"
+            />
+            <AttendancePeopleCard
+              title="Belum Absen Hari Ini"
+              :icon="ExclamationCircleIcon"
+              :employees="pendingEmployees"
+              variant="slate"
+              empty-text="Semua sudah absen hari ini"
+              :expanded="openCard === 'pending'"
+              @toggle="toggleCard('pending')"
+            />
           </div>
         </template>
       </div>
