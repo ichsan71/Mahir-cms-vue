@@ -129,6 +129,24 @@ export const GET_EMPLOYEE = gql`
           id
           name
         }
+        bpjs {
+          id
+          kesehatanNumber
+          kesehatanClass
+          kesehatanRegisteredDate
+          ketenagakerjaanNumber
+          ketenagakerjaanRegisteredDate
+          notes
+        }
+        taxInfo {
+          id
+          npwp
+          npwpRegisteredDate
+          isNpwpActive
+          ptkpStatus
+          taxMethod
+          ptkpDependents
+        }
         user {
           id
           isActive

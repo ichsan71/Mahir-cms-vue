@@ -1,10 +1,9 @@
 /**
- * Kunci permission fitur Penggajian — tiap nilai adalah nama operasi GraphQL
- * yang di-gate backend (cocok dengan `user.userPermissions`).
+ * Kunci permission fitur Penggajian (potongan gaji) — tiap nilai adalah nama
+ * operasi GraphQL yang di-gate backend (cocok dengan `user.userPermissions`).
  */
 export const PERM = {
-  LIST: "payrolls",
-  STATS: "payrollStats",
-  PROCESS: "processPayroll",
-  PROCESS_ALL: "processAllPayroll",
+  LIST: "listEmployeeSalaryDeduction",
+  GET: "getEmployeeSalaryDeduction",
+  COMPUTE: "computeEmployeeSalaryDeduction",
 };

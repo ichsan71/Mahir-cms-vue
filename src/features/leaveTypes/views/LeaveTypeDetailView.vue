@@ -20,7 +20,8 @@ const flags = computed(() => {
   const t = leaveType.value;
   if (!t) return [];
   return [
-    { label: "Berbayar", on: t.isPaid },
+    // "Berbayar" bila ada minimal satu komponen gaji yang tetap dibayar saat cuti.
+    { label: "Berbayar", on: (t.paidSalaryComponentIds?.length ?? 0) > 0 },
     { label: "Perlu alasan", on: t.needReason },
     { label: "Perlu lampiran", on: t.needAttachment },
     { label: "Perlu persetujuan", on: t.needApproval },

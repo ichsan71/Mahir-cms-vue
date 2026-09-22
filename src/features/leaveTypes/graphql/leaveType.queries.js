@@ -42,17 +42,20 @@ export const GET_LEAVE_TYPE = gql`
         name
         code
         description
-        isPaid
+        paidSalaryComponentIds
         needReason
         needAttachment
         needApproval
         isActive
+        useParentApproval
       }
     }
   }
 `;
 
-// Tambah tipe cuti. `input` (LeaveTypeInput) sesuai kontrak: name, isPaid.
+// Tambah tipe cuti. `input` (LeaveTypeInput): name, description,
+// paidSalaryComponentIds (list id komponen gaji yang tetap dibayar saat cuti),
+// needReason, needAttachment, needApproval, isActive, useParentApproval.
 export const CREATE_LEAVE_TYPE = gql`
   mutation CreateLeaveType($input: LeaveTypeInput!) {
     createLeaveType(input: $input) {

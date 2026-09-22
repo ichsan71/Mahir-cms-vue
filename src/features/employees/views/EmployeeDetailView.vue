@@ -7,6 +7,12 @@ import EmployeeIdentityHeader from "../components/EmployeeIdentityHeader.vue";
 import EmployeeProfileCard from "../components/EmployeeProfileCard.vue";
 import EmployeeAccessCard from "../components/EmployeeAccessCard.vue";
 import EmployeeLeaveBalanceCard from "../components/EmployeeLeaveBalanceCard.vue";
+import EmployeeSalaryCard from "../components/EmployeeSalaryCard.vue";
+import EmployeeBankAccountCard from "../components/EmployeeBankAccountCard.vue";
+import EmployeeBpjsCard from "../components/EmployeeBpjsCard.vue";
+import EmployeeTaxInfoCard from "../components/EmployeeTaxInfoCard.vue";
+import EmployeeEmergencyContactCard from "../components/EmployeeEmergencyContactCard.vue";
+import EmployeeFamilyMemberCard from "../components/EmployeeFamilyMemberCard.vue";
 import EmployeeAddressModal from "../components/EmployeeAddressModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -25,10 +31,28 @@ const { employee, loading, refetch } = useEmployeeDetail(id);
 const canViewAccess = computed(() => auth.can(PERM.GROUP_LIST));
 // Tab "Saldo Cuti" hanya muncul bila user boleh melihat saldo cuti (listLeaveBalance).
 const canViewBalance = computed(() => auth.can(PERM.BALANCE_LIST));
+// Tab "Struktur Gaji" hanya muncul bila user boleh melihat struktur gaji (listEmployeeSalary).
+const canViewSalary = computed(() => auth.can(PERM.SALARY_LIST));
+// Tab "Rekening Bank" hanya muncul bila user boleh melihat rekening (listEmployeeBankAccount).
+const canViewBank = computed(() => auth.can(PERM.BANK_LIST));
+// Tab "BPJS" hanya muncul bila user boleh melihat data BPJS (listEmployeeBpjs).
+const canViewBpjs = computed(() => auth.can(PERM.BPJS_LIST));
+// Tab "Pajak" hanya muncul bila user boleh melihat info pajak (listEmployeeTaxInfo).
+const canViewTax = computed(() => auth.can(PERM.TAX_LIST));
+// Tab "Kontak Darurat" hanya muncul bila user boleh melihatnya (listEmployeeEmergencyContact).
+const canViewEmergency = computed(() => auth.can(PERM.EMERGENCY_LIST));
+// Tab "Keluarga" hanya muncul bila user boleh melihatnya (listEmployeeFamilyMember).
+const canViewFamily = computed(() => auth.can(PERM.FAMILY_LIST));
 const tabs = computed(() => [
   { id: "profil", label: "Profil" },
   ...(canViewAccess.value ? [{ id: "akses", label: "Hak Akses" }] : []),
   ...(canViewBalance.value ? [{ id: "saldo-cuti", label: "Saldo Cuti" }] : []),
+  ...(canViewSalary.value ? [{ id: "struktur-gaji", label: "Struktur Gaji" }] : []),
+  ...(canViewBank.value ? [{ id: "rekening-bank", label: "Rekening Bank" }] : []),
+  ...(canViewBpjs.value ? [{ id: "bpjs", label: "BPJS" }] : []),
+  ...(canViewTax.value ? [{ id: "pajak", label: "Pajak" }] : []),
+  ...(canViewEmergency.value ? [{ id: "kontak-darurat", label: "Kontak Darurat" }] : []),
+  ...(canViewFamily.value ? [{ id: "keluarga", label: "Keluarga" }] : []),
 ]);
 const tab = ref("profil");
 
@@ -154,6 +178,18 @@ async function handleDeleteAddress() {
     <EmployeeAccessCard v-if="canViewAccess" v-show="tab === 'akses'" :employee="employee" />
 
     <EmployeeLeaveBalanceCard v-if="canViewBalance" v-show="tab === 'saldo-cuti'" :employee="employee" />
+
+    <EmployeeSalaryCard v-if="canViewSalary" v-show="tab === 'struktur-gaji'" :employee="employee" />
+
+    <EmployeeBankAccountCard v-if="canViewBank" v-show="tab === 'rekening-bank'" :employee="employee" />
+
+    <EmployeeBpjsCard v-if="canViewBpjs" v-show="tab === 'bpjs'" :employee="employee" @saved="refetch" />
+
+    <EmployeeTaxInfoCard v-if="canViewTax" v-show="tab === 'pajak'" :employee="employee" @saved="refetch" />
+
+    <EmployeeEmergencyContactCard v-if="canViewEmergency" v-show="tab === 'kontak-darurat'" :employee="employee" />
+
+    <EmployeeFamilyMemberCard v-if="canViewFamily" v-show="tab === 'keluarga'" :employee="employee" />
   </template>
 
   <!-- Tambah / ubah alamat karyawan -->

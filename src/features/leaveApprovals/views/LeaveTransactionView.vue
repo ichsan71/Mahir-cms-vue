@@ -9,6 +9,7 @@ import LeavesView from "@/features/leaveRequests/views/LeavesView.vue";
 import LeaveApprovalsView from "./LeaveApprovalsView.vue";
 import LeaveBalancesView from "@/features/leaveBalances/views/LeaveBalancesView.vue";
 import LeaveBalanceTransactionsView from "@/features/leaveBalanceTransactions/views/LeaveBalanceTransactionsView.vue";
+import LeaveAtWorkHoursView from "@/features/leaveAtWorkHours/views/LeaveAtWorkHoursView.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -17,7 +18,8 @@ const auth = useAuthStore();
 const tabs = computed(() =>
   [
     { key: "pengajuan", label: "Pengajuan", permission: "listLeave" },
-    { key: "persetujuan", label: "Persetujuan", permission: "listLeaveApproval" },
+    { key: "persetujuan", label: "Persetujuan Cuti", permission: "listLeaveApproval" },
+    { key: "izin-jam-kerja", label: "Izin di Jam Kerja", permission: "listLeaveAtWorkHour" },
     { key: "saldo", label: "Saldo Cuti", permission: "listLeaveBalance" },
     { key: "mutasi", label: "Mutasi Saldo", permission: "listLeaveBalanceTransaction" },
   ].filter((t) => auth.can(t.permission)),
@@ -72,6 +74,7 @@ watch(
   <!-- Konten tab aktif -->
   <LeavesView v-if="activeTab === 'pengajuan'" />
   <LeaveApprovalsView v-else-if="activeTab === 'persetujuan'" />
+  <LeaveAtWorkHoursView v-else-if="activeTab === 'izin-jam-kerja'" />
   <LeaveBalancesView v-else-if="activeTab === 'saldo'" />
   <LeaveBalanceTransactionsView v-else-if="activeTab === 'mutasi'" />
 </template>

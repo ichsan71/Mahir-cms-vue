@@ -50,6 +50,7 @@ const navItems = [
       { to: "/pengaturan-cuti", icon: DocumentTextIcon, label: "Pengaturan Cuti", permissions: ["listLeaveRule", "listLeaveType", "listLeaveMandatoryApprover"] },
       { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", permissions: ["listEmploymentType"] },
       { to: "/shift", icon: ClockIcon, label: "Shift & Pola Kerja", permissions: ["listShift", "listWorkPattern"] },
+      { to: "/komponen-penggajian", icon: BanknotesIcon, label: "Komponen Penggajian", permissions: ["listSalaryComponentType"] },
       { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", permissions: ["listEmployee"] },
     ],
   },
@@ -57,11 +58,11 @@ const navItems = [
   // termasuk super admin. Saat modul siap: buang `soon`, kembalikan `to` +
   // `permissions` (mis. Penggajian → permissions: ["payrolls"]) agar permission-based.
   { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", permissions: ["listAttendance"] },
-  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveBalance", "listLeaveBalanceTransaction"] },
+  { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveAtWorkHour", "listLeaveBalance", "listLeaveBalanceTransaction"] },
   { to: "/pengumuman", icon: MegaphoneIcon, label: "Pengumuman", permissions: ["listAnnouncement"] },
+  { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", permissions: ["listEmployeeSalaryDeduction"] },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
-  { icon: BanknotesIcon, label: "Penggajian", soon: true },
   // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).
   { to: "/saya", icon: UserCircleIcon, label: "Profil Saya" },
 ];

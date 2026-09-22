@@ -1,59 +1,105 @@
 <script setup>
-// Port dari resources/views/pages/payroll/index.blade.php + modules/payroll.js
-import { usePayroll } from "../composables/usePayroll";
-import PageHeader from "@/shared/components/PageHeader.vue";
-import StatsCard from "@/shared/components/StatsCard.vue";
-import StatusBadge from "@/shared/components/StatusBadge.vue";
-import SearchInput from "@/shared/components/SearchInput.vue";
-import { formatCurrency } from "@/shared/utils/format";
-import {
-  DocumentArrowDownIcon,
-  DocumentTextIcon,
-  BanknotesIcon,
-  CheckCircleIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-} from "@heroicons/vue/24/outline";
-import { PlayCircleIcon } from "@heroicons/vue/24/solid";
+// Halaman Penggajian — daftar potongan gaji (hasil kalkulasi kehadiran) dengan
+// aksi "Hitung Potongan" per karyawan/periode dan detail rincian per komponen.
+import { ref, watch, onUnmounted } from "vue";
+import { useSalaryDeductions } from "../composables/useSalaryDeductions";
+import { useComputeDeduction } from "../composables/useComputeDeduction";
+import { useDeductionFiltersStore } from "../stores/deductionFilters.store";
+import ComputeDeductionModal from "../components/ComputeDeductionModal.vue";
+import DeductionDetailModal from "../components/DeductionDetailModal.vue";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { formatDate } from "@/shared/utils/format";
+import { PERM } from "../permissions";
+import { MagnifyingGlassIcon, EyeIcon, CalculatorIcon } from "@heroicons/vue/24/outline";
 
-const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
+const auth = useAuthStore();
+const filters = useDeductionFiltersStore();
+
+const { deductions, pagination, loading, refetch, nextPage, prevPage } = useSalaryDeductions();
+const { compute, loading: computing } = useComputeDeduction();
+
+// Search dengan debounce → commit ke store.
+const localSearch = ref(filters.search);
+let timeoutId = null;
+watch(localSearch, () => {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(() => {
+    filters.search = localSearch.value;
+  }, 400);
+});
+onUnmounted(() => clearTimeout(timeoutId));
+
+function money(v, currency) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "-";
+  const num = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(n);
+  return `${currency || "IDR"} ${num}`;
+}
+
+// ── Hitung potongan ───────────────────────────────────────────────────────────
+const computeOpen = ref(false);
+
+async function handleCompute({ employeeId, periodMonth }) {
+  const res = await compute(employeeId, periodMonth);
+  if (res) {
+    computeOpen.value = false;
+    refetch();
+  }
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+const detailOpen = ref(false);
+const detailTarget = ref(null);
+
+function openDetail(row) {
+  detailTarget.value = row;
+  detailOpen.value = true;
+}
+
+const fieldCls =
+  "rounded-lg border border-mahir-border py-2 px-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary";
 </script>
 
 <template>
-  <PageHeader title="Manajemen Penggajian" subtitle="Rekapitulasi & pemrosesan gaji karyawan — Periode April 2026">
-    <template #actions>
-      <button class="flex items-center gap-2 rounded-lg border border-mahir-border bg-white px-4 py-2 text-[13.5px] font-medium text-slate-700 hover:bg-slate-50">
-        <DocumentArrowDownIcon class="h-4 w-4" /> Ekspor CSV
-      </button>
-      <button
-        class="flex items-center gap-2 rounded-lg bg-mahir-primary px-4 py-2 text-[13.5px] font-semibold text-white hover:bg-mahir-primary/90"
-        @click="processAll"
-      >
-        <PlayCircleIcon class="h-4 w-4" /> Proses Semua
-      </button>
-    </template>
-  </PageHeader>
-
-  <!-- Stats -->
-  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-    <StatsCard :value="stats ? formatCurrency(stats.totalNet) : '—'" label="Total Penggajian" :icon="BanknotesIcon" color="#243B8F" bg-color="#E7EEFF" />
-    <StatsCard :value="stats ? formatCurrency(stats.paidNet) : '—'" label="Total Terbayar" :icon="CheckCircleIcon" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.countPaid ?? '—'" label="Sudah Diproses" :icon="CheckBadgeIcon" color="#1B9C67" bg-color="#E2F8EC" />
-    <StatsCard :value="stats?.countPending ?? '—'" label="Belum Diproses" :icon="ClockIcon" color="#D98E18" bg-color="#FFF3DA" />
+  <!-- Header -->
+  <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Penggajian</h1>
+      <p class="text-sm text-mahir-muted">Potongan gaji hasil kalkulasi kehadiran & cuti karyawan</p>
+    </div>
+    <button
+      v-if="auth.can(PERM.COMPUTE)"
+      class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+      @click="computeOpen = true"
+    >
+      <CalculatorIcon class="h-4 w-4" /> Hitung Potongan
+    </button>
   </div>
 
-  <!-- Table -->
+  <!-- Table card -->
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
-      <h2 class="font-semibold text-slate-900">Daftar Slip Gaji — April 2026</h2>
+      <h2 class="font-semibold text-slate-900">
+        Daftar Potongan
+        <span class="ml-1 text-[13px] font-normal text-slate-400">{{ pagination.count }}</span>
+      </h2>
+
       <div class="flex flex-wrap items-center gap-2">
-        <SearchInput v-model="filters.search" placeholder="Cari karyawan..." />
-        <select v-model="filters.status" class="rounded-lg border border-mahir-border px-3 py-2 text-sm text-slate-700 focus:border-mahir-primary focus:outline-none">
+        <div class="relative">
+          <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input v-model="localSearch" type="text" placeholder="Cari karyawan..." :class="[fieldCls, 'w-[200px] pl-9']" />
+        </div>
+        <select v-model="filters.isFinal" :class="fieldCls">
           <option value="">Semua Status</option>
-          <option value="paid">Lunas</option>
-          <option value="pending">Pending</option>
-          <option value="unpaid">Belum Bayar</option>
+          <option value="true">Final</option>
+          <option value="false">Draft</option>
         </select>
+        <label class="flex items-center gap-1.5 text-[13px] text-slate-500">
+          Periode
+          <input v-model="filters.periodEndFrom" type="date" :class="fieldCls" title="Periode berakhir dari" />
+          –
+          <input v-model="filters.periodEndTo" type="date" :class="fieldCls" title="Periode berakhir sampai" />
+        </label>
       </div>
     </div>
 
@@ -61,49 +107,54 @@ const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
       <table class="w-full text-left text-sm">
         <thead>
           <tr class="border-b border-mahir-border text-xs uppercase tracking-wide text-slate-400">
-            <th class="px-4 py-3 font-semibold">ID Slip</th>
             <th class="px-4 py-3 font-semibold">Karyawan</th>
             <th class="px-4 py-3 font-semibold">Periode</th>
-            <th class="px-4 py-3 font-semibold">Gaji Pokok</th>
-            <th class="px-4 py-3 font-semibold">Tunjangan</th>
-            <th class="px-4 py-3 font-semibold">Potongan</th>
-            <th class="px-4 py-3 font-semibold">Gaji Bersih</th>
-            <th class="px-4 py-3 font-semibold">Status</th>
-            <th class="px-4 py-3 font-semibold">Tgl Bayar</th>
+            <th class="px-4 py-3 text-right font-semibold">Hari Kerja</th>
+            <th class="px-4 py-3 text-right font-semibold">Absen</th>
+            <th class="px-4 py-3 text-right font-semibold">Cuti Tak Berbayar</th>
+            <th class="px-4 py-3 text-right font-semibold">Total Potongan</th>
+            <th class="px-4 py-3 text-center font-semibold">Status</th>
             <th class="px-4 py-3 text-center font-semibold">Aksi</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="!payrolls.length">
-            <td colspan="10" class="px-4 py-8 text-center text-slate-400">
-              {{ loading ? "Memuat data…" : "Tidak ada slip gaji." }}
-            </td>
+          <tr v-if="loading && !deductions.length">
+            <td colspan="8" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
           </tr>
-          <tr v-for="p in payrolls" :key="p.id" class="border-b border-mahir-border last:border-0 hover:bg-slate-50/60">
-            <td class="px-4 py-3"><code class="text-xs text-slate-500">{{ p.id }}</code></td>
-            <td class="px-4 py-3">
-              <div class="font-semibold text-slate-800">{{ p.emp }}</div>
-              <div class="text-[11.5px] text-slate-400">{{ p.dept }}</div>
+          <tr v-else-if="!deductions.length">
+            <td colspan="8" class="px-4 py-8 text-center text-slate-400">Belum ada potongan gaji.</td>
+          </tr>
+          <tr
+            v-for="row in deductions"
+            :key="row.id"
+            class="border-b border-mahir-border last:border-0 hover:bg-slate-50/60"
+          >
+            <td class="px-4 py-3 font-semibold text-slate-800">{{ row.employee?.fullName ?? "-" }}</td>
+            <td class="px-4 py-3 text-slate-600">
+              {{ formatDate(row.periodStart) }} – {{ formatDate(row.periodEnd) }}
             </td>
-            <td class="px-4 py-3 text-slate-600">{{ p.period }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ formatCurrency(p.basic) }}</td>
-            <td class="px-4 py-3 text-slate-600">{{ formatCurrency(p.allowance) }}</td>
-            <td class="px-4 py-3 text-mahir-danger">-{{ formatCurrency(p.deduction) }}</td>
-            <td class="px-4 py-3 font-bold text-slate-800">{{ formatCurrency(p.net) }}</td>
-            <td class="px-4 py-3"><StatusBadge :status="p.status" /></td>
-            <td class="px-4 py-3 text-slate-600">{{ p.date }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ row.totalWorkDay ?? "-" }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ row.absentDays ?? "-" }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ row.unpaidLeaveDays ?? "-" }}</td>
+            <td class="px-4 py-3 text-right font-bold text-mahir-danger">
+              {{ money(row.totalDeduction, row.currency) }}
+            </td>
+            <td class="px-4 py-3 text-center">
+              <span
+                class="inline-block rounded-full px-2.5 py-0.5 text-[12px] font-medium"
+                :class="row.isFinal ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'"
+              >
+                {{ row.isFinal ? "Final" : "Draft" }}
+              </span>
+            </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-center gap-1.5">
-                <button class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200" title="Lihat Slip">
-                  <DocumentTextIcon class="h-4 w-4" />
-                </button>
                 <button
-                  v-if="p.status !== 'paid'"
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-mahir-primary text-white hover:bg-mahir-primary/90"
-                  title="Proses"
-                  @click="process(p.id)"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  title="Detail"
+                  @click="openDetail(row)"
                 >
-                  <CheckCircleIcon class="h-4 w-4" />
+                  <EyeIcon class="h-4 w-4" />
                 </button>
               </div>
             </td>
@@ -112,8 +163,41 @@ const { filters, payrolls, stats, loading, process, processAll } = usePayroll();
       </table>
     </div>
 
-    <div class="border-t border-mahir-border px-5 py-3 text-[13px] text-mahir-muted">
-      {{ payrolls.length }} slip gaji
+    <!-- Footer / pagination -->
+    <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
+      <span class="text-[13px] text-mahir-muted"
+        >Menampilkan {{ deductions.length }} dari {{ pagination.count }} potongan</span
+      >
+      <nav class="flex items-center gap-1">
+        <button
+          class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm disabled:text-slate-300 enabled:text-slate-600 enabled:hover:bg-slate-50"
+          :disabled="!pagination.hasPrev"
+          @click="prevPage"
+        >
+          ‹
+        </button>
+        <span class="rounded-lg bg-mahir-primary px-3 py-1 text-sm font-medium text-white">
+          {{ pagination.currentPage }}
+        </span>
+        <span class="px-1 text-[13px] text-mahir-muted">dari {{ pagination.totalPages }}</span>
+        <button
+          class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm disabled:text-slate-300 enabled:text-slate-600 enabled:hover:bg-slate-50"
+          :disabled="!pagination.hasNext"
+          @click="nextPage"
+        >
+          ›
+        </button>
+      </nav>
     </div>
   </div>
+
+  <!-- Modal hitung potongan -->
+  <ComputeDeductionModal
+    v-model:open="computeOpen"
+    :saving="computing"
+    @submit="handleCompute"
+  />
+
+  <!-- Modal detail potongan -->
+  <DeductionDetailModal v-model:open="detailOpen" :deduction="detailTarget" />
 </template>

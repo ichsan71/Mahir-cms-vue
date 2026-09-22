@@ -27,4 +27,33 @@ export const PERM = {
   BALANCE_LIST: "listLeaveBalance",
   BALANCE_CREATE: "createLeaveBalance",
   BALANCE_EDIT: "editLeaveBalance",
+  // Struktur gaji (tab Struktur Gaji di detail karyawan): melihat, menambah, mengubah & menghapus.
+  SALARY_LIST: "listEmployeeSalary",
+  SALARY_CREATE: "createEmployeeSalary",
+  SALARY_EDIT: "editEmployeeSalary",
+  SALARY_DELETE: "deleteEmployeeSalary",
+  // Rekening bank (tab Rekening Bank di detail karyawan).
+  BANK_LIST: "listEmployeeBankAccount",
+  BANK_CREATE: "createEmployeeBankAccount",
+  BANK_EDIT: "editEmployeeBankAccount",
+  BANK_DELETE: "deleteEmployeeBankAccount",
+  // BPJS (tab BPJS di detail karyawan) — data 1:1 per karyawan.
+  BPJS_LIST: "listEmployeeBpjs",
+  BPJS_CREATE: "createEmployeeBpjs",
+  BPJS_EDIT: "editEmployeeBpjs",
+  // Info pajak (tab Pajak di detail karyawan) — data 1:1 per karyawan.
+  TAX_LIST: "listEmployeeTaxInfo",
+  TAX_CREATE: "createEmployeeTaxInfo",
+  TAX_EDIT: "editEmployeeTaxInfo",
+  TAX_DELETE: "deleteEmployeeTaxInfo",
+  // Kontak darurat (tab Kontak Darurat di detail karyawan).
+  EMERGENCY_LIST: "listEmployeeEmergencyContact",
+  EMERGENCY_CREATE: "createEmployeeEmergencyContact",
+  EMERGENCY_EDIT: "editEmployeeEmergencyContact",
+  EMERGENCY_DELETE: "deleteEmployeeEmergencyContact",
+  // Anggota keluarga (tab Keluarga di detail karyawan).
+  FAMILY_LIST: "listEmployeeFamilyMember",
+  FAMILY_CREATE: "createEmployeeFamilyMember",
+  FAMILY_EDIT: "editEmployeeFamilyMember",
+  FAMILY_DELETE: "deleteEmployeeFamilyMember",
 };
