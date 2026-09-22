@@ -65,6 +65,19 @@ export const FORGOT_PASSWORD = gql`
   }
 `;
 
+// Daftarkan device untuk push notification (FCM) setelah login.
+// `input` (RegisDeviceInput): fcmToken (token FCM perangkat), platform ("WEB"),
+// notificationEnabled. Backend mengaitkan token ke user agar bisa dikirimi notifikasi.
+export const REGISTER_DEVICE = gql`
+  mutation RegisterDevice($input: RegisDeviceInput!) {
+    registerDevice(input: $input) {
+      data {
+        id
+      }
+    }
+  }
+`;
+
 // Logout di sisi server: menginvalidasi token. authLink otomatis membawa header
 // `Authorization: Bearer <token>` selama token masih ada di store (dipanggil
 // sebelum sesi lokal dibersihkan), atau via context header eksplisit.

@@ -1,10 +1,11 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMutation } from "@vue/apollo-composable";
-import { LOGIN, LOGOUT, CHANGE_PASSWORD, FORGOT_PASSWORD } from "../graphql/auth.queries";
+import { LOGIN, LOGOUT, CHANGE_PASSWORD, FORGOT_PASSWORD, REGISTER_DEVICE } from "../graphql/auth.queries";
 import { useAuthStore } from "../stores/auth.store";
 import { useToastStore } from "@/stores/toast.store";
 import { apolloClient } from "@/apollo/client";
+import { requestFcmToken, onForegroundMessage } from "@/shared/notifications/firebase";
 
 // Bersihkan prefix teknis dari pesan error GraphQL/Apollo.
 function cleanMessage(e) {
@@ -28,6 +29,36 @@ export function useAuth() {
   const { mutate: logoutMut } = useMutation(LOGOUT);
   const { mutate: changePasswordMut } = useMutation(CHANGE_PASSWORD);
   const { mutate: forgotPasswordMut } = useMutation(FORGOT_PASSWORD);
+  const { mutate: registerDeviceMut } = useMutation(REGISTER_DEVICE);
+
+  // Daftarkan perangkat ke FCM agar bisa menerima push notification.
+  // Dipanggil fire-and-forget setelah login sukses — kegagalan/penolakan izin
+  // TIDAK mengganggu proses login. Skip bila token sama sudah terdaftar.
+  async function registerPushDevice() {
+    try {
+      const fcmToken = await requestFcmToken();
+      if (!fcmToken) return;
+
+      // Tampilkan notifikasi foreground sebagai toast informasi.
+      onForegroundMessage((payload) => {
+        const title = payload?.notification?.title || payload?.data?.title;
+        const body = payload?.notification?.body || payload?.data?.body;
+        if (title || body) toast.info([title, body].filter(Boolean).join(" — "));
+      });
+
+      // Hindari registrasi ulang untuk token yang sama.
+      if (localStorage.getItem("mahir_fcm_token") === fcmToken) return;
+
+      const res = await registerDeviceMut({
+        input: { fcmToken, platform: "WEB", notificationEnabled: true },
+      });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      localStorage.setItem("mahir_fcm_token", fcmToken);
+    } catch (e) {
+      // Push notification bersifat opsional — cukup catat, jangan ganggu user.
+      console.warn("[FCM] registerDevice gagal:", e);
+    }
+  }
 
   async function login({ username, password }) {
     error.value = "";
@@ -60,6 +91,10 @@ export function useAuth() {
 
       auth.setSession(payload);
       toast.success(`Selamat datang, ${auth.displayName}!`);
+
+      // Daftarkan perangkat untuk push notification (fire-and-forget; tidak
+      // memblokir navigasi meski izin ditolak / browser tak mendukung).
+      void registerPushDevice();
 
       // Semua peran mendarat di Dashboard (atau rute redirect). Sidebar & guard
       // membatasi menu sesuai permission masing-masing.
@@ -154,6 +189,9 @@ export function useAuth() {
     // segera (supaya guard langsung menganggap kita sudah keluar).
     const bearer = auth.token;
     auth.logout();
+    // Bersihkan cache token FCM lokal agar login berikutnya (mungkin akun lain)
+    // mendaftarkan ulang perangkat.
+    localStorage.removeItem("mahir_fcm_token");
     toast.info("Anda telah keluar dari sistem");
     router.push("/login");
 

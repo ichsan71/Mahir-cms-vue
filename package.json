@@ -22,6 +22,7 @@
     "@vueup/vue-quill": "^1.5.5",
     "apollo-upload-client": "^17.0.0",
     "chart.js": "^4.4.2",
+    "firebase": "^11.10.0",
     "graphql": "^16.8.0",
     "graphql-tag": "^2.12.6",
     "graphql-ws": "^6.2.0",
