@@ -50,7 +50,7 @@ export function useAuth() {
       if (localStorage.getItem("mahir_fcm_token") === fcmToken) return;
 
       const res = await registerDeviceMut({
-        input: { fcmToken, platform: "WEB", notificationEnabled: true },
+        input: { appName: "Mahir", fcmToken, platform: "WEB", notificationEnabled: true },
       });
       if (res?.errors?.length) throw new Error(res.errors[0].message);
       localStorage.setItem("mahir_fcm_token", fcmToken);
