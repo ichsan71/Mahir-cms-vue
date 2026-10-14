@@ -59,6 +59,7 @@ const routes = [
       { path: "cabang/:id", name: "cabang-detail", component: () => import("@/features/branches/views/BranchDetailView.vue"), meta: { title: "Detail Cabang", permission: "getBranch" } },
       { path: "komponen-penggajian", name: "komponen-penggajian", component: () => import("@/features/salaryComponentTypes/views/SalaryComponentTypesView.vue"), meta: { title: "Komponen Penggajian", permission: "listSalaryComponentType" } },
       { path: "penggajian", name: "penggajian", component: () => import("@/features/payroll/views/PayrollView.vue"), meta: { title: "Penggajian", permission: "listEmployeeSalaryDeduction" } },
+      { path: "changelog", name: "changelog", component: () => import("@/features/changelogs/views/ChangelogsView.vue"), meta: { title: "Changelog" } },
       { path: "kehadiran", name: "kehadiran", component: () => import("@/features/attendance/views/AttendanceView.vue"), meta: { title: "Monitoring Kehadiran", permission: "listAttendance" } },
       { path: "cuti", name: "cuti", component: () => import("@/features/leaveApprovals/views/LeaveTransactionView.vue"), meta: { title: "Cuti & Izin", permission: ["listLeave", "listLeaveApproval", "listLeaveAtWorkHour", "listLeaveBalance", "listLeaveBalanceTransaction"] } },
       { path: "pengumuman", name: "pengumuman", component: () => import("@/features/announcements/views/AnnouncementsView.vue"), meta: { title: "Pengumuman", permission: "listAnnouncement" } },

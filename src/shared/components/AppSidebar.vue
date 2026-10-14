@@ -25,6 +25,7 @@ import {
   Cog6ToothIcon,
   UserCircleIcon,
   MegaphoneIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/vue/24/outline";
 
 const ui = useUiStore();
@@ -61,6 +62,7 @@ const navItems = [
   { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveAtWorkHour", "listLeaveBalance", "listLeaveBalanceTransaction"] },
   { to: "/pengumuman", icon: MegaphoneIcon, label: "Pengumuman", permissions: ["listAnnouncement"] },
   { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", permissions: ["listEmployeeSalaryDeduction"] },
+  { to: "/changelog", icon: ClipboardDocumentListIcon, label: "Changelog" },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },
   // Profil sendiri — tampil hanya bila akun tertaut data employee (superuser: null).

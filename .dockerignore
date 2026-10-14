@@ -1,0 +1,32 @@
+# Dependencies & build output (akan dibuat ulang di dalam image)
+node_modules
+dist
+
+# Env & secrets (jangan ikut ke image)
+.env
+.env.*
+!.env.example
+*.local
+
+# Git & VCS
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docs & logs
+docs
+*.log
+npm-debug.log*
+
+# Claude / tooling
+.claude
