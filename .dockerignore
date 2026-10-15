@@ -30,3 +30,6 @@ npm-debug.log*
 
 # Claude / tooling
 .claude
+
+# CI (tidak dibutuhkan saat build image)
+.github

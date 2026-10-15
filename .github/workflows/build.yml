@@ -43,6 +43,7 @@ jobs:
           # Nilai VITE_* "dibakar" ke bundel frontend saat build (client-side).
           # Simpan di GitHub: Settings > Secrets and variables > Actions > Variables
           podman build $ARGS \
+            --ulimit nofile=65535:65535 \
             --build-arg VITE_GRAPHQL_URI="${{ vars.VITE_GRAPHQL_URI }}" \
             --build-arg VITE_GOOGLE_MAPS_API_KEY="${{ vars.VITE_GOOGLE_MAPS_API_KEY }}" \
             --build-arg VITE_FIREBASE_API_KEY="${{ vars.VITE_FIREBASE_API_KEY }}" \
