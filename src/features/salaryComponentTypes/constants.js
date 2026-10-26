@@ -1,11 +1,10 @@
-// Kategori komponen penggajian. Backend menerima `category` sebagai String bebas,
-// jadi daftar ini menentukan pilihan di form + label tampilan. Sesuaikan bila
-// backend memakai nilai/kode lain.
+// Kategori komponen penggajian — mengikuti enum backend SALARY_COMPONENT_CATEGORY
+// (employeeChoices). Dipakai utk filter toolbar & label/badge tampilan. Form modal
+// mengambil pilihan langsung dari enum via useEnumChoices.
 export const CATEGORIES = [
-  { value: "EARNING", label: "Pendapatan" },
+  { value: "BASIC", label: "Gaji Pokok" },
   { value: "ALLOWANCE", label: "Tunjangan" },
   { value: "DEDUCTION", label: "Potongan" },
-  { value: "BENEFIT", label: "Benefit" },
 ];
 
 const LABELS = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.label]));
@@ -19,14 +18,12 @@ export function categoryLabel(value) {
 // Warna badge per kategori (Tailwind). Default netral bila tak dikenal.
 export function categoryBadgeClass(value) {
   switch (value) {
-    case "EARNING":
+    case "BASIC":
       return "bg-emerald-50 text-emerald-600";
     case "ALLOWANCE":
       return "bg-sky-50 text-sky-600";
     case "DEDUCTION":
       return "bg-red-50 text-red-500";
-    case "BENEFIT":
-      return "bg-violet-50 text-violet-600";
     default:
       return "bg-slate-100 text-slate-500";
   }
