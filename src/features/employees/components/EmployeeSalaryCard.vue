@@ -102,6 +102,14 @@ function money(v, currency) {
   return `${currency || "IDR"} ${num}`;
 }
 
+// Estimasi total komponen utk satu struktur gaji (penjumlahan semua nilai).
+function componentsTotal(components) {
+  return (components ?? []).reduce((sum, c) => {
+    const n = Number(c.value);
+    return Number.isFinite(n) ? sum + n : sum;
+  }, 0);
+}
+
 function payPeriodLabel(value) {
   if (!value) return "-";
   return PAY_PERIODS.find((p) => p.value === value)?.label ?? value;
@@ -130,6 +138,15 @@ const rows = ref([]);
 
 function blankRow() {
   return { componentTypeId: "", value: "", notes: "", selected: null };
+}
+
+// Backend mengirim Decimal sbg string yg bisa dlm notasi ilmiah (mis. "3E+5").
+// Ubah ke desimal biasa ("300000") agar tampil benar di input number saat edit.
+function decimalText(v) {
+  if (v == null || v === "") return "";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "";
+  return n.toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 20 });
 }
 
 function addRow() {
@@ -166,7 +183,7 @@ function openEdit(row) {
   };
   rows.value = (row.components ?? []).map((c) => ({
     componentTypeId: c.componentType?.id ?? "",
-    value: c.value ?? "",
+    value: decimalText(c.value),
     notes: c.notes ?? "",
     selected: c.componentType
       ? {
@@ -397,6 +414,16 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
                     </td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr class="border-t border-mahir-border">
+                    <td class="py-2 pr-3 text-[13px] font-medium text-slate-500" colspan="2">
+                      Estimasi total
+                    </td>
+                    <td class="py-2 text-right font-bold text-mahir-primary">
+                      {{ money(componentsTotal(s.components), s.currency) }}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
               <p v-if="s.notes" class="mt-2 text-[12px] text-slate-500">{{ s.notes }}</p>
             </div>
