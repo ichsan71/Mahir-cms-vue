@@ -27,6 +27,7 @@ export const PERM = {
   BALANCE_LIST: "listLeaveBalance",
   BALANCE_CREATE: "createLeaveBalance",
   BALANCE_EDIT: "editLeaveBalance",
+  BALANCE_RECALCULATE: "recalculateLeaveBalance",
   // Struktur gaji (tab Struktur Gaji di detail karyawan): melihat, menambah, mengubah & menghapus.
   SALARY_LIST: "listEmployeeSalary",
   SALARY_CREATE: "createEmployeeSalary",

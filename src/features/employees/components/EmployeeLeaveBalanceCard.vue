@@ -10,6 +10,7 @@ import {
   LIST_EMPLOYEE_LEAVE_BALANCE_YEARS,
   CREATE_LEAVE_BALANCE,
   EDIT_LEAVE_BALANCE,
+  RECALCULATE_LEAVE_BALANCE,
 } from "../graphql/leaveBalance.queries";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import SearchableSelect from "@/shared/components/SearchableSelect.vue";
@@ -30,6 +31,14 @@ const toast = useToastStore();
 const employeeId = computed(() => {
   const n = Number(props.employee?.id);
   return Number.isInteger(n) && n > 0 ? n : null;
+});
+
+// Perusahaan karyawan ini → companyIds untuk cakupan recalculate.
+const companyIds = computed(() => {
+  const ids = (props.employee?.companies ?? [])
+    .map((c) => Number(c.id))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  return ids.length ? ids : null;
 });
 
 // ── Filter & paginasi ───────────────────────────────────────────────────────
@@ -94,6 +103,46 @@ function prevPage() {
 
 const canCreate = computed(() => auth.can(PERM.BALANCE_CREATE));
 const canEdit = computed(() => auth.can(PERM.BALANCE_EDIT));
+const canRecalculate = computed(() => auth.can(PERM.BALANCE_RECALCULATE));
+
+// ── Hitung ulang saldo cuti ───────────────────────────────────────────────────
+// recalcTarget menandai apa yang sedang diproses: 'all' (header) atau leaveTypeId
+// (baris) — untuk spinner & disable tombol terkait.
+const { mutate: recalculateLeaveBalance } = useMutation(RECALCULATE_LEAVE_BALANCE);
+const recalcTarget = ref(null);
+
+// `leaveType` = null → recalc semua tipe; objek { id, name } → recalc satu tipe.
+async function recalculate(leaveType = null) {
+  if (!employeeId.value || !canRecalculate.value || recalcTarget.value != null) return;
+  const leaveTypeId = leaveType?.id ?? null;
+  recalcTarget.value = leaveTypeId ?? "all";
+  try {
+    const res = await recalculateLeaveBalance({
+      // Backend mengharapkan array [Int!] & nama plural; leaveTypeIds null = semua tipe.
+      employeeIds: [employeeId.value],
+      leaveTypeIds: leaveTypeId ? [Number(leaveTypeId)] : null,
+      companyIds: companyIds.value,
+    });
+    if (res?.errors?.length) throw new Error(res.errors[0].message);
+    const nama = props.employee?.fullName || "karyawan ini";
+    toast.success(
+      leaveType?.name
+        ? `Saldo cuti "${leaveType.name}" milik ${nama} berhasil dihitung ulang.`
+        : `Semua saldo cuti ${nama} berhasil dihitung ulang.`,
+    );
+    refetch();
+    refetchYears();
+  } catch (e) {
+    const m =
+      e?.graphQLErrors?.[0]?.message ||
+      e?.networkError?.message ||
+      e?.message ||
+      "Gagal menghitung ulang saldo cuti. Coba lagi.";
+    toast.error(m.replace(/^GraphQL error:\s*/i, "").trim());
+  } finally {
+    recalcTarget.value = null;
+  }
+}
 
 // ── Modal tambah / edit ─────────────────────────────────────────────────────
 const { options: leaveTypeOptions, loading: leaveTypeLoading, setSearch: setLeaveTypeSearch } =
@@ -223,6 +272,18 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
         </select>
 
+        <!-- Hitung ulang semua saldo karyawan ini -->
+        <button
+          v-if="canRecalculate"
+          type="button"
+          :disabled="recalcTarget != null"
+          class="inline-flex items-center gap-1.5 rounded-lg border border-mahir-border px-4 py-2 text-[13.5px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="recalculate()"
+        >
+          <ArrowPathIcon class="h-4 w-4" :class="{ 'animate-spin': recalcTarget === 'all' }" />
+          Hitung Ulang
+        </button>
+
         <!-- Tambah saldo -->
         <button
           v-if="canCreate"
@@ -256,7 +317,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
               <th class="py-2.5 pr-4 font-semibold text-right">Kuota</th>
               <th class="py-2.5 pr-4 font-semibold text-right">Terpakai</th>
               <th class="py-2.5 pr-4 font-semibold text-right">Sisa</th>
-              <th v-if="canEdit" class="py-2.5 font-semibold text-right">Aksi</th>
+              <th v-if="canEdit || canRecalculate" class="py-2.5 font-semibold text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -270,14 +331,31 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
               <td class="py-3 pr-4 text-right text-slate-600">{{ b.allocated }}</td>
               <td class="py-3 pr-4 text-right text-slate-600">{{ b.used }}</td>
               <td class="py-3 pr-4 text-right font-semibold text-slate-800">{{ b.remaining }}</td>
-              <td v-if="canEdit" class="py-3 text-right">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-lg border border-mahir-border px-3 py-1.5 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-                  @click="openEdit(b)"
-                >
-                  <PencilSquareIcon class="h-4 w-4" /> Edit
-                </button>
+              <td v-if="canEdit || canRecalculate" class="py-3 text-right">
+                <div class="inline-flex items-center justify-end gap-1.5">
+                  <!-- Hitung ulang tipe cuti baris ini -->
+                  <button
+                    v-if="canRecalculate"
+                    type="button"
+                    :disabled="recalcTarget != null"
+                    title="Hitung ulang saldo tipe ini"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-mahir-border text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    @click="recalculate(b.leaveType)"
+                  >
+                    <ArrowPathIcon
+                      class="h-4 w-4"
+                      :class="{ 'animate-spin': recalcTarget === b.leaveType?.id }"
+                    />
+                  </button>
+                  <button
+                    v-if="canEdit"
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-mahir-border px-3 py-1.5 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                    @click="openEdit(b)"
+                  >
+                    <PencilSquareIcon class="h-4 w-4" /> Edit
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>

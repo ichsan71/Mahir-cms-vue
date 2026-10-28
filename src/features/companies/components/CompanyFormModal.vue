@@ -40,7 +40,9 @@ const blank = () => ({
   website: "",
   npwp: "",
   logo: "", // diisi base64 data URL hasil unggah file
-  parentId: ""
+  parentId: "",
+  payrollCutoffDay: "", // tanggal (1–31) tutup buku penggajian
+  payrollReleaseDay: "", // tanggal (1–31) rilis/pembayaran gaji
 });
 
 const form = ref(blank());
@@ -108,6 +110,8 @@ function fillForm() {
       npwp: c.npwp ?? "",
       logo: c.logo ?? "",
       parentId: c.parent?.id ?? "",
+      payrollCutoffDay: c.payrollCutoffDay ?? "",
+      payrollReleaseDay: c.payrollReleaseDay ?? "",
     };
     logoName.value = c.logo ? "Logo saat ini" : "";
     isParent.value = !c.parent;
@@ -153,6 +157,9 @@ function onSubmit() {
     prefix: prefixAbbr.value || null,
     // Induk → null; bukan induk → id perusahaan induk terpilih.
     parentId: isParent.value ? null : f.parentId || null,
+    // Tanggal penggajian (Int 1–31); kosong → null.
+    payrollCutoffDay: f.payrollCutoffDay === "" || f.payrollCutoffDay == null ? null : Number(f.payrollCutoffDay),
+    payrollReleaseDay: f.payrollReleaseDay === "" || f.payrollReleaseDay == null ? null : Number(f.payrollReleaseDay),
   };
 
   // Logo hanya dikirim bila pengguna memilih berkas baru (File object) — sama
@@ -199,8 +206,8 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
         <input v-model="form.website" type="url" placeholder="https://" :class="fieldCls" />
       </div>
       <div>
-        <label :class="labelCls">NPWP</label>
-        <input v-model="form.npwp" type="text" :class="fieldCls" />
+        <label :class="labelCls">NPWP *</label>
+        <input v-model="form.npwp" type="text" required :class="fieldCls" />
       </div>
       <div>
         <label :class="labelCls">Prefix</label>
@@ -211,6 +218,30 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           class="w-full cursor-not-allowed rounded-lg border border-mahir-border bg-slate-100 px-3 py-2 font-mono text-sm font-semibold text-slate-600"
         />
         <p class="mt-1 text-xs text-slate-400">Dibuat otomatis dari nama perusahaan.</p>
+      </div>
+      <div>
+        <label :class="labelCls">Tanggal Cut Off</label>
+        <input
+          v-model.number="form.payrollCutoffDay"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="1 – 31"
+          :class="fieldCls"
+        />
+        <p class="mt-1 text-xs text-slate-400">Tanggal periode penggajian ditutup (1–31).</p>
+      </div>
+      <div>
+        <label :class="labelCls">Tanggal Rilis Gaji</label>
+        <input
+          v-model.number="form.payrollReleaseDay"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="1 – 31"
+          :class="fieldCls"
+        />
+        <p class="mt-1 text-xs text-slate-400">Tanggal gaji dibayarkan (1–31).</p>
       </div>
       <div class="md:col-span-2">
         <label :class="labelCls">Logo</label>

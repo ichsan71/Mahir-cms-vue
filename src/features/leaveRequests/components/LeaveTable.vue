@@ -54,11 +54,11 @@ function isPending(s) {
   return !isApproved(s) && !isRejected(s);
 }
 
-// Warna dot per approver berdasarkan statusnya (pending = kuning).
-function dotClass(s) {
-  if (isApproved(s)) return "bg-mahir-success";
-  if (isRejected(s)) return "bg-mahir-danger";
-  return "bg-mahir-warning";
+// Warna nama & ikon approver mengikuti warna status (pending = kuning).
+function nameClass(s) {
+  if (isApproved(s)) return "text-mahir-success";
+  if (isRejected(s)) return "text-mahir-danger";
+  return "text-mahir-warning";
 }
 
 function approvedCount(row) {
@@ -131,18 +131,17 @@ function pendingNames(row) {
             </div>
 
             <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span class="text-[11.5px] font-medium text-mahir-muted">
+              <span class="text-[13px] font-semibold text-mahir-muted">
                 Persetujuan {{ approvedCount(row) }}/{{ row.approvals.length }}
               </span>
               <span
                 v-for="a in row.approvals"
                 :key="a.id"
-                class="inline-flex items-center gap-1 rounded-full bg-slate-50 px-1.5 py-0.5 text-[10.5px] text-slate-500"
+                class="inline-flex items-center gap-1 rounded-full bg-slate-50 px-1.5 py-0.5 text-[12.5px] text-slate-500"
                 :title="a.approver?.fullName"
               >
-                <span class="h-1.5 w-1.5 rounded-full" :class="dotClass(a.status)"></span>
-                <UserCircleIcon class="h-3 w-3" />
-                {{ a.approver?.fullName || "—" }}
+                <UserCircleIcon class="h-4 w-4 flex-shrink-0" :class="nameClass(a.status)" />
+                <span class="font-medium leading-none" :class="nameClass(a.status)">{{ a.approver?.fullName || "—" }}</span>
               </span>
             </div>
           </div>

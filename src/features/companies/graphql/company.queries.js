@@ -34,6 +34,9 @@ export const GET_COMPANY = gql`
         phone
         website
         email
+        npwp
+        payrollCutoffDay
+        payrollReleaseDay
         childrens {
           id
           name

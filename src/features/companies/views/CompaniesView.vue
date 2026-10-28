@@ -35,7 +35,6 @@ function handleDetail(company) {
 }
 
 async function handleSave({ id, input }) {
-  console.log(input)
   const result = id ? await editCompany(id, input) : await createCompany(input);
   if (result) {
     modalOpen.value = false;

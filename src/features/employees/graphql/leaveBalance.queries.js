@@ -74,3 +74,18 @@ export const EDIT_LEAVE_BALANCE = gql`
     }
   }
 `;
+
+// Hitung ulang saldo cuti. Argumen berupa array Int & opsional, nama plural
+// (schema.json introspection keliru: menandai Int tunggal & nama singular —
+// backend nyata: employeeIds/leaveTypeIds/companyIds bertipe [Int!]):
+// - employeeIds saja → recalc semua tipe cuti karyawan tsb.
+// - employeeIds + leaveTypeIds → recalc hanya tipe cuti tertentu.
+// - companyIds → cakupan perusahaan (diambil dari perusahaan karyawan).
+// Mengembalikan pesan (StrObjectResponse.data: String).
+export const RECALCULATE_LEAVE_BALANCE = gql`
+  mutation RecalculateLeaveBalance($employeeIds: [Int!], $leaveTypeIds: [Int!], $companyIds: [Int!]) {
+    recalculateLeaveBalance(employeeIds: $employeeIds, leaveTypeIds: $leaveTypeIds, companyIds: $companyIds) {
+      data
+    }
+  }
+`;

@@ -13,6 +13,8 @@ import {
   PhoneIcon,
   GlobeAltIcon,
   ShareIcon,
+  CalendarDaysIcon,
+  IdentificationIcon,
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
@@ -108,6 +110,14 @@ function goBack() {
             </div>
 
             <div class="flex items-start gap-3">
+              <IdentificationIcon class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">NPWP</div>
+                <div class="mt-0.5 text-sm font-medium text-slate-800">{{ company.npwp || "—" }}</div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
               <PhoneIcon class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
               <div>
                 <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Telepon</div>
@@ -129,6 +139,26 @@ function goBack() {
                     >{{ company.website }}</a
                   >
                   <span v-else>—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <CalendarDaysIcon class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tanggal Cut Off</div>
+                <div class="mt-0.5 text-sm font-medium text-slate-800">
+                  {{ company.payrollCutoffDay != null ? `Tanggal ${company.payrollCutoffDay}` : "—" }}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3">
+              <CalendarDaysIcon class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tanggal Rilis Gaji</div>
+                <div class="mt-0.5 text-sm font-medium text-slate-800">
+                  {{ company.payrollReleaseDay != null ? `Tanggal ${company.payrollReleaseDay}` : "—" }}
                 </div>
               </div>
             </div>

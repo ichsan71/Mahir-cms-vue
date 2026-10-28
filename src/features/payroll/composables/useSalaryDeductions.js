@@ -7,13 +7,13 @@ import { useDeductionFiltersStore } from "../stores/deductionFilters.store";
 // Layer logika potongan gaji: daftar paginated (reaktif terhadap filter & halaman).
 export function useSalaryDeductions() {
   const filters = useDeductionFiltersStore();
-  const { search, periodEndFrom, periodEndTo, isFinal, page, pageSize } = storeToRefs(filters);
+  const { employeeIds, periodEndFrom, periodEndTo, isFinal, page, pageSize } = storeToRefs(filters);
 
   const { result, loading, refetch } = useQuery(
     LIST_EMPLOYEE_SALARY_DEDUCTION,
     () => ({
       params: {
-        search: search.value?.trim() || null,
+        employeeIds: employeeIds.value?.length ? employeeIds.value : null,
         periodEndFrom: periodEndFrom.value || null,
         periodEndTo: periodEndTo.value || null,
         isFinal: isFinal.value === "" ? null : isFinal.value === "true",
@@ -38,7 +38,7 @@ export function useSalaryDeductions() {
     };
   });
 
-  watch([search, periodEndFrom, periodEndTo, isFinal, pageSize], () => {
+  watch([employeeIds, periodEndFrom, periodEndTo, isFinal, pageSize], () => {
     page.value = 1;
   });
 

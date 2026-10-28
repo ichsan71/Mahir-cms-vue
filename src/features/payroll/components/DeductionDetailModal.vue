@@ -17,7 +17,7 @@ const d = computed(() => props.deduction);
 function money(v, currency) {
   const n = Number(v);
   if (!Number.isFinite(n)) return "-";
-  const num = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(n);
+  const num = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(Math.trunc(n));
   return `${currency || "IDR"} ${num}`;
 }
 </script>

@@ -1,16 +1,16 @@
 <script setup>
 // Halaman Penggajian — daftar potongan gaji (hasil kalkulasi kehadiran) dengan
 // aksi "Hitung Potongan" per karyawan/periode dan detail rincian per komponen.
-import { ref, watch, onUnmounted } from "vue";
+import { ref } from "vue";
 import { useSalaryDeductions } from "../composables/useSalaryDeductions";
 import { useComputeDeduction } from "../composables/useComputeDeduction";
 import { useDeductionFiltersStore } from "../stores/deductionFilters.store";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
 import ComputeDeductionModal from "../components/ComputeDeductionModal.vue";
 import DeductionDetailModal from "../components/DeductionDetailModal.vue";
-import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { formatDate } from "@/shared/utils/format";
 import { PERM } from "../permissions";
-import { MagnifyingGlassIcon, EyeIcon, CalculatorIcon } from "@heroicons/vue/24/outline";
+import { EyeIcon, CalculatorIcon } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
 const filters = useDeductionFiltersStore();
@@ -18,21 +18,10 @@ const filters = useDeductionFiltersStore();
 const { deductions, pagination, loading, refetch, nextPage, prevPage } = useSalaryDeductions();
 const { compute, loading: computing } = useComputeDeduction();
 
-// Search dengan debounce → commit ke store.
-const localSearch = ref(filters.search);
-let timeoutId = null;
-watch(localSearch, () => {
-  clearTimeout(timeoutId);
-  timeoutId = setTimeout(() => {
-    filters.search = localSearch.value;
-  }, 400);
-});
-onUnmounted(() => clearTimeout(timeoutId));
-
 function money(v, currency) {
   const n = Number(v);
   if (!Number.isFinite(n)) return "-";
-  const num = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 }).format(n);
+  const num = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(Math.trunc(n));
   return `${currency || "IDR"} ${num}`;
 }
 
@@ -85,10 +74,6 @@ const fieldCls =
       </h2>
 
       <div class="flex flex-wrap items-center gap-2">
-        <div class="relative">
-          <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input v-model="localSearch" type="text" placeholder="Cari karyawan..." :class="[fieldCls, 'w-[200px] pl-9']" />
-        </div>
         <select v-model="filters.isFinal" :class="fieldCls">
           <option value="">Semua Status</option>
           <option value="true">Final</option>
