@@ -4,6 +4,7 @@ import { PERM } from "../permissions";
 import {
   BuildingOffice2Icon,
   ShareIcon,
+  UserIcon,
   PencilSquareIcon,
   TrashIcon,
 } from "@heroicons/vue/24/outline";
@@ -49,6 +50,10 @@ const auth = useAuthStore();
           <div class="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-mahir-muted">
             <ShareIcon class="h-3.5 w-3.5 flex-shrink-0" />
             <span class="truncate">{{ row.unit?.name || "Semua unit" }}</span>
+          </div>
+          <div class="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-mahir-muted">
+            <UserIcon class="h-3.5 w-3.5 flex-shrink-0" />
+            <span class="truncate">{{ row.employee?.fullName || "Belum ada approver" }}</span>
           </div>
         </div>
 

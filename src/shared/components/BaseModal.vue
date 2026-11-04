@@ -6,7 +6,7 @@ import { XMarkIcon, ArrowPathIcon } from "@heroicons/vue/24/outline";
 const props = defineProps({
   open: { type: Boolean, default: false },
   title: { type: String, default: "Form" },
-  size: { type: String, default: "lg" }, // 'md' | 'lg' | 'xl'
+  size: { type: String, default: "lg" }, // 'md' | 'lg' | 'xl' | '2xl'
   // Saat true: tombol simpan jadi spinner "Memuat…" & dinonaktifkan,
   // dan modal tidak bisa ditutup agar proses tidak terputus.
   loading: { type: Boolean, default: false },
@@ -15,7 +15,7 @@ const props = defineProps({
 
 const emit = defineEmits(["update:open", "submit"]);
 
-const SIZE = { md: "max-w-md", lg: "max-w-2xl", xl: "max-w-4xl" };
+const SIZE = { md: "max-w-md", lg: "max-w-2xl", xl: "max-w-4xl", "2xl": "max-w-6xl" };
 
 function close() {
   if (props.loading) return;

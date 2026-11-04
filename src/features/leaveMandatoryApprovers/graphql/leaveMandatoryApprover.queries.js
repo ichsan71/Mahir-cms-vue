@@ -16,6 +16,7 @@ export const LIST_LEAVE_MANDATORY_APPROVER = gql`
         results {
           id
           order
+          isActive
           unit {
             id
             name
@@ -23,6 +24,10 @@ export const LIST_LEAVE_MANDATORY_APPROVER = gql`
           company {
             id
             name
+          }
+          employee {
+            id
+            fullName
           }
         }
       }

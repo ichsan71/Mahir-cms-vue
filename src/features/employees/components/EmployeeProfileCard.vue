@@ -267,15 +267,13 @@ function workdayCount(wp) {
 
             <div class="col-span-2 mt-2 pt-3 border-t border-slate-200/60">
               <div class="flex items-center gap-1.5 text-[10px] font-medium tracking-wide uppercase text-slate-400">
-                <ShieldCheckIcon class="h-3.5 w-3.5" /> Peran / Role
+                <ShieldCheckIcon class="h-3.5 w-3.5" /> Peran / Jabatan
               </div>
-              <div v-if="employee.user?.groups?.length" class="mt-1.5 flex flex-wrap gap-1.5">
+              <div v-if="employee.roleName" class="mt-1.5 flex flex-wrap gap-1.5">
                 <span
-                  v-for="group in employee.user.groups"
-                  :key="group.id"
                   class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-mahir-primary ring-1 ring-inset ring-blue-600/10"
                 >
-                  {{ group.name }}
+                  {{ employee.roleName }}
                 </span>
               </div>
               <div v-else class="mt-1 text-xs italic text-slate-400">Belum ada peran</div>

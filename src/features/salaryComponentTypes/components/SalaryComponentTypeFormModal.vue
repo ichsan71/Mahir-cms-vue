@@ -115,12 +115,14 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
   <BaseModal
     :open="open"
     :title="isEdit ? 'Edit Komponen Penggajian' : 'Tambah Komponen Penggajian'"
-    size="lg"
+    size="2xl"
     :loading="saving"
     @update:open="emit('update:open', $event)"
     @submit="onSubmit"
   >
-    <div class="space-y-4">
+    <div class="grid gap-5 lg:grid-cols-3">
+      <!-- Kolom kiri: isian form -->
+      <div class="space-y-4 lg:col-span-2">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label :class="labelCls">Nama Komponen *</label>
@@ -157,11 +159,13 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
             :class="fieldCls"
             placeholder="Kosongkan bila tidak berlaku"
           />
+          <span class="mt-1 block text-[12px] text-mahir-muted">Untuk komponen harian: hari dengan telat melebihi menit ini tidak dibayar.</span>
         </div>
       </div>
 
       <div>
         <label :class="labelCls">Sifat komponen</label>
+
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <label :class="toggleCls">
             <input v-model="form.isTaxable" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
@@ -175,7 +179,7 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
             <input v-model="form.isFixed" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
             <span>
               <span class="block text-sm font-medium text-slate-700">Tetap</span>
-              <span class="block text-[12px] text-mahir-muted">Nilainya tetap tiap periode, bukan variabel.</span>
+              <span class="block text-[12px] text-mahir-muted">Dibayar penuh tiap periode. Jika tidak dicentang, dihitung per hari hadir.</span>
             </span>
           </label>
 
@@ -183,7 +187,7 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
             <input v-model="form.isProrated" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
             <span>
               <span class="block text-sm font-medium text-slate-700">Prorata</span>
-              <span class="block text-[12px] text-mahir-muted">Disesuaikan dengan hari kerja/kehadiran.</span>
+              <span class="block text-[12px] text-mahir-muted">Dipotong proporsional dengan hari tidak hadir. Hanya untuk komponen Tetap.</span>
             </span>
           </label>
         </div>
@@ -231,6 +235,81 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
           </button>
         </div>
       </div>
+      </div>
+      <!-- /Kolom kiri -->
+
+      <!-- Kolom kanan: panduan sifat komponen + contoh kasus (bisa dibuka) -->
+      <aside class="lg:col-span-1">
+        <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-[12px] leading-relaxed text-slate-600 lg:sticky lg:top-0">
+          <h6 class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-sky-800">
+            <svg class="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
+            </svg>
+            Panduan sifat komponen
+          </h6>
+
+          <ul class="space-y-1.5">
+            <li><b class="text-slate-700">Tetap</b> — dibayar penuh tiap periode. Jika tidak, dihitung per hari hadir × nilai harian.</li>
+            <li><b class="text-slate-700">Prorata</b> — nilai dipotong proporsional dengan hari tidak hadir (khusus komponen Tetap).</li>
+            <li><b class="text-slate-700">Hangus bila telat</b> — hari yang telat melebihi batas menit tidak dibayar (khusus komponen harian).</li>
+          </ul>
+
+          <details class="mt-3 rounded-lg border border-sky-200 bg-white/70">
+            <summary class="cursor-pointer select-none px-3 py-2 font-medium text-sky-800">
+              Lihat contoh kasus &amp; perhitungan
+            </summary>
+
+            <div class="space-y-3 border-t border-sky-200 px-3 py-3">
+              <div class="overflow-x-auto">
+                <p class="mb-1 font-medium text-slate-700">Pengaturan (asumsi 22 hari kerja):</p>
+                <table class="w-full border-collapse text-[11px]">
+                  <thead>
+                    <tr class="bg-sky-100/60 text-left text-slate-600">
+                      <th class="border border-sky-200 px-2 py-1 font-medium">Komponen</th>
+                      <th class="border border-sky-200 px-2 py-1 font-medium">Tetap</th>
+                      <th class="border border-sky-200 px-2 py-1 font-medium">Prorata</th>
+                      <th class="border border-sky-200 px-2 py-1 font-medium">Hangus</th>
+                      <th class="border border-sky-200 px-2 py-1 font-medium">Nilai</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-slate-600">
+                    <tr>
+                      <td class="border border-sky-200 px-2 py-1">Gaji Pokok</td>
+                      <td class="border border-sky-200 px-2 py-1">Ya</td>
+                      <td class="border border-sky-200 px-2 py-1">Ya</td>
+                      <td class="border border-sky-200 px-2 py-1">—</td>
+                      <td class="border border-sky-200 px-2 py-1">5.000.000</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-sky-200 px-2 py-1">Transport</td>
+                      <td class="border border-sky-200 px-2 py-1">Ya</td>
+                      <td class="border border-sky-200 px-2 py-1">Ya</td>
+                      <td class="border border-sky-200 px-2 py-1">—</td>
+                      <td class="border border-sky-200 px-2 py-1">500.000</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-sky-200 px-2 py-1">Uang Makan</td>
+                      <td class="border border-sky-200 px-2 py-1">Tidak</td>
+                      <td class="border border-sky-200 px-2 py-1">—</td>
+                      <td class="border border-sky-200 px-2 py-1">30</td>
+                      <td class="border border-sky-200 px-2 py-1">10rb/hari</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <p class="mb-1 font-medium text-slate-700">Perhitungan (1 absen, 1 telat, 1 cuti tahunan):</p>
+                <ul class="space-y-1">
+                  <li><b class="text-slate-700">Gaji Pokok</b>: 5.000.000 − (5.000.000 ÷ 22 × 1) = <b>4.772.727</b></li>
+                  <li><b class="text-slate-700">Transport</b>: 500.000 − (500.000 ÷ 22 × 2) = <b>454.545</b> <span class="text-mahir-muted">(absen + cuti, karena cuti tahunan tidak dibayar)</span></li>
+                  <li><b class="text-slate-700">Uang Makan</b>: (20 hadir − 1 telat + 1 cuti) = 20 × 10.000 = <b>200.000</b></li>
+                </ul>
+              </div>
+            </div>
+          </details>
+        </div>
+      </aside>
     </div>
   </BaseModal>
 </template>

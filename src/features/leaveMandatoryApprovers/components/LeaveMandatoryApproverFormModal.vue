@@ -1,12 +1,13 @@
 <script setup>
 // Form tambah/ubah approver wajib — kontrak LeaveMandatoryApproverInput
-// (companyId, unitId, order, isActive). Prefill edit dari baris list (company,
-// unit, order sudah tersedia di list; tak perlu query detail terpisah).
-import { ref, computed, watch } from "vue";
+// (companyId, unitId, employeeId, order, isActive). Prefill edit dari baris list
+// (company, unit, order, employee sudah tersedia di list; tak perlu query detail).
+import { ref, computed, watch, nextTick } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import SearchableSelect from "@/shared/components/SearchableSelect.vue";
 import { useCompanySearch } from "@/features/companies/composables/useCompanySearch";
 import { useUnitSearch } from "@/features/units/composables/useUnitSearch";
+import { useEmployeeSearch } from "@/features/employees/composables/useEmployeeSearch";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -28,36 +29,77 @@ const unitSelected = ref(null);
 const blank = () => ({
   companyId: "",
   unitId: "",
+  employeeId: "",
   order: "",
   isActive: true,
 });
 
 const form = ref(blank());
 
+// Pencarian karyawan untuk approver — daftar menyempit mengikuti unit (dan
+// perusahaan) yang dipilih di atas. Filter dikirim ke listEmployee via params.
+const employeeSelected = ref(null);
+const { options: employeeOptions, loading: employeeLoading, setSearch: setEmployeeSearch } = useEmployeeSearch(
+  () => {
+    const unitId = toInt(form.value.unitId);
+    const companyId = toInt(form.value.companyId);
+    return {
+      ...(unitId ? { unitIds: [unitId] } : {}),
+      ...(companyId ? { companyIds: [companyId] } : {}),
+    };
+  },
+);
+
 function toNumStr(v) {
   return v === null || v === undefined ? "" : String(v);
 }
 
+// Saat fillForm mengisi unit/perusahaan sekaligus, watcher reset approver di
+// bawah tidak boleh ikut jalan (agar prefill approver saat edit tidak terhapus).
+const isFilling = ref(false);
+
 function fillForm() {
+  isFilling.value = true;
   const s = props.approver;
   if (s?.id) {
     form.value = {
       companyId: s.company?.id ?? "",
       unitId: s.unit?.id ?? "",
+      employeeId: s.employee?.id ?? "",
       order: toNumStr(s.order),
       isActive: true,
     };
     companySelected.value = s.company ?? null;
     unitSelected.value = s.unit ?? null;
+    employeeSelected.value = s.employee
+      ? { id: s.employee.id, name: s.employee.fullName }
+      : null;
   } else {
     form.value = blank();
     companySelected.value = null;
     unitSelected.value = null;
+    employeeSelected.value = null;
   }
+  // Lepas guard setelah reaksi watcher selesai di-flush.
+  nextTick(() => {
+    isFilling.value = false;
+  });
 }
 
 watch(() => props.open, (open) => open && fillForm());
 watch(() => props.approver, () => props.open && fillForm());
+
+// Bila unit / perusahaan diganti, approver sebelumnya bisa jadi tak lagi relevan
+// (di luar unit baru) — kosongkan pilihannya agar user memilih ulang.
+watch(
+  () => [form.value.unitId, form.value.companyId],
+  (next, prev) => {
+    if (isFilling.value) return;
+    if (!prev || (next[0] === prev[0] && next[1] === prev[1])) return;
+    form.value.employeeId = "";
+    employeeSelected.value = null;
+  },
+);
 
 // Konversi angka → integer backend, null bila kosong/tidak valid.
 function toInt(v) {
@@ -72,6 +114,7 @@ function onSubmit() {
   const input = {
     companyId: toInt(f.companyId),
     unitId: toInt(f.unitId),
+    employeeId: toInt(f.employeeId),
     order: toInt(f.order),
   };
   // isActive hanya bagian kontrak create (edit tidak menyertakannya).
@@ -119,6 +162,22 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           @search="setUnitSearch"
         />
         <p class="mt-1 text-[12px] text-mahir-muted">Kosongkan bila berlaku untuk semua unit di perusahaan ini.</p>
+      </div>
+
+      <div>
+        <label :class="labelCls">Approver <span class="font-normal text-slate-400">(karyawan)</span></label>
+        <SearchableSelect
+          v-model="form.employeeId"
+          :selected="employeeSelected"
+          :options="employeeOptions"
+          :loading="employeeLoading"
+          placeholder="Pilih approver"
+          search-placeholder="Cari karyawan…"
+          @search="setEmployeeSearch"
+        />
+        <p class="mt-1 text-[12px] text-mahir-muted">
+          Daftar karyawan otomatis menyesuaikan unit/perusahaan yang dipilih di atas.
+        </p>
       </div>
 
       <div>
