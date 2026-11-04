@@ -1,7 +1,8 @@
 import { ref, computed } from "vue";
 import { useQuery } from "@vue/apollo-composable";
-import { LIST_ATTENDANCE } from "../graphql/attendance.queries";
+import { LIST_ATTENDANCE, LIST_LEAVE_TODAY } from "../graphql/attendance.queries";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { PERM } from "../permissions";
 import { summarizeAttendance } from "../summary";
 
 // Format Date lokal → "YYYY-MM-DD" (tanpa efek zona waktu dari toISOString).
@@ -58,6 +59,36 @@ export function useAttendanceCalendar() {
     return map;
   });
 
+  // Cuti DISETUJUI milik karyawan login. Rentang tanggal difilter di klien
+  // (startDate..endDate), lalu dijabarkan per hari agar bisa ditandai di kalender.
+  const { result: leaveResult } = useQuery(
+    LIST_LEAVE_TODAY,
+    () => ({ params: { page: 1, pageSize: 50, status: "APPROVED", employeeId: auth.employee?.id ?? null } }),
+    () => ({ enabled: auth.can(PERM.LEAVE_LIST) && !!auth.employee?.id, fetchPolicy: "cache-and-network" }),
+  );
+
+  const leaves = computed(() => leaveResult.value?.listLeave?.data?.results ?? []);
+
+  // Peta "YYYY-MM-DD" → cuti, menjabarkan tiap cuti dari startDate s/d endDate.
+  const leaveByDate = computed(() => {
+    const map = new Map();
+    for (const lv of leaves.value) {
+      const start = dateKey(lv.startDate);
+      const end = dateKey(lv.endDate) || start;
+      if (!start) continue;
+      const cur = new Date(`${start}T00:00:00`);
+      const last = new Date(`${end}T00:00:00`);
+      // Batas aman agar tidak loop berlebihan bila data janggal.
+      let guard = 0;
+      while (cur <= last && guard < 400) {
+        map.set(ymd(cur), lv);
+        cur.setDate(cur.getDate() + 1);
+        guard += 1;
+      }
+    }
+    return map;
+  });
+
   const todayKey = ymd(new Date());
 
   // Grid 6 minggu × 7 hari, mulai Senin. Sel di luar bulan ditandai inMonth=false.
@@ -83,6 +114,7 @@ export function useAttendanceCalendar() {
           isToday: key === todayKey,
           weekend: dow === 0 || dow === 6,
           record: byDate.value.get(key) || null,
+          leave: leaveByDate.value.get(key) || null,
         });
       }
       out.push(days);

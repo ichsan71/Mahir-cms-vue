@@ -49,13 +49,23 @@ function cellClass(cell) {
   if (cell.weekend || (cell.record && isHoliday(cell.record))) {
     return "border-mahir-danger/20 bg-mahir-danger-soft hover:brightness-[0.98]";
   }
+  // Hari cuti (tanpa libur) ditandai dengan latar info soft.
+  if (cell.leave) {
+    return "border-mahir-info/30 bg-mahir-info-soft hover:brightness-[0.98]";
+  }
   return "border-mahir-border bg-white hover:border-mahir-primary/40";
 }
 
-// Sel terpilih → detail ditampilkan dalam modal. Hanya hari yang punya catatan.
+// Label cuti untuk ditampilkan (nama tipe cuti bila ada).
+function leaveLabel(leave) {
+  return leave?.leaveType?.name || "Cuti";
+}
+
+// Sel terpilih → detail ditampilkan dalam modal. Hari yang punya catatan
+// kehadiran ATAU cuti dapat dibuka.
 const selected = ref(null);
 function selectDay(cell) {
-  if (!cell.inMonth || !cell.record) return;
+  if (!cell.inMonth || (!cell.record && !cell.leave)) return;
   selected.value = cell;
 }
 function closeDetail() {
@@ -64,6 +74,7 @@ function closeDetail() {
 // Tutup modal saat pindah bulan (sel lama bisa hilang dari grid).
 watch(() => props.monthLabel, closeDetail);
 const selectedRecord = computed(() => selected.value?.record ?? null);
+const selectedLeave = computed(() => selected.value?.leave ?? null);
 
 // Tutup modal dengan tombol Escape.
 function onKeydown(e) {
@@ -192,14 +203,21 @@ function mapsUrl(lat, lng) {
               class="h-1.5 w-1.5 rounded-full"
               :class="DOT[statusKey(cell.record)] || 'bg-slate-300'"
             ></span>
+            <span
+              v-else-if="cell.leave"
+              class="h-1.5 w-1.5 rounded-full bg-mahir-info"
+            ></span>
           </div>
 
-          <!-- Info ringkas kehadiran -->
-          <div v-if="cell.record" class="mt-auto pt-0.5">
-            <div v-if="isHoliday(cell.record)" class="truncate text-[9.5px] font-semibold text-mahir-danger">
+          <!-- Info ringkas kehadiran / cuti -->
+          <div v-if="cell.record || cell.leave" class="mt-auto pt-0.5">
+            <div v-if="cell.record && isHoliday(cell.record)" class="truncate text-[9.5px] font-semibold text-mahir-danger">
               {{ holidayLabel(cell.record) }}
             </div>
-            <div class="hidden text-[10px] font-medium leading-tight text-slate-600 lg:block">
+            <div v-if="cell.leave" class="truncate text-[9.5px] font-semibold text-mahir-info" :title="leaveLabel(cell.leave)">
+              {{ leaveLabel(cell.leave) }}
+            </div>
+            <div v-if="cell.record" class="hidden text-[10px] font-medium leading-tight text-slate-600 lg:block">
               <span :class="actualIn(cell.record) ? '' : 'text-slate-300'">{{ formatTime(actualIn(cell.record)) }}</span>
               <span class="text-slate-300">–</span>
               <span :class="actualOut(cell.record) ? '' : 'text-slate-300'">{{ formatTime(actualOut(cell.record)) }}</span>
@@ -215,6 +233,9 @@ function mapsUrl(lat, lng) {
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="h-3 w-3 rounded border border-mahir-danger/20 bg-mahir-danger-soft"></span> Libur
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="h-3 w-3 rounded border border-mahir-info/30 bg-mahir-info-soft"></span> Cuti
         </span>
       </div>
     </div>
@@ -242,6 +263,12 @@ function mapsUrl(lat, lng) {
               </div>
             </div>
             <div class="flex items-center gap-2">
+              <span
+                v-if="selectedLeave"
+                class="inline-flex items-center gap-1 rounded-md bg-mahir-info-soft px-2 py-0.5 text-[12px] font-semibold text-mahir-info"
+              >
+                {{ leaveLabel(selectedLeave) }}
+              </span>
               <StatusBadge v-if="selectedRecord" :status="statusKey(selectedRecord)" />
               <button
                 type="button"
@@ -255,6 +282,28 @@ function mapsUrl(lat, lng) {
 
           <!-- Body -->
           <div class="overflow-y-auto px-6 py-5">
+      <!-- Info cuti (bila hari ini cuti yang disetujui) -->
+      <div
+        v-if="selectedLeave"
+        class="mb-4 rounded-xl border border-mahir-info/20 bg-mahir-info-soft px-3.5 py-3"
+      >
+        <div class="flex items-center gap-1.5 text-[13.5px] font-semibold text-mahir-info">
+          <CalendarDaysIcon class="h-4 w-4" /> {{ leaveLabel(selectedLeave) }}
+        </div>
+        <div class="mt-1 text-[12px] text-slate-600">
+          {{ formatDate(selectedLeave.startDate) }} – {{ formatDate(selectedLeave.endDate) }}
+        </div>
+        <div v-if="selectedLeave.reason" class="mt-1 text-[12px] italic text-slate-500">
+          "{{ selectedLeave.reason }}"
+        </div>
+      </div>
+
+      <!-- Keterangan bila hari cuti tanpa catatan kehadiran -->
+      <div v-if="!selectedRecord" class="py-2 text-center text-[13px] text-slate-400">
+        Tidak ada catatan kehadiran untuk hari ini.
+      </div>
+
+      <template v-if="selectedRecord">
       <!-- Jadwal vs aktual + durasi -->
       <div class="mb-4 grid gap-3 sm:grid-cols-3">
         <div class="rounded-xl border border-mahir-border bg-slate-50/60 px-3.5 py-2.5">
@@ -390,6 +439,7 @@ function mapsUrl(lat, lng) {
           </div>
         </div>
       </div>
+      </template>
           </div>
         </div>
       </div>
