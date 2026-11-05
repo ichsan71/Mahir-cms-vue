@@ -39,7 +39,7 @@ const filteredEmployees = computed(() => {
   return employees.value.filter((emp) => {
     const haystack = [
       emp.fullName,
-      emp.nik,
+      emp.roleName,
       emp.level?.name,
       ...(emp.units ?? []).map((u) => u.name),
     ]
@@ -213,7 +213,7 @@ function goBack() {
               <div class="min-w-0 flex-1">
                 <div class="truncate text-[13.5px] font-semibold text-slate-800">{{ emp.fullName }}</div>
                 <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-slate-400">
-                  <span>NIK: {{ emp.nik || "—" }}</span>
+                  <span>{{ emp.roleName || "—" }}</span>
                   <span v-if="emp.level?.name" class="text-slate-300">·</span>
                   <span v-if="emp.level?.name">{{ emp.level.name }}</span>
                   <span v-if="unitNames(emp)" class="text-slate-300">·</span>

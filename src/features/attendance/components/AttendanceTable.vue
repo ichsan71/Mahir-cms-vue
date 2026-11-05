@@ -297,7 +297,7 @@ function holidayLabel(row) {
                     v-if="mapsUrl(log.latitude, log.longitude)"
                     :href="mapsUrl(log.latitude, log.longitude)"
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     class="inline-flex items-center gap-1 text-mahir-primary hover:underline"
                   >
                     <MapPinIcon class="h-3.5 w-3.5" /> Lihat lokasi
@@ -314,7 +314,7 @@ function holidayLabel(row) {
                 v-if="log.image"
                 :href="log.image"
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 class="flex-shrink-0"
                 title="Lihat foto"
               >

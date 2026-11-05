@@ -128,7 +128,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
                     <a
                       :href="att.file"
                       target="_blank"
-                      rel="noopener"
+                      rel="noopener noreferrer"
                       class="inline-flex items-center gap-2 rounded-lg border border-mahir-border px-3 py-2 text-[13px] text-mahir-primary hover:bg-slate-50"
                     >
                       <PaperClipIcon class="h-4 w-4 flex-shrink-0" />

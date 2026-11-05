@@ -41,7 +41,7 @@ export const GET_BRANCH = gql`
         name
         employees {
           id
-          nik
+          roleName
           image
           level {
             name

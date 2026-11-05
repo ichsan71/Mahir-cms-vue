@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted } from "vue";
 import StatusBadge from "@/shared/components/StatusBadge.vue";
 import { formatDate } from "@/shared/utils/format";
+import { sanitizeHtml } from "@/shared/utils/sanitizeHtml";
 import { useAnnouncementDetail } from "../composables/useAnnouncementDetail";
 import {
   XMarkIcon,
@@ -128,11 +129,12 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
               <!-- Isi -->
               <div class="mb-4">
                 <span class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Isi</span>
+                <!-- Konten rich-text disanitasi (SEC-01) sebelum dirender. -->
                 <!-- eslint-disable-next-line vue/no-v-html -->
                 <div
                   v-if="announcement.content"
                   class="prose-mahir mt-1.5 text-[14px] leading-relaxed text-slate-700"
-                  v-html="announcement.content"
+                  v-html="sanitizeHtml(announcement.content)"
                 ></div>
                 <p v-else class="mt-1.5 text-[13px] text-slate-400">Tidak ada isi.</p>
               </div>
@@ -145,7 +147,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
                     <a
                       :href="att.file"
                       target="_blank"
-                      rel="noopener"
+                      rel="noopener noreferrer"
                       class="inline-flex items-center gap-2 rounded-lg border border-mahir-border px-3 py-2 text-[13px] text-mahir-primary hover:bg-slate-50"
                     >
                       <PaperClipIcon class="h-4 w-4 flex-shrink-0" />

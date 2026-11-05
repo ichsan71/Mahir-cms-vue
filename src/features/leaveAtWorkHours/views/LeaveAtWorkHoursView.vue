@@ -199,7 +199,7 @@ async function handleConfirm() {
               <td class="px-5 py-3 text-slate-500">
                 <div class="flex max-w-[280px] items-center gap-1.5">
                   <span class="truncate">{{ row.reason || "-" }}</span>
-                  <a v-if="row.attachment" :href="row.attachment" target="_blank" rel="noopener" class="shrink-0 text-mahir-primary hover:text-mahir-primary/80" title="Lihat lampiran">
+                  <a v-if="row.attachment" :href="row.attachment" target="_blank" rel="noopener noreferrer" class="shrink-0 text-mahir-primary hover:text-mahir-primary/80" title="Lihat lampiran">
                     <PaperClipIcon class="h-4 w-4" />
                   </a>
                 </div>
@@ -278,7 +278,7 @@ async function handleConfirm() {
               <td class="px-5 py-3 text-slate-500">
                 <div class="flex max-w-[240px] items-center gap-1.5">
                   <span class="truncate">{{ row.leaveAtWorkHour?.reason || "-" }}</span>
-                  <a v-if="row.leaveAtWorkHour?.attachment" :href="row.leaveAtWorkHour.attachment" target="_blank" rel="noopener" class="shrink-0 text-mahir-primary hover:text-mahir-primary/80" title="Lihat lampiran">
+                  <a v-if="row.leaveAtWorkHour?.attachment" :href="row.leaveAtWorkHour.attachment" target="_blank" rel="noopener noreferrer" class="shrink-0 text-mahir-primary hover:text-mahir-primary/80" title="Lihat lampiran">
                     <PaperClipIcon class="h-4 w-4" />
                   </a>
                 </div>

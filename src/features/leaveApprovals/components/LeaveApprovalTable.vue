@@ -103,7 +103,7 @@ function accent(s) {
               v-if="row.leave?.attachment"
               :href="row.leave.attachment"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               class="inline-flex items-center gap-1 text-mahir-primary hover:underline"
             >
               <PaperClipIcon class="h-3.5 w-3.5" /> Lampiran

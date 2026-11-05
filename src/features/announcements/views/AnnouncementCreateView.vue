@@ -227,7 +227,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
             <a
               :href="att.file"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
               class="min-w-0 flex-1 truncate text-[13px] text-mahir-primary hover:underline"
             >
               {{ existingName(att.file) }}

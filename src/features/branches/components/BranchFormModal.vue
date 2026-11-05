@@ -54,7 +54,6 @@ function onSubmit() {
     name: form.value.name?.trim() || null,
     companyIds: form.value.companyIds || [], // Mengirimkan array ID
   };
-  console.log(input)
   emit("save", { id: props.branch?.id ?? null, input });
 }
 

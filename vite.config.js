@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    // SEC-04: buang console.log/debug/info di build produksi agar tidak ada
+    // kebocoran data di konsol. console.warn/error dipertahankan untuk diagnostik.
+    // Di mode development log tetap utuh (pure hanya berdampak saat minifikasi).
+    esbuild: {
+      pure: mode === "production" ? ["console.log", "console.debug", "console.info"] : [],
+    },
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
