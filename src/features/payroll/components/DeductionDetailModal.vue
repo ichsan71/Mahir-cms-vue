@@ -3,7 +3,7 @@
 import { computed } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import { categoryLabel, categoryBadgeClass } from "@/features/salaryComponentTypes/constants";
-import { formatDate } from "@/shared/utils/format";
+import { formatDate, formatNumber } from "@/shared/utils/format";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -51,15 +51,15 @@ function money(v, currency) {
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="rounded-lg border border-mahir-border p-3">
           <div class="text-[11px] uppercase tracking-wide text-slate-400">Hari Kerja</div>
-          <div class="text-sm font-semibold text-slate-800">{{ d.totalWorkDay ?? "-" }}</div>
+          <div class="text-sm font-semibold text-slate-800">{{ formatNumber(d.totalWorkDay) }}</div>
         </div>
         <div class="rounded-lg border border-mahir-border p-3">
           <div class="text-[11px] uppercase tracking-wide text-slate-400">Absen</div>
-          <div class="text-sm font-semibold text-slate-800">{{ d.absentDays ?? "-" }}</div>
+          <div class="text-sm font-semibold text-slate-800">{{ formatNumber(d.absentDays) }}</div>
         </div>
         <div class="rounded-lg border border-mahir-border p-3">
           <div class="text-[11px] uppercase tracking-wide text-slate-400">Cuti Tak Berbayar</div>
-          <div class="text-sm font-semibold text-slate-800">{{ d.unpaidLeaveDays ?? "-" }}</div>
+          <div class="text-sm font-semibold text-slate-800">{{ formatNumber(d.unpaidLeaveDays) }}</div>
         </div>
         <div class="rounded-lg border border-mahir-border p-3">
           <div class="text-[11px] uppercase tracking-wide text-slate-400">Total Potongan</div>
@@ -103,8 +103,8 @@ function money(v, currency) {
                 <td class="py-2 pr-3 text-right text-slate-600">{{ money(b.monthlyValue, d.currency) }}</td>
                 <td class="py-2 pr-3 text-right text-slate-600">{{ money(b.dailyRate, d.currency) }}</td>
                 <td class="py-2 pr-3 text-right text-slate-600">
-                  {{ b.daysDeducted ?? 0 }}
-                  <span v-if="b.lateForfeitDays" class="text-[11px] text-slate-400">(+{{ b.lateForfeitDays }} telat)</span>
+                  {{ formatNumber(b.daysDeducted, { dash: "0" }) }}
+                  <span v-if="Number(b.lateForfeitDays)" class="text-[11px] text-slate-400">(+{{ formatNumber(b.lateForfeitDays) }} telat)</span>
                 </td>
                 <td class="py-2 text-right font-semibold text-mahir-danger">{{ money(b.amount, d.currency) }}</td>
               </tr>

@@ -46,8 +46,10 @@ export const GET_LEAVE_TYPE = gql`
         needReason
         needAttachment
         needApproval
+        needClockIn
         isActive
         useParentApproval
+        attendanceStatus
       }
     }
   }

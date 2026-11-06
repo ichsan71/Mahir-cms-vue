@@ -8,6 +8,7 @@ import { VueDatePicker } from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 import { useLeaveTypeSearch } from "@/features/leaveTypes/composables/useLeaveTypeSearch";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { validateFile, ATTACHMENT_MIME, ATTACHMENT_ACCEPT, ATTACHMENT_HINT, MB } from "@/shared/utils/validateUpload";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -32,6 +33,7 @@ const blank = () => ({
 
 const form = ref(blank());
 const attachment = ref(null); // File object (opsional)
+const attachmentError = ref("");
 const fileInput = ref(null);
 // Pesan galat per field (validasi klien — SearchableSelect/datepicker bukan input native).
 const errors = ref({});
@@ -39,6 +41,7 @@ const errors = ref({});
 function fillForm() {
   form.value = blank();
   attachment.value = null;
+  attachmentError.value = "";
   if (fileInput.value) fileInput.value.value = "";
   leaveTypeSelected.value = null;
   errors.value = {};
@@ -54,7 +57,18 @@ watch([() => form.value.startDate, () => form.value.endDate], ([s, e]) => {
 });
 
 function onFileChange(e) {
-  attachment.value = e.target.files?.[0] ?? null;
+  attachmentError.value = "";
+  const file = e.target.files?.[0] ?? null;
+  if (file) {
+    const { ok, error } = validateFile(file, { allow: ATTACHMENT_MIME, maxBytes: 10 * MB });
+    if (!ok) {
+      attachmentError.value = error;
+      attachment.value = null;
+      if (fileInput.value) fileInput.value.value = "";
+      return;
+    }
+  }
+  attachment.value = file;
 }
 
 // Validasi field wajib sebelum submit.
@@ -172,10 +186,12 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
         <input
           ref="fileInput"
           type="file"
+          :accept="ATTACHMENT_ACCEPT"
           class="block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-mahir-primary-soft file:px-3 file:py-2 file:text-sm file:font-medium file:text-mahir-primary hover:file:bg-mahir-primary-soft/80"
           @change="onFileChange"
         />
-        <p class="mt-1 text-xs text-slate-400">Opsional — mis. surat dokter (PDF/gambar).</p>
+        <p v-if="attachmentError" class="mt-1 text-xs text-rose-500">{{ attachmentError }}</p>
+        <p v-else class="mt-1 text-xs text-slate-400">Opsional — {{ ATTACHMENT_HINT }}. Maks. 10 MB.</p>
       </div>
     </div>
   </BaseModal>

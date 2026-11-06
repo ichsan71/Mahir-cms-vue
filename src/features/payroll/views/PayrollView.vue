@@ -8,12 +8,22 @@ import { useDeductionFiltersStore } from "../stores/deductionFilters.store";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import ComputeDeductionModal from "../components/ComputeDeductionModal.vue";
 import DeductionDetailModal from "../components/DeductionDetailModal.vue";
-import { formatDate } from "@/shared/utils/format";
+import SearchableSelect from "@/shared/components/SearchableSelect.vue";
+import { useEmployeeSearch } from "@/features/employees/composables/useEmployeeSearch";
+import { formatDate, formatNumber } from "@/shared/utils/format";
 import { PERM } from "../permissions";
 import { EyeIcon, CalculatorIcon } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
 const filters = useDeductionFiltersStore();
+
+// Filter karyawan (multi) → employeeIds. selected menyimpan {id,name} utk tampil tag.
+const {
+  options: employeeOptions,
+  loading: employeeLoading,
+  setSearch: setEmployeeSearch,
+} = useEmployeeSearch();
+const employeeSelected = ref([]);
 
 const { deductions, pagination, loading, refetch, nextPage, prevPage } = useSalaryDeductions();
 const { compute, loading: computing } = useComputeDeduction();
@@ -74,6 +84,19 @@ const fieldCls =
       </h2>
 
       <div class="flex flex-wrap items-center gap-2">
+        <div class="min-w-[220px]">
+          <SearchableSelect
+            v-model="filters.employeeIds"
+            :selected="employeeSelected"
+            :options="employeeOptions"
+            :loading="employeeLoading"
+            multiple
+            floating
+            placeholder="Semua karyawan"
+            search-placeholder="Cari karyawan…"
+            @search="setEmployeeSearch"
+          />
+        </div>
         <select v-model="filters.isFinal" :class="fieldCls">
           <option value="">Semua Status</option>
           <option value="true">Final</option>
@@ -118,9 +141,9 @@ const fieldCls =
             <td class="px-4 py-3 text-slate-600">
               {{ formatDate(row.periodStart) }} – {{ formatDate(row.periodEnd) }}
             </td>
-            <td class="px-4 py-3 text-right text-slate-600">{{ row.totalWorkDay ?? "-" }}</td>
-            <td class="px-4 py-3 text-right text-slate-600">{{ row.absentDays ?? "-" }}</td>
-            <td class="px-4 py-3 text-right text-slate-600">{{ row.unpaidLeaveDays ?? "-" }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(row.totalWorkDay) }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(row.absentDays) }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ formatNumber(row.unpaidLeaveDays) }}</td>
             <td class="px-4 py-3 text-right font-bold text-mahir-danger">
               {{ money(row.totalDeduction, row.currency) }}
             </td>

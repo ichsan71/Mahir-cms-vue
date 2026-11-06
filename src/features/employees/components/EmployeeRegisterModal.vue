@@ -14,6 +14,7 @@ import { useBranchSearch } from "@/features/branches/composables/useBranchSearch
 import { useEmploymentTypeSearch } from "@/features/employmentTypes/composables/useEmploymentTypeSearch";
 import { useWorkPatternSearch } from "@/features/workPatterns/composables/useWorkPatternSearch";
 import { useEmployeeSearch } from "../composables/useEmployeeSearch";
+import { validateFile, IMAGE_MIME, IMAGE_ACCEPT, IMAGE_HINT, MB } from "@/shared/utils/validateUpload";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -182,7 +183,6 @@ watch(maritalStatusOptions, (opts) => {
 // GraphQL multipart upload (backend butuh berkas nyata; string base64 memicu
 // "'str' object has no attribute 'read'"). `form.image` menampung File yang akan
 // dikirim, sedangkan `imagePreview` (data URL) hanya untuk pratinjau di layar.
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 const imageError = ref("");
 const imagePreview = ref(null);
 
@@ -190,12 +190,9 @@ function onImageChange(event) {
   imageError.value = "";
   const file = event.target.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    imageError.value = "Berkas harus berupa gambar.";
-    return;
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    imageError.value = "Ukuran gambar maksimal 2 MB.";
+  const { ok, error } = validateFile(file, { allow: IMAGE_MIME, maxBytes: 5 * MB });
+  if (!ok) {
+    imageError.value = error;
     return;
   }
   form.value.image = file; // objek File → dikirim sebagai berkas (multipart)
@@ -333,7 +330,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
                 class="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
               >
                 {{ imagePreview ? "Ganti Foto" : "Unggah Foto" }}
-                <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+                <input type="file" :accept="IMAGE_ACCEPT" class="hidden" @change="onImageChange" />
               </label>
               <button
                 v-if="imagePreview"
@@ -345,7 +342,7 @@ const sectionCls = "text-xs font-bold uppercase tracking-wider text-slate-400";
               </button>
             </div>
             <p v-if="imageError" class="mt-1 text-xs text-rose-500">{{ imageError }}</p>
-            <p v-else class="mt-1 text-xs text-slate-400">Format gambar, maks. 2 MB.</p>
+            <p v-else class="mt-1 text-xs text-slate-400">{{ IMAGE_HINT }} — maks. 5 MB.</p>
           </div>
         </div>
       </div>

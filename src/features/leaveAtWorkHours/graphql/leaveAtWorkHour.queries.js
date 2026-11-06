@@ -17,6 +17,8 @@ export const LIST_LEAVE_AT_WORK_HOUR = gql`
           id
           date
           reason
+          expectedCheckIn
+          expectedCheckOut
           attachment
           status
           employee {
@@ -27,6 +29,20 @@ export const LIST_LEAVE_AT_WORK_HOUR = gql`
             id
             name
           }
+          approvals {
+            id
+            status
+            approver {
+              id
+              fullName
+              mandatoryApprovals {
+                employee {
+                  id
+                  fullName
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -34,13 +50,41 @@ export const LIST_LEAVE_AT_WORK_HOUR = gql`
 `;
 
 // Ajukan izin baru. `input` (LeaveAtWorkHourInput): employeeId, leaveTypeId,
-// date, reason, attachment (file, opsional), status (LeaveAtWorkHourStatusChoices).
+// date, reason, expectedCheckIn/expectedCheckOut (jam "HH:mm:ss", opsional),
+// attachment (file, opsional), status (LeaveAtWorkHourStatusChoices).
 export const CREATE_LEAVE_AT_WORK_HOUR = gql`
   mutation CreateLeaveAtWorkHour($input: LeaveAtWorkHourInput!) {
     createLeaveAtWorkHour(input: $input) {
       data {
         id
         date
+        status
+      }
+    }
+  }
+`;
+
+// Ubah izin yang masih DRAFT. `input` = LeaveAtWorkHourInput utuh (sama seperti
+// create); `id` = id record izin. Hanya boleh saat status DRAFT (ditegakkan backend).
+export const EDIT_LEAVE_AT_WORK_HOUR = gql`
+  mutation EditLeaveAtWorkHour($id: Int!, $input: LeaveAtWorkHourInput!) {
+    editLeaveAtWorkHour(id: $id, input: $input) {
+      data {
+        id
+        date
+        status
+      }
+    }
+  }
+`;
+
+// Kirim izin DRAFT ke alur persetujuan → status berubah dari DRAFT ke PENDING.
+// Setelah dikirim, izin tidak bisa diubah lagi. `id` = id record izin.
+export const SUBMIT_LEAVE_AT_WORK_HOUR = gql`
+  mutation SubmitLeaveAtWorkHour($id: Int!) {
+    submitLeaveAtWorkHour(id: $id) {
+      data {
+        id
         status
       }
     }
@@ -67,11 +111,19 @@ export const LIST_LEAVE_AT_WORK_HOUR_APPROVAL = gql`
           approver {
             id
             fullName
+            mandatoryApprovals {
+              employee {
+                id
+                fullName
+              }
+            }
           }
           leaveAtWorkHour {
             id
             date
             reason
+            expectedCheckIn
+            expectedCheckOut
             attachment
             status
             employee {

@@ -7,6 +7,7 @@ export const PERM = {
   GET: "getLeaveAtWorkHour",
   CREATE: "createLeaveAtWorkHour",
   EDIT: "editLeaveAtWorkHour",
+  SUBMIT: "submitLeaveAtWorkHour",
   DELETE: "deleteLeaveAtWorkHour",
   APPROVE: "approveLeaveAtWorkHour",
   REJECT: "rejectLeaveAtWorkHour",

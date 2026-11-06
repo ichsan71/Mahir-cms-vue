@@ -53,6 +53,19 @@ export function formatCurrency(value = 0) {
   }).format(value);
 }
 
+/**
+ * Format angka biasa untuk tampilan. Backend kadang mengirim Decimal dalam
+ * notasi eksponen (mis. "2E+1" = 20); helper ini mem-parse ke Number dulu lalu
+ * memformat pakai pemisah ribuan id-ID tanpa notasi eksponen. `dash` =
+ * pengganti bila nilai kosong/invalid (default "-").
+ */
+export function formatNumber(value, { dash = "-", maximumFractionDigits = 2 } = {}) {
+  if (value === null || value === undefined || value === "") return dash;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return dash;
+  return new Intl.NumberFormat("id-ID", { maximumFractionDigits }).format(n);
+}
+
 /** Format tanggal ISO → "19 Jun 2026". Mengembalikan "—" bila kosong/invalid. */
 export function formatDate(value) {
   if (!value) return "—";

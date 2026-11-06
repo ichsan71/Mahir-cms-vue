@@ -6,6 +6,7 @@ import SearchableSelect from "@/shared/components/SearchableSelect.vue";
 import { abbreviatePrefix } from "@/shared/utils/format";
 import { useCompanySearch } from "../composables/useCompanySearch";
 import { PhotoIcon } from "@heroicons/vue/24/outline";
+import { validateFile, IMAGE_MIME, IMAGE_ACCEPT, IMAGE_HINT, MB } from "@/shared/utils/validateUpload";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -56,20 +57,15 @@ const logoImg = ref(null); // File object yang dikirim langsung ke backend
 const logoError = ref("");
 const fileInput = ref(null);
 
-const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2 MB
-
 // Simpan File object untuk dikirim (multipart upload) + base64 untuk pratinjau.
 function onLogoChange(e) {
   logoError.value = "";
   const file = e.target.files?.[0];
   if (!file) return;
 
-  if (!file.type.startsWith("image/")) {
-    logoError.value = "Berkas harus berupa gambar.";
-    return;
-  }
-  if (file.size > MAX_LOGO_SIZE) {
-    logoError.value = "Ukuran logo maksimal 2 MB.";
+  const { ok, error } = validateFile(file, { allow: IMAGE_MIME, maxBytes: 5 * MB });
+  if (!ok) {
+    logoError.value = error;
     return;
   }
 
@@ -258,7 +254,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
             <input
               ref="fileInput"
               type="file"
-              accept="image/*"
+              :accept="IMAGE_ACCEPT"
               class="block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-mahir-primary-soft file:px-3 file:py-2 file:text-sm file:font-medium file:text-mahir-primary hover:file:bg-mahir-primary-soft/80"
               @change="onLogoChange"
             />
@@ -274,7 +270,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
                   Hapus
                 </button>
               </template>
-              <p v-else class="text-xs text-slate-400">PNG/JPG, maksimal 2 MB.</p>
+              <p v-else class="text-xs text-slate-400">{{ IMAGE_HINT }} — maks. 5 MB.</p>
             </div>
           </div>
         </div>

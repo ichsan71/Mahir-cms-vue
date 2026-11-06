@@ -15,6 +15,7 @@ import { useUnitSearch } from "@/features/units/composables/useUnitSearch";
 import { useAnnouncementForm } from "../composables/useAnnouncementForm";
 import { useAnnouncementDetail } from "../composables/useAnnouncementDetail";
 import { PaperClipIcon, XMarkIcon, MegaphoneIcon } from "@heroicons/vue/24/outline";
+import { validateFile, ATTACHMENT_MIME, ATTACHMENT_ACCEPT, ATTACHMENT_HINT, MB } from "@/shared/utils/validateUpload";
 
 const route = useRoute();
 const router = useRouter();
@@ -53,6 +54,7 @@ const form = ref(blank());
 const attachments = ref([]); // File[] baru yang akan diunggah
 const existingAttachments = ref([]); // lampiran yang sudah ada (mode edit, read-only)
 const fileInput = ref(null);
+const attachmentError = ref("");
 const errors = ref({});
 
 function resetForm() {
@@ -111,9 +113,19 @@ function existingName(url) {
 }
 
 function onFilesChange(e) {
+  attachmentError.value = "";
   const picked = Array.from(e.target.files || []);
-  // Gabungkan dengan yang sudah ada agar bisa memilih bertahap.
-  attachments.value = [...attachments.value, ...picked];
+  const valid = [];
+  const rejected = [];
+  for (const file of picked) {
+    const { ok } = validateFile(file, { allow: ATTACHMENT_MIME, maxBytes: 10 * MB });
+    (ok ? valid : rejected).push(file);
+  }
+  if (rejected.length) {
+    attachmentError.value = `${rejected.length} berkas ditolak (tipe tidak didukung atau >10 MB): ${rejected.map((f) => f.name).join(", ")}`;
+  }
+  // Gabungkan yang lolos dengan yang sudah ada agar bisa memilih bertahap.
+  attachments.value = [...attachments.value, ...valid];
   if (fileInput.value) fileInput.value.value = "";
 }
 function removeFile(idx) {
@@ -242,11 +254,14 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           ref="fileInput"
           type="file"
           multiple
+          :accept="ATTACHMENT_ACCEPT"
           class="block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-mahir-primary-soft file:px-3 file:py-2 file:text-sm file:font-medium file:text-mahir-primary hover:file:bg-mahir-primary-soft/80"
           @change="onFilesChange"
         />
+        <p v-if="attachmentError" class="mt-1 text-xs text-rose-500">{{ attachmentError }}</p>
         <p class="mt-1 text-xs text-slate-400">
-          {{ isEdit ? "Tambah berkas baru (lampiran lama tetap tersimpan)." : "Bisa lebih dari satu berkas (gambar/PDF/dokumen)." }}
+          {{ isEdit ? "Tambah berkas baru (lampiran lama tetap tersimpan)." : "Bisa lebih dari satu berkas." }}
+          {{ ATTACHMENT_HINT }}. Maks. 10 MB per berkas.
         </p>
 
         <ul v-if="attachments.length" class="mt-3 flex flex-col gap-2">

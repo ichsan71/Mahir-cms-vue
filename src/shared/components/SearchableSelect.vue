@@ -23,6 +23,9 @@ const props = defineProps({
   searchPlaceholder: { type: String, default: "Ketik untuk mencari…" },
   disabled: { type: Boolean, default: false },
   multiple: { type: Boolean, default: false }, // 👈 Tambahkan prop multiple
+  // floating: dropdown melayang (absolute) agar tak menggeser layout di toolbar.
+  // Default inline (false) supaya tetap aman di dalam modal yang overflow-y-auto.
+  floating: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["update:modelValue", "search"]);
@@ -123,7 +126,7 @@ const controlCls =
 </script>
 
 <template>
-  <div>
+  <div :class="floating ? 'relative' : ''">
     <div
       :class="[controlCls, disabled ? 'cursor-not-allowed bg-slate-50' : 'cursor-pointer']"
       @click="toggle"
@@ -170,7 +173,11 @@ const controlCls =
       />
     </div>
 
-    <div v-if="open" class="mt-1 overflow-hidden rounded-lg border border-mahir-border">
+    <div
+      v-if="open"
+      class="mt-1 overflow-hidden rounded-lg border border-mahir-border bg-white"
+      :class="floating ? 'absolute left-0 right-0 z-30 shadow-lg' : ''"
+    >
       <div class="border-b border-mahir-border p-2">
         <div class="relative">
           <MagnifyingGlassIcon class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />

@@ -1,7 +1,7 @@
 <script setup>
 // Form tambah/ubah tipe cuti — kontrak LeaveTypeInput: name, description,
-// paidSalaryComponentIds, needReason, needAttachment, needApproval, isActive,
-// useParentApproval.
+// paidSalaryComponentIds, needReason, needAttachment, needApproval, needClockIn,
+// isActive, useParentApproval.
 //
 // Catatan: `isPaid` (lama) diganti `paidSalaryComponentIds` — daftar komponen
 // gaji yang TETAP dibayarkan selama karyawan menjalani cuti jenis ini. Bila
@@ -54,6 +54,7 @@ const blank = () => ({
   needReason: false,
   needAttachment: false,
   needApproval: false,
+  needClockIn: false,
   isActive: true,
   useParentApproval: false,
 });
@@ -70,6 +71,7 @@ function fillForm() {
         needReason: !!s.needReason,
         needAttachment: !!s.needAttachment,
         needApproval: !!s.needApproval,
+        needClockIn: !!s.needClockIn,
         isActive: s.isActive ?? true,
         useParentApproval: !!s.useParentApproval,
       }
@@ -98,6 +100,7 @@ function onSubmit() {
     needReason: !!f.needReason,
     needAttachment: !!f.needAttachment,
     needApproval: !!f.needApproval,
+    needClockIn: !!f.needClockIn,
     isActive: !!f.isActive,
     useParentApproval: !!f.useParentApproval,
   };
@@ -177,6 +180,14 @@ const toggleCls = "flex cursor-pointer items-start gap-3 rounded-lg border borde
           <span>
             <span class="block text-sm font-medium text-slate-700">Wajib lampiran</span>
             <span class="block text-[12px] text-mahir-muted">Karyawan wajib melampirkan berkas (mis. surat dokter).</span>
+          </span>
+        </label>
+
+        <label :class="[toggleCls, 'sm:col-span-2']">
+          <input v-model="form.needClockIn" type="checkbox" class="mt-0.5 h-4 w-4 accent-mahir-primary" />
+          <span>
+            <span class="block text-sm font-medium text-slate-700">Wajib absen (clock-in)</span>
+            <span class="block text-[12px] text-mahir-muted">Karyawan tetap wajib melakukan absensi saat menjalani cuti/izin jenis ini.</span>
           </span>
         </label>
 

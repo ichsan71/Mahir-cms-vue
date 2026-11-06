@@ -3,6 +3,7 @@
 import { ref, watch } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import { DEPARTMENTS } from "../constants";
+import { validateFile, IMAGE_MIME, IMAGE_ACCEPT, IMAGE_HINT, MB } from "@/shared/utils/validateUpload";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -46,19 +47,15 @@ watch(
 );
 
 // Upload foto: baca file jadi data URL base64 lalu simpan di form.image.
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB
 const imageError = ref("");
 
 function onImageChange(event) {
   imageError.value = "";
   const file = event.target.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    imageError.value = "Berkas harus berupa gambar.";
-    return;
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    imageError.value = "Ukuran gambar maksimal 2 MB.";
+  const { ok, error } = validateFile(file, { allow: IMAGE_MIME, maxBytes: 5 * MB });
+  if (!ok) {
+    imageError.value = error;
     return;
   }
   const reader = new FileReader();
@@ -112,7 +109,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
             class="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
           >
             {{ form.image ? "Ganti Foto" : "Unggah Foto" }}
-            <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+            <input type="file" :accept="IMAGE_ACCEPT" class="hidden" @change="onImageChange" />
           </label>
           <button
             v-if="form.image"
@@ -124,7 +121,7 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
           </button>
         </div>
         <p v-if="imageError" class="mt-1 text-xs text-rose-500">{{ imageError }}</p>
-        <p v-else class="mt-1 text-xs text-slate-400">Format gambar, maks. 2 MB.</p>
+        <p v-else class="mt-1 text-xs text-slate-400">{{ IMAGE_HINT }} — maks. 5 MB.</p>
       </div>
     </div>
 

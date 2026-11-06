@@ -1,12 +1,19 @@
 <script setup>
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useQuery } from "@vue/apollo-composable";
 import { useLeaveTypeDetail } from "../composables/useLeaveTypeDetail";
+import { LIST_SALARY_COMPONENT_TYPE } from "@/features/salaryComponentTypes/graphql/salaryComponentType.queries";
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
   TagIcon,
   InformationCircleIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  BanknotesIcon,
+  UserGroupIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
@@ -15,16 +22,57 @@ const router = useRouter();
 const id = computed(() => route.params.id);
 const { leaveType, loading } = useLeaveTypeDetail(id);
 
+// Katalog komponen gaji aktif untuk memetakan id → nama komponen yang dibayar.
+const { result: catalogResult } = useQuery(
+  LIST_SALARY_COMPONENT_TYPE,
+  () => ({ params: { isActive: true, page: 1, pageSize: 100 } }),
+  { fetchPolicy: "cache-and-network" },
+);
+const componentMap = computed(() => {
+  const map = {};
+  for (const c of catalogResult.value?.listSalaryComponentType?.data?.results ?? []) {
+    map[String(c.id)] = c.code ? `${c.name} (${c.code})` : c.name;
+  }
+  return map;
+});
+const paidComponents = computed(() =>
+  (leaveType.value?.paidSalaryComponentIds ?? []).map(
+    (cid) => componentMap.value[String(cid)] ?? `Komponen #${cid}`,
+  ),
+);
+const isPaid = computed(() => (leaveType.value?.paidSalaryComponentIds?.length ?? 0) > 0);
+
+// Status kehadiran yang dicatat saat karyawan menjalani cuti jenis ini.
+const ATTENDANCE_STATUS = {
+  ON_LEAVE: "Cuti",
+  SICK: "Sakit",
+  PERMISSION: "Izin",
+};
+const attendanceStatusLabel = computed(() => {
+  const v = leaveType.value?.attendanceStatus;
+  return v ? (ATTENDANCE_STATUS[v] ?? v) : "—";
+});
+
+// Ringkasan alur persetujuan (needApproval + useParentApproval).
+const approvalInfo = computed(() => {
+  const t = leaveType.value;
+  if (!t?.needApproval) {
+    return { title: "Tidak perlu persetujuan", desc: "Pengajuan langsung disetujui otomatis.", on: false };
+  }
+  return t.useParentApproval
+    ? { title: "Perlu persetujuan — Atasan langsung", desc: "Penyetuju diambil dari hierarki atasan karyawan.", on: true }
+    : { title: "Perlu persetujuan — Approver wajib", desc: "Penyetuju diambil dari approver wajib yang dikonfigurasi.", on: true };
+});
+
 // Daftar ketentuan boolean untuk ditampilkan sebagai badge ya/tidak.
 const flags = computed(() => {
   const t = leaveType.value;
   if (!t) return [];
   return [
-    // "Berbayar" bila ada minimal satu komponen gaji yang tetap dibayar saat cuti.
-    { label: "Berbayar", on: (t.paidSalaryComponentIds?.length ?? 0) > 0 },
     { label: "Perlu alasan", on: t.needReason },
     { label: "Perlu lampiran", on: t.needAttachment },
     { label: "Perlu persetujuan", on: t.needApproval },
+    { label: "Wajib absen (clock-in)", on: t.needClockIn },
     { label: "Aktif", on: t.isActive },
   ];
 });
@@ -92,23 +140,92 @@ function goBack() {
       <p v-if="leaveType.description" class="mt-4 text-sm text-slate-600">{{ leaveType.description }}</p>
     </div>
 
-    <!-- Ketentuan -->
-    <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
-      <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
-        <InformationCircleIcon class="h-4 w-4 text-mahir-primary" />
-        <h2 class="font-display text-[15px] font-bold text-slate-900">Ketentuan</h2>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Ketentuan -->
+      <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
+        <div class="mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <InformationCircleIcon class="h-4 w-4 text-mahir-primary" />
+          <h2 class="font-display text-[15px] font-bold text-slate-900">Ketentuan</h2>
+        </div>
+
+        <ul class="space-y-2.5">
+          <li
+            v-for="f in flags"
+            :key="f.label"
+            class="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2"
+          >
+            <span class="text-sm font-medium text-slate-700">{{ f.label }}</span>
+            <span
+              class="inline-flex items-center gap-1.5 text-[13px] font-semibold"
+              :class="f.on ? 'text-mahir-success' : 'text-slate-400'"
+            >
+              <CheckCircleIcon v-if="f.on" class="h-4 w-4" />
+              <XCircleIcon v-else class="h-4 w-4" />
+              {{ f.on ? "Ya" : "Tidak" }}
+            </span>
+          </li>
+        </ul>
       </div>
 
-      <div class="grid grid-cols-2 gap-y-4 sm:grid-cols-3 sm:gap-x-8">
-        <div v-for="f in flags" :key="f.label">
-          <dt class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ f.label }}</dt>
-          <dd class="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-slate-800">
+      <!-- Persetujuan, komponen gaji, status kehadiran -->
+      <div class="space-y-6">
+        <!-- Alur persetujuan -->
+        <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <ClipboardDocumentCheckIcon class="h-4 w-4 text-mahir-primary" />
+            <h2 class="font-display text-[15px] font-bold text-slate-900">Persetujuan</h2>
+          </div>
+          <div class="flex items-start gap-3">
             <span
-              class="inline-block h-2 w-2 rounded-full"
-              :class="f.on ? 'bg-mahir-primary' : 'bg-slate-300'"
-            ></span>
-            {{ f.on ? "Ya" : "Tidak" }}
-          </dd>
+              class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+              :class="approvalInfo.on ? 'bg-mahir-primary-soft text-mahir-primary' : 'bg-slate-100 text-slate-400'"
+            >
+              <UserGroupIcon class="h-4 w-4" />
+            </span>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">{{ approvalInfo.title }}</p>
+              <p class="mt-0.5 text-[12.5px] text-mahir-muted">{{ approvalInfo.desc }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Komponen gaji dibayar saat cuti -->
+        <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <BanknotesIcon class="h-4 w-4 text-mahir-primary" />
+            <h2 class="font-display text-[15px] font-bold text-slate-900">Komponen Gaji Dibayar</h2>
+            <span
+              class="ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              :class="isPaid ? 'bg-mahir-success-soft text-mahir-success' : 'bg-slate-100 text-slate-500'"
+            >
+              {{ isPaid ? "Berbayar" : "Tidak Berbayar" }}
+            </span>
+          </div>
+          <div v-if="isPaid" class="flex flex-wrap gap-1.5">
+            <span
+              v-for="(c, i) in paidComponents"
+              :key="i"
+              class="rounded-lg bg-slate-100 px-2.5 py-1 text-[12.5px] font-medium text-slate-700"
+            >
+              {{ c }}
+            </span>
+          </div>
+          <p v-else class="text-[13px] text-mahir-muted">
+            Tidak ada komponen gaji yang dibayarkan selama cuti jenis ini.
+          </p>
+        </div>
+
+        <!-- Status kehadiran -->
+        <div class="rounded-2xl border border-mahir-border bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <TagIcon class="h-4 w-4 text-mahir-primary" />
+            <h2 class="font-display text-[15px] font-bold text-slate-900">Status Kehadiran</h2>
+          </div>
+          <p class="text-sm text-slate-700">
+            Dicatat sebagai
+            <span class="font-semibold text-slate-900">{{ attendanceStatusLabel }}</span>
+            pada data kehadiran karyawan.
+          </p>
         </div>
       </div>
     </div>

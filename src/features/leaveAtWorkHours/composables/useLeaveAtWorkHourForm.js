@@ -2,6 +2,8 @@ import { ref } from "vue";
 import { useMutation } from "@vue/apollo-composable";
 import {
   CREATE_LEAVE_AT_WORK_HOUR,
+  EDIT_LEAVE_AT_WORK_HOUR,
+  SUBMIT_LEAVE_AT_WORK_HOUR,
   APPROVE_LEAVE_AT_WORK_HOUR,
   REJECT_LEAVE_AT_WORK_HOUR,
   DELETE_LEAVE_AT_WORK_HOUR,
@@ -20,6 +22,8 @@ export function useLeaveAtWorkHourForm() {
   const loading = ref(false);
 
   const { mutate: createMut } = useMutation(CREATE_LEAVE_AT_WORK_HOUR);
+  const { mutate: editMut } = useMutation(EDIT_LEAVE_AT_WORK_HOUR);
+  const { mutate: submitMut } = useMutation(SUBMIT_LEAVE_AT_WORK_HOUR);
   const { mutate: approveMut } = useMutation(APPROVE_LEAVE_AT_WORK_HOUR);
   const { mutate: rejectMut } = useMutation(REJECT_LEAVE_AT_WORK_HOUR);
   const { mutate: deleteMut } = useMutation(DELETE_LEAVE_AT_WORK_HOUR);
@@ -36,6 +40,38 @@ export function useLeaveAtWorkHourForm() {
     } catch (e) {
       toast.error(cleanMessage(e) || "Gagal mengajukan izin. Coba lagi.");
       return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function editLeave(id, input) {
+    loading.value = true;
+    try {
+      const res = await editMut({ id: Number(id), input });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      const updated = res?.data?.editLeaveAtWorkHour?.data;
+      if (!updated) throw new Error("Gagal menyimpan perubahan");
+      toast.success("Perubahan izin tersimpan");
+      return updated;
+    } catch (e) {
+      toast.error(cleanMessage(e) || "Gagal menyimpan perubahan. Coba lagi.");
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function submit(id) {
+    loading.value = true;
+    try {
+      const res = await submitMut({ id: Number(id) });
+      if (res?.errors?.length) throw new Error(res.errors[0].message);
+      toast.success("Izin berhasil dikirim untuk persetujuan");
+      return true;
+    } catch (e) {
+      toast.error(cleanMessage(e) || "Gagal mengirim izin. Coba lagi.");
+      return false;
     } finally {
       loading.value = false;
     }
@@ -86,5 +122,5 @@ export function useLeaveAtWorkHourForm() {
     }
   }
 
-  return { createLeave, approve, reject, remove, loading };
+  return { createLeave, editLeave, submit, approve, reject, remove, loading };
 }
