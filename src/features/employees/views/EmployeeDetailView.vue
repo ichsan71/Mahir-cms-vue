@@ -8,6 +8,7 @@ import EmployeeProfileCard from "../components/EmployeeProfileCard.vue";
 import EmployeeAccessCard from "../components/EmployeeAccessCard.vue";
 import EmployeeLeaveBalanceCard from "../components/EmployeeLeaveBalanceCard.vue";
 import EmployeeSalaryCard from "../components/EmployeeSalaryCard.vue";
+import EmployeeSalaryHistoryCard from "../components/EmployeeSalaryHistoryCard.vue";
 import EmployeeBankAccountCard from "../components/EmployeeBankAccountCard.vue";
 import EmployeeBpjsCard from "../components/EmployeeBpjsCard.vue";
 import EmployeeTaxInfoCard from "../components/EmployeeTaxInfoCard.vue";
@@ -48,6 +49,7 @@ const tabs = computed(() => [
   ...(canViewAccess.value ? [{ id: "akses", label: "Hak Akses" }] : []),
   ...(canViewBalance.value ? [{ id: "saldo-cuti", label: "Saldo Cuti" }] : []),
   ...(canViewSalary.value ? [{ id: "struktur-gaji", label: "Struktur Gaji" }] : []),
+  ...(canViewSalary.value ? [{ id: "riwayat-gaji", label: "Gaji" }] : []),
   ...(canViewBank.value ? [{ id: "rekening-bank", label: "Rekening Bank" }] : []),
   ...(canViewBpjs.value ? [{ id: "bpjs", label: "BPJS" }] : []),
   ...(canViewTax.value ? [{ id: "pajak", label: "Pajak" }] : []),
@@ -180,6 +182,8 @@ async function handleDeleteAddress() {
     <EmployeeLeaveBalanceCard v-if="canViewBalance" v-show="tab === 'saldo-cuti'" :employee="employee" />
 
     <EmployeeSalaryCard v-if="canViewSalary" v-show="tab === 'struktur-gaji'" :employee="employee" />
+
+    <EmployeeSalaryHistoryCard v-if="canViewSalary" v-show="tab === 'riwayat-gaji'" :employee="employee" />
 
     <EmployeeBankAccountCard v-if="canViewBank" v-show="tab === 'rekening-bank'" :employee="employee" />
 

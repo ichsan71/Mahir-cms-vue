@@ -37,131 +37,230 @@ export const LIST_EMPLOYEE = gql`
   }
 `;
 
-// Detail satu karyawan untuk halaman profil.
+// Field inti profil karyawan — dipakai bersama oleh GET_EMPLOYEE (detail
+// karyawan) dan GET_MY_PROFILE (profil sendiri) agar satu sumber kebenaran.
+const EMPLOYEE_CORE_FIELDS = gql`
+  fragment EmployeeCoreFields on Employee {
+    id
+    nearestResponse {
+      id
+      fullName
+    }
+    image
+    addresses {
+      city
+      country
+      id
+      line1
+      line2
+      state
+    }
+    birthDate
+    birthPlace
+    branch {
+      id
+      name
+    }
+    childrens {
+      id
+      fullName
+      nik
+    }
+    citizenship
+    code
+    companies {
+      id
+      name
+    }
+    description
+    employmentType {
+      id
+      name
+    }
+    firstName
+    fullName
+    middleName
+    hiredDate
+    lastName
+    level {
+      id
+      name
+    }
+    maritalStatus
+    nik
+    parent {
+      id
+      nik
+      fullName
+    }
+    religion
+    resignDate
+    responses {
+      id
+      fullName
+    }
+    roleName
+    workPattern {
+      id
+      name
+      details {
+        id
+        weekday
+        weekdayDisplay
+        isWorkday
+        shift {
+          id
+          name
+          code
+          startTime
+          endTime
+          breakStart
+          breakEnd
+          requiredHours
+          requiredHoursPeriod
+          flexibleByPlace
+          flexibleByWorkingHours
+        }
+      }
+    }
+    talentaId
+    units {
+      id
+      name
+    }
+    bpjs {
+      id
+      kesehatanNumber
+      kesehatanClass
+      kesehatanRegisteredDate
+      ketenagakerjaanNumber
+      ketenagakerjaanRegisteredDate
+      notes
+    }
+    taxInfo {
+      id
+      npwp
+      npwpRegisteredDate
+      isNpwpActive
+      ptkpStatus
+      taxMethod
+      ptkpDependents
+    }
+    user {
+      id
+      isActive
+      isStaff
+      isSuperuser
+      email
+      username
+      groups {
+        id
+        name
+      }
+    }
+  }
+`;
+
+// Detail satu karyawan untuk halaman detail karyawan (karyawan lain).
+// Sengaja TIDAK memuat field nested sensitif (leaveBalances, salaries) agar
+// akses data antar-karyawan tetap melewati query list-nya sendiri yang di-gate.
 export const GET_EMPLOYEE = gql`
   query GetEmployee($getEmployeeId: Int!) {
     getEmployee(id: $getEmployeeId) {
       data {
-        id
-        nearestResponse {
-          id
-          fullName
-        }
-        image
-        addresses {
-          city
-          country
-          id
-          line1
-          line2
-          state
-        }
-        birthDate
-        birthPlace
-        branch {
-          id
-          name
-        }
-        childrens {
-          id
-          fullName
-          nik
-        }
-        citizenship
-        code
-        companies {
-          id
-          name
-        }
-        description
-        employmentType {
-          id
-          name
-        }
-        firstName
-        fullName
-        middleName
-        hiredDate
-        lastName
-        level {
-          id
-          name
-        }
-        maritalStatus
-        nik
-        parent {
-          id
-          nik
-          fullName
-        }
-        religion
-        resignDate
-        responses {
-          id
-          fullName
-        }
-        roleName
-        workPattern {
-          id
-          name
-          details {
+        ...EmployeeCoreFields
+      }
+    }
+  }
+  ${EMPLOYEE_CORE_FIELDS}
+`;
+
+// Profil milik user yang login. Satu panggilan getEmployee(id-sendiri) yang
+// sekaligus menarik field nested milik karyawan itu (mis. saldo cuti), sehingga
+// user bisa melihat datanya sendiri tanpa memanggil query list yang di-gate
+// permission backend. Tambah nested lain (mis. salaries) di sini bila perlu.
+export const GET_MY_PROFILE = gql`
+  query GetMyProfile(
+    $getEmployeeId: Int!
+    $leaveBalanceParams: LeaveBalanceParams
+    $bankAccountParams: EmployeeBankAccountParams
+    $emergencyContactParams: EmployeeEmergencyContactParams
+    $familyMemberParams: EmployeeFamilyMemberParams
+  ) {
+    getEmployee(id: $getEmployeeId) {
+      data {
+        ...EmployeeCoreFields
+        leaveBalances(params: $leaveBalanceParams) {
+          count
+          totalPages
+          currentPage
+          hasNext
+          hasPrev
+          results {
             id
-            weekday
-            weekdayDisplay
-            isWorkday
-            shift {
+            year
+            allocated
+            used
+            remaining
+            leaveType {
               id
               name
-              code
-              startTime
-              endTime
-              breakStart
-              breakEnd
-              requiredHours
-              requiredHoursPeriod
-              flexibleByPlace
-              flexibleByWorkingHours
             }
           }
         }
-        talentaId
-        units {
-          id
-          name
+        bankAccounts(params: $bankAccountParams) {
+          count
+          totalPages
+          currentPage
+          hasNext
+          hasPrev
+          results {
+            id
+            bankName
+            bankCode
+            accountNumber
+            accountHolderName
+            branchName
+            isPrimary
+          }
         }
-        bpjs {
-          id
-          kesehatanNumber
-          kesehatanClass
-          kesehatanRegisteredDate
-          ketenagakerjaanNumber
-          ketenagakerjaanRegisteredDate
-          notes
-        }
-        taxInfo {
-          id
-          npwp
-          npwpRegisteredDate
-          isNpwpActive
-          ptkpStatus
-          taxMethod
-          ptkpDependents
-        }
-        user {
-          id
-          isActive
-          isStaff
-          isSuperuser
-          email
-          username
-          groups {
+        emergencyContacts(params: $emergencyContactParams) {
+          count
+          totalPages
+          currentPage
+          hasNext
+          hasPrev
+          results {
             id
             name
+            relationship
+            phone
+            alternatePhone
+            address
+            isPrimary
+          }
+        }
+        familyMembers(params: $familyMemberParams) {
+          count
+          totalPages
+          currentPage
+          hasNext
+          hasPrev
+          results {
+            id
+            name
+            relationship
+            birthDate
+            gender
+            nik
+            occupation
+            isDependent
           }
         }
       }
     }
   }
+  ${EMPLOYEE_CORE_FIELDS}
 `;
 
 export const CREATE_EMPLOYEE = gql`

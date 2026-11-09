@@ -38,6 +38,48 @@ export const LIST_EMPLOYEE_SALARY = gql`
   }
 `;
 
+// Riwayat gaji milik satu karyawan, dibaca dari field ber-paginasi
+// `getEmployee.salaries(params)` (bukan query listEmployeeSalary terpisah).
+// Dipakai tab read-only "Riwayat Gaji" di detail karyawan. `params`
+// (EmployeeSalaryParams): page, pageSize, isActive, payPeriod, search.
+export const GET_EMPLOYEE_SALARIES = gql`
+  query GetEmployeeSalaries($getEmployeeId: Int!, $params: EmployeeSalaryParams) {
+    getEmployee(id: $getEmployeeId) {
+      data {
+        id
+        salaries(params: $params) {
+          count
+          totalPages
+          currentPage
+          hasNext
+          hasPrev
+          results {
+            id
+            effectiveDate
+            payPeriod
+            currency
+            paymentMethod
+            isActive
+            notes
+            takeHome
+            components {
+              id
+              value
+              notes
+              componentType {
+                id
+                name
+                code
+                category
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Tambah struktur gaji baru. `input` (EmployeeSalaryInput): employeeId,
 // effectiveDate, payPeriod, currency, paymentMethod, isActive, notes,
 // components [{ componentTypeId, value, notes }].
