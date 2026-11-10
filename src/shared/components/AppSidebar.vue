@@ -26,6 +26,7 @@ import {
   UserCircleIcon,
   MegaphoneIcon,
   ClipboardDocumentListIcon,
+  ShieldCheckIcon,
 } from "@heroicons/vue/24/outline";
 
 const ui = useUiStore();
@@ -52,6 +53,7 @@ const navItems = [
       { to: "/tipe-kepegawaian", icon: IdentificationIcon, label: "Tipe Karyawan", permissions: ["listEmploymentType"] },
       { to: "/shift", icon: ClockIcon, label: "Shift & Pola Kerja", permissions: ["listShift", "listWorkPattern"] },
       { to: "/komponen-penggajian", icon: BanknotesIcon, label: "Komponen Penggajian", permissions: ["listSalaryComponentType"] },
+      { to: "/approver-penggajian", icon: ShieldCheckIcon, label: "Approver Penggajian", permissions: ["listPayrollMandatoryApprover"] },
       { to: "/karyawan", icon: IdentificationIcon, label: "Karyawan", permissions: ["listEmployee"] },
     ],
   },
@@ -61,7 +63,7 @@ const navItems = [
   { to: "/kehadiran", icon: CalendarDaysIcon, label: "Kehadiran", permissions: ["listAttendance"] },
   { to: "/cuti", icon: DocumentTextIcon, label: "Cuti & Izin", permissions: ["listLeave", "listLeaveApproval", "listLeaveAtWorkHour", "listLeaveBalance", "listLeaveBalanceTransaction"] },
   { to: "/pengumuman", icon: MegaphoneIcon, label: "Pengumuman", permissions: ["listAnnouncement"] },
-  { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", permissions: ["listEmployeeSalaryDeduction"] },
+  { to: "/penggajian", icon: BanknotesIcon, label: "Penggajian", permissions: ["listPayslip", "listPayslipApproval", "listEmployeeSalaryDeduction"] },
   { to: "/changelog", icon: ClipboardDocumentListIcon, label: "Changelog" },
   { icon: UserPlusIcon, label: "Rekrutmen", soon: true },
   { icon: PresentationChartLineIcon, label: "Laporan", soon: true },

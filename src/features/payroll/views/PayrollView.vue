@@ -57,24 +57,12 @@ function openDetail(row) {
 
 const fieldCls =
   "rounded-lg border border-mahir-border py-2 px-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary";
+
+// Pilihan jumlah baris per halaman.
+const PAGE_SIZES = [10, 50, 100, 200];
 </script>
 
 <template>
-  <!-- Header -->
-  <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900">Penggajian</h1>
-      <p class="text-sm text-mahir-muted">Potongan gaji hasil kalkulasi kehadiran & cuti karyawan</p>
-    </div>
-    <button
-      v-if="auth.can(PERM.COMPUTE)"
-      class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
-      @click="computeOpen = true"
-    >
-      <CalculatorIcon class="h-4 w-4" /> Hitung Potongan
-    </button>
-  </div>
-
   <!-- Table card -->
   <div class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
@@ -108,7 +96,27 @@ const fieldCls =
           –
           <input v-model="filters.periodEndTo" type="date" :class="fieldCls" title="Periode berakhir sampai" />
         </label>
+        <button
+          v-if="auth.can(PERM.COMPUTE)"
+          class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+          @click="computeOpen = true"
+        >
+          <CalculatorIcon class="h-4 w-4" /> Hitung Potongan
+        </button>
       </div>
+    </div>
+
+    <!-- Bar: jumlah per halaman + info jumlah data -->
+    <div class="flex items-center gap-3 border-t border-mahir-border px-5 py-2.5">
+      <label class="flex items-center gap-1.5 text-[13px] text-mahir-muted">
+        Tampilkan
+        <select v-model.number="filters.pageSize" :class="fieldCls" class="!py-1">
+          <option v-for="n in PAGE_SIZES" :key="n" :value="n">{{ n }}</option>
+        </select>
+      </label>
+      <span class="text-[13px] text-mahir-muted"
+        >Menampilkan {{ deductions.length }} dari {{ pagination.count }} potongan</span
+      >
     </div>
 
     <div class="overflow-x-auto">
@@ -172,10 +180,7 @@ const fieldCls =
     </div>
 
     <!-- Footer / pagination -->
-    <div class="flex items-center justify-between border-t border-mahir-border px-5 py-3">
-      <span class="text-[13px] text-mahir-muted"
-        >Menampilkan {{ deductions.length }} dari {{ pagination.count }} potongan</span
-      >
+    <div class="flex items-center justify-end border-t border-mahir-border px-5 py-3">
       <nav class="flex items-center gap-1">
         <button
           class="rounded-lg border border-mahir-border px-2.5 py-1 text-sm disabled:text-slate-300 enabled:text-slate-600 enabled:hover:bg-slate-50"

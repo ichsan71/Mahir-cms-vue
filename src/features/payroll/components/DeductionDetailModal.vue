@@ -79,8 +79,10 @@ function money(v, currency) {
               <tr class="border-b border-mahir-border text-[11px] uppercase tracking-wide text-slate-400">
                 <th class="py-2 pr-3 font-semibold">Komponen</th>
                 <th class="py-2 pr-3 font-semibold">Kategori</th>
-                <th class="py-2 pr-3 text-right font-semibold">Nilai/Bulan</th>
+                <th class="py-2 pr-3 text-right font-semibold">Nilai/Bln</th>
                 <th class="py-2 pr-3 text-right font-semibold">Tarif/Hari</th>
+                <th class="py-2 pr-3 text-right font-semibold" title="Hari tidak dibayar (absen/cuti tak berbayar)">Tdk Dibayar</th>
+                <th class="py-2 pr-3 text-right font-semibold" title="Hari hangus karena keterlambatan">Hangus</th>
                 <th class="py-2 pr-3 text-right font-semibold">Hari Dipotong</th>
                 <th class="py-2 text-right font-semibold">Potongan</th>
               </tr>
@@ -89,9 +91,9 @@ function money(v, currency) {
               <tr
                 v-for="(b, i) in d.breakdown"
                 :key="i"
-                class="border-b border-mahir-border/50 last:border-0"
+                class="border-b border-mahir-border/50"
               >
-                <td class="py-2 pr-3 font-medium text-slate-700">{{ b.code ?? "-" }}</td>
+                <td class="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{{ b.code ?? "-" }}</td>
                 <td class="py-2 pr-3">
                   <span
                     class="inline-block rounded-full px-2 py-0.5 text-[11px] font-medium"
@@ -102,13 +104,18 @@ function money(v, currency) {
                 </td>
                 <td class="py-2 pr-3 text-right text-slate-600">{{ money(b.monthlyValue, d.currency) }}</td>
                 <td class="py-2 pr-3 text-right text-slate-600">{{ money(b.dailyRate, d.currency) }}</td>
-                <td class="py-2 pr-3 text-right text-slate-600">
-                  {{ formatNumber(b.daysDeducted, { dash: "0" }) }}
-                  <span v-if="Number(b.lateForfeitDays)" class="text-[11px] text-slate-400">(+{{ formatNumber(b.lateForfeitDays) }} telat)</span>
-                </td>
-                <td class="py-2 text-right font-semibold text-mahir-danger">{{ money(b.amount, d.currency) }}</td>
+                <td class="py-2 pr-3 text-right text-slate-600">{{ formatNumber(b.unpaidDays, { dash: "0" }) }}</td>
+                <td class="py-2 pr-3 text-right text-slate-600">{{ formatNumber(b.lateForfeitDays, { dash: "0" }) }}</td>
+                <td class="py-2 pr-3 text-right font-medium text-slate-700">{{ formatNumber(b.daysDeducted, { dash: "0" }) }}</td>
+                <td class="py-2 text-right font-semibold text-mahir-danger">− {{ money(b.amount, d.currency) }}</td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr class="border-t border-mahir-border">
+                <td class="py-2 pr-3 text-[13px] font-semibold text-slate-600" colspan="7">Total Potongan</td>
+                <td class="py-2 text-right font-bold text-mahir-danger">− {{ money(d.totalDeduction, d.currency) }}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
