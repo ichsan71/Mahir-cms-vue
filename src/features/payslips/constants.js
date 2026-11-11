@@ -1,5 +1,5 @@
 // Pilihan jumlah baris per halaman untuk daftar paginated.
-export const PAGE_SIZES = [10, 50, 100, 200];
+export const PAGE_SIZES = [10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 
 // Status slip gaji & persetujuan datang sebagai String bebas dari backend
 // (tak ada enum di skema). Peta ini defensif: case-insensitive, dan jatuh ke
@@ -36,10 +36,11 @@ export function isDraft(status) {
   return String(status || "").toLowerCase() === "draft";
 }
 
-// Apakah slip sudah final (boleh diajukan untuk persetujuan).
-export function isFinalized(status) {
-  const s = String(status || "").toLowerCase();
-  return s === "finalized" || s === "final";
+// Apakah slip siap diajukan untuk persetujuan.
+// Alur baru: slip hasil generate berstatus "draft" dan langsung bisa diajukan.
+// Status "final" (hasil approve) bersifat terminal, tombol "Ajukan" tak muncul.
+export function isSubmittable(status) {
+  return String(status || "").toLowerCase() === "draft";
 }
 
 // Apakah baris persetujuan masih menunggu aksi approver.

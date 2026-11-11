@@ -1,6 +1,6 @@
 <script setup>
 // Tab "Slip Gaji" — daftar slip gaji dengan aksi siklus hidup:
-// buat (generate) → penyesuaian (adjust) → finalisasi → ajukan (submit) → ekspor.
+// buat (generate → draft) → penyesuaian (adjust) → ajukan (submit) → ekspor.
 // Semua aksi di-gate permission (UX saja; API tetap menegakkan).
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
@@ -8,7 +8,7 @@ import { usePayslips } from "../composables/usePayslips";
 import { usePayslipActions } from "../composables/usePayslipActions";
 import { usePayslipExport } from "../composables/usePayslipExport";
 import { usePayslipFiltersStore } from "../stores/payslipFilters.store";
-import { statusMeta, isDraft, isFinalized, PAGE_SIZES } from "../constants";
+import { statusMeta, isDraft, isSubmittable, PAGE_SIZES } from "../constants";
 import { PERM } from "../permissions";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useEmployeeSearch } from "@/features/employees/composables/useEmployeeSearch";
@@ -22,7 +22,6 @@ import { formatDate } from "@/shared/utils/format";
 import {
   EyeIcon,
   PencilSquareIcon,
-  LockClosedIcon,
   PaperAirplaneIcon,
   PlusIcon,
   ArrowDownTrayIcon,
@@ -33,7 +32,7 @@ const filters = usePayslipFiltersStore();
 const { employeeIds: filterEmployeeIds } = storeToRefs(filters);
 
 const { payslips, pagination, loading, refetch, nextPage, prevPage, currentFilters } = usePayslips();
-const { generate, finalize, adjust, submit, loading: acting } = usePayslipActions();
+const { generate, adjust, submit, loading: acting } = usePayslipActions();
 const { exportPayslip, loading: exporting } = usePayslipExport();
 
 // Filter karyawan (multi).
@@ -116,20 +115,13 @@ async function handleExport({ email, format }) {
   if (res) exportOpen.value = false;
 }
 
-// ── Konfirmasi finalisasi / pengajuan ────────────────────────────────────────
+// ── Konfirmasi pengajuan ─────────────────────────────────────────────────────
 const confirmOpen = ref(false);
-const confirmKind = ref("finalize"); // "finalize" | "submit" | "submitBulk"
+const confirmKind = ref("submit"); // "submit" | "submitBulk"
 const confirmTarget = ref(null);
 
 const confirmMeta = computed(() => {
   const name = confirmTarget.value?.employee?.fullName ?? "";
-  if (confirmKind.value === "finalize") {
-    return {
-      title: "Finalisasi Slip",
-      message: `Finalisasi slip gaji ${name ? `"${name}"` : "ini"}? Setelah final, slip bisa diajukan untuk persetujuan.`,
-      confirm: "Ya, Finalisasi",
-    };
-  }
   if (confirmKind.value === "submitBulk") {
     return {
       title: "Ajukan Slip Terpilih",
@@ -144,11 +136,6 @@ const confirmMeta = computed(() => {
   };
 });
 
-function openFinalize(row) {
-  confirmKind.value = "finalize";
-  confirmTarget.value = row;
-  confirmOpen.value = true;
-}
 function openSubmit(row) {
   confirmKind.value = "submit";
   confirmTarget.value = row;
@@ -162,9 +149,7 @@ function openSubmitBulk() {
 
 async function handleConfirm() {
   let ok = false;
-  if (confirmKind.value === "finalize") {
-    ok = !!(await finalize(confirmTarget.value?.id));
-  } else if (confirmKind.value === "submit") {
+  if (confirmKind.value === "submit") {
     ok = !!(await submit({ ids: [confirmTarget.value?.id] }));
   } else if (confirmKind.value === "submitBulk") {
     ok = !!(await submit({ ids: [...selected.value] }));
@@ -326,15 +311,7 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
                   <PencilSquareIcon class="h-4 w-4" />
                 </button>
                 <button
-                  v-if="auth.can(PERM.FINALIZE) && isDraft(row.status)"
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                  title="Finalisasi"
-                  @click="openFinalize(row)"
-                >
-                  <LockClosedIcon class="h-4 w-4" />
-                </button>
-                <button
-                  v-if="auth.can(PERM.SUBMIT) && isFinalized(row.status)"
+                  v-if="auth.can(PERM.SUBMIT) && isSubmittable(row.status)"
                   class="flex h-8 w-8 items-center justify-center rounded-lg bg-mahir-primary/10 text-mahir-primary hover:bg-mahir-primary/20"
                   title="Ajukan untuk persetujuan"
                   @click="openSubmit(row)"

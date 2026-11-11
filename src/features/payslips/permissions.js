@@ -7,7 +7,6 @@ export const PERM = {
   LIST: "listPayslip",
   GET: "getPayslip",
   GENERATE: "generatePayslip",
-  FINALIZE: "finalizePayslip",
   ADJUST: "adjustPayslip",
   SUBMIT: "submitPayslip",
   RESTORE: "restorePayslip",

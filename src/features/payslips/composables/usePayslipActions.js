@@ -2,7 +2,6 @@ import { ref } from "vue";
 import { useMutation } from "@vue/apollo-composable";
 import {
   GENERATE_PAYSLIP,
-  FINALIZE_PAYSLIP,
   ADJUST_PAYSLIP,
   SUBMIT_PAYSLIP,
   RESTORE_PAYSLIP,
@@ -19,8 +18,8 @@ function cleanMessage(e) {
   return raw.replace(/^GraphQL error:\s*/i, "").trim();
 }
 
-// Layer aksi siklus hidup slip gaji: generate / finalize / adjust / submit /
-// restore. Pemanggil me-refresh daftar lewat callback (tidak di-refetch di sini
+// Layer aksi siklus hidup slip gaji: generate / adjust / submit / restore.
+// Pemanggil me-refresh daftar lewat callback (tidak di-refetch di sini
 // agar fleksibel dengan filter aktif).
 export function usePayslipActions() {
   const toast = useToastStore();
@@ -28,7 +27,6 @@ export function usePayslipActions() {
   const loading = ref(false);
 
   const { mutate: generateMut } = useMutation(GENERATE_PAYSLIP);
-  const { mutate: finalizeMut } = useMutation(FINALIZE_PAYSLIP);
   const { mutate: adjustMut } = useMutation(ADJUST_PAYSLIP);
   const { mutate: submitMut } = useMutation(SUBMIT_PAYSLIP);
   const { mutate: restoreMut } = useMutation(RESTORE_PAYSLIP);
@@ -61,15 +59,6 @@ export function usePayslipActions() {
     );
     const data = res?.data?.generatePayslip?.data;
     if (data) toast.success("Slip gaji berhasil dibuat");
-    return data || null;
-  }
-
-  async function finalize(id) {
-    const res = await run(() => finalizeMut({ id: Number(id) }), {
-      fail: "Gagal memfinalisasi slip. Coba lagi.",
-    });
-    const data = res?.data?.finalizePayslip?.data;
-    if (data) toast.success("Slip gaji difinalisasi");
     return data || null;
   }
 
@@ -112,5 +101,5 @@ export function usePayslipActions() {
     return data || null;
   }
 
-  return { generate, finalize, adjust, submit, restore, error, loading };
+  return { generate, adjust, submit, restore, error, loading };
 }

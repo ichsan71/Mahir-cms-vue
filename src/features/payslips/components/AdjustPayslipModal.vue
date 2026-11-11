@@ -1,6 +1,6 @@
 <script setup>
 // Modal "Penyesuaian Slip" — nominal adjustment (boleh negatif) + catatan.
-// Dipakai sebelum slip difinalisasi.
+// Dipakai selagi slip masih draft (sebelum diajukan).
 import { ref, watch } from "vue";
 import BaseModal from "@/shared/components/BaseModal.vue";
 import { formatDate } from "@/shared/utils/format";

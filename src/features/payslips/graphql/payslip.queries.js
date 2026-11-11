@@ -181,19 +181,6 @@ export const GENERATE_PAYSLIP = gql`
   }
 `;
 
-// Finalisasi slip gaji (kunci nilai dari perubahan lanjutan).
-export const FINALIZE_PAYSLIP = gql`
-  mutation FinalizePayslip($id: Int!) {
-    finalizePayslip(id: $id) {
-      data {
-        id
-        status
-        finalizedAt
-      }
-    }
-  }
-`;
-
 // Penyesuaian nominal slip (adjustment ± dengan catatan).
 export const ADJUST_PAYSLIP = gql`
   mutation AdjustPayslip($id: Int!, $adjustment: Decimal!, $adjustmentNote: String) {
