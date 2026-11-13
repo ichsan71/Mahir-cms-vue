@@ -7,6 +7,7 @@ import { storeToRefs } from "pinia";
 import { usePayslips } from "../composables/usePayslips";
 import { usePayslipActions } from "../composables/usePayslipActions";
 import { usePayslipExport } from "../composables/usePayslipExport";
+import { usePayslipPrint } from "../composables/usePayslipPrint";
 import { usePayslipFiltersStore } from "../stores/payslipFilters.store";
 import { statusMeta, isDraft, isSubmittable, PAGE_SIZES } from "../constants";
 import { PERM } from "../permissions";
@@ -18,6 +19,7 @@ import GeneratePayslipModal from "../components/GeneratePayslipModal.vue";
 import AdjustPayslipModal from "../components/AdjustPayslipModal.vue";
 import PayslipDetailModal from "../components/PayslipDetailModal.vue";
 import PayslipExportModal from "../components/PayslipExportModal.vue";
+import ApprovalStepper from "../components/ApprovalStepper.vue";
 import { formatDate } from "@/shared/utils/format";
 import {
   EyeIcon,
@@ -25,6 +27,7 @@ import {
   PaperAirplaneIcon,
   PlusIcon,
   ArrowDownTrayIcon,
+  PrinterIcon,
 } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
@@ -32,8 +35,9 @@ const filters = usePayslipFiltersStore();
 const { employeeIds: filterEmployeeIds } = storeToRefs(filters);
 
 const { payslips, pagination, loading, refetch, nextPage, prevPage, currentFilters } = usePayslips();
-const { generate, adjust, submit, loading: acting } = usePayslipActions();
+const { generate, submit, loading: acting } = usePayslipActions();
 const { exportPayslip, loading: exporting } = usePayslipExport();
+const { printById, printing } = usePayslipPrint();
 
 // Filter karyawan (multi).
 const {
@@ -84,19 +88,12 @@ async function handleGenerate(payload) {
   }
 }
 
-// ── Penyesuaian ──────────────────────────────────────────────────────────────
+// ── Penyesuaian (kelola item slip) ───────────────────────────────────────────
 const adjustOpen = ref(false);
 const adjustTarget = ref(null);
 function openAdjust(row) {
   adjustTarget.value = row;
   adjustOpen.value = true;
-}
-async function handleAdjust(payload) {
-  const res = await adjust(payload);
-  if (res) {
-    adjustOpen.value = false;
-    refetch();
-  }
 }
 
 // ── Detail ───────────────────────────────────────────────────────────────────
@@ -291,6 +288,12 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
               >
                 {{ statusMeta(row.status).label }}
               </span>
+              <ApprovalStepper
+                v-if="row.approvals?.results?.length"
+                :approvals="row.approvals.results"
+                compact
+                class="mt-1.5"
+              />
             </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-center gap-1.5">
@@ -303,7 +306,16 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
                   <EyeIcon class="h-4 w-4" />
                 </button>
                 <button
-                  v-if="auth.can(PERM.ADJUST) && isDraft(row.status)"
+                  v-if="auth.can(PERM.GET)"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+                  title="Cetak / Unduh slip"
+                  :disabled="printing"
+                  @click="printById(row.id)"
+                >
+                  <PrinterIcon class="h-4 w-4" />
+                </button>
+                <button
+                  v-if="(auth.can(PERM.ITEM_CREATE) || auth.can(PERM.ITEM_EDIT) || auth.can(PERM.ITEM_DELETE)) && isDraft(row.status)"
                   class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100"
                   title="Penyesuaian"
                   @click="openAdjust(row)"
@@ -352,12 +364,7 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
 
   <!-- Modals -->
   <GeneratePayslipModal v-model:open="generateOpen" :saving="acting" @submit="handleGenerate" />
-  <AdjustPayslipModal
-    v-model:open="adjustOpen"
-    :saving="acting"
-    :payslip="adjustTarget"
-    @submit="handleAdjust"
-  />
+  <AdjustPayslipModal v-model:open="adjustOpen" :payslip="adjustTarget" @changed="refetch" />
   <PayslipDetailModal v-model:open="detailOpen" :payslip-id="detailId" />
   <PayslipExportModal v-model:open="exportOpen" :saving="exporting" @submit="handleExport" />
 

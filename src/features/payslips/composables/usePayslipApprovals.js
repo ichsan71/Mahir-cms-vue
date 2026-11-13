@@ -3,11 +3,19 @@ import { storeToRefs } from "pinia";
 import { useQuery } from "@vue/apollo-composable";
 import { LIST_PAYSLIP_APPROVAL } from "../graphql/payslip.queries";
 import { usePayslipApprovalFiltersStore } from "../stores/payslipApprovalFilters.store";
+import { useAuthStore } from "@/features/auth/stores/auth.store";
 
 // Layer logika inbox persetujuan slip gaji (baris PayslipApproval), paginated.
 export function usePayslipApprovals() {
   const filters = usePayslipApprovalFiltersStore();
   const { status, employeeIds, page, pageSize } = storeToRefs(filters);
+  const auth = useAuthStore();
+
+  // Inbox = hanya approval yang approver-nya adalah employee user login.
+  // Superuser tidak punya employee → approverIds null (lihat semua).
+  const approverIds = computed(() =>
+    auth.employee?.id ? [Number(auth.employee.id)] : null,
+  );
 
   const { result, loading, refetch } = useQuery(
     LIST_PAYSLIP_APPROVAL,
@@ -15,6 +23,7 @@ export function usePayslipApprovals() {
       params: {
         status: status.value || null,
         employeeIds: employeeIds.value?.length ? employeeIds.value : null,
+        approverIds: approverIds.value,
         page: page.value || null,
         pageSize: pageSize.value || null,
       },

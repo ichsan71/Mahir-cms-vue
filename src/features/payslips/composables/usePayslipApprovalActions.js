@@ -30,7 +30,7 @@ export function usePayslipApprovalActions() {
   const { mutate: approveManyMut } = useMutation(APPROVE_PAYSLIP_MANY);
   const { mutate: rejectManyMut } = useMutation(REJECT_PAYSLIP_MANY);
 
-  async function run(fn, { okMsg, fail }) {
+  async function run(fn, { fail }) {
     error.value = "";
     loading.value = true;
     try {
@@ -66,14 +66,28 @@ export function usePayslipApprovalActions() {
     return ok;
   }
 
+  // Ringkas hasil massal (PayslipApprovalBulkApprovalResult) jadi toast + nilai
+  // balik. `verb` = "disetujui" | "ditolak".
+  function reportBulk(data, verb) {
+    if (!data) return null;
+    const n = data.count ?? data.results?.length ?? 0;
+    if (data.queued) {
+      toast.success(`Permintaan ${verb} sedang diproses di latar belakang.`);
+    } else {
+      toast.success(`${n} slip gaji ${verb}`);
+    }
+    if (data.failed?.length) {
+      toast.error(`${data.failed.length} slip gagal: ${data.failed[0].error}`);
+    }
+    return data;
+  }
+
   async function approveMany(ids, remark = null) {
     const res = await run(
       () => approveManyMut({ ids: ids.map(Number), remark: remark?.trim() || null }),
       { fail: "Gagal menyetujui slip terpilih. Coba lagi." },
     );
-    const data = res?.data?.approvePayslipMany?.data;
-    if (data) toast.success(`${data.length} slip gaji disetujui`);
-    return data || null;
+    return reportBulk(res?.data?.approvePayslipMany?.data, "disetujui");
   }
 
   async function rejectMany(ids, remark = null) {
@@ -81,9 +95,7 @@ export function usePayslipApprovalActions() {
       () => rejectManyMut({ ids: ids.map(Number), remark: remark?.trim() || null }),
       { fail: "Gagal menolak slip terpilih. Coba lagi." },
     );
-    const data = res?.data?.rejectPayslipMany?.data;
-    if (data) toast.success(`${data.length} slip gaji ditolak`);
-    return data || null;
+    return reportBulk(res?.data?.rejectPayslipMany?.data, "ditolak");
   }
 
   return { approve, reject, approveMany, rejectMany, error, loading };

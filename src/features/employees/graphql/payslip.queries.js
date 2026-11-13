@@ -12,6 +12,22 @@ export const GET_MY_PAYSLIPS = gql`
     getEmployee(id: $getEmployeeId) {
       data {
         id
+        fullName
+        level {
+          id
+          name
+        }
+        units {
+          id
+          name
+        }
+        companies {
+          id
+          name
+          legalName
+          npwp
+          logo
+        }
         payslips(params: $params) {
           count
           totalPages
@@ -28,13 +44,22 @@ export const GET_MY_PAYSLIPS = gql`
             bpjsEmployee
             pph21
             netPay
-            adjustment
-            adjustmentNote
-            breakdown
+            prorationFactor
             currency
             status
             finalizedAt
             emittedAt
+            items {
+              id
+              kind
+              code
+              note
+              amount
+              componentTypeId
+              category
+              prorated
+              order
+            }
             deduction {
               id
               totalWorkDay

@@ -7,10 +7,14 @@ export const PERM = {
   LIST: "listPayslip",
   GET: "getPayslip",
   GENERATE: "generatePayslip",
-  ADJUST: "adjustPayslip",
   SUBMIT: "submitPayslip",
   RESTORE: "restorePayslip",
   EXPORT: "exportPayslip",
+  // Item slip (penyesuaian / line-item)
+  ITEM_LIST: "listPayslipItem",
+  ITEM_CREATE: "createPayslipItem",
+  ITEM_EDIT: "editPayslipItem",
+  ITEM_DELETE: "deletePayslipItem",
   // Persetujuan slip gaji
   LIST_APPROVAL: "listPayslipApproval",
   GET_APPROVAL: "getPayslipApproval",

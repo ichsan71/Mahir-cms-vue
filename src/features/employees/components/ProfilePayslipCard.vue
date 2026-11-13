@@ -6,14 +6,15 @@
 //
 // Label bulan memakai bulan `periodEnd` (konvensi "gaji bulan X"); rentang
 // tanggal & tanggal terbit (emittedAt) ikut ditampilkan agar tak ambigu.
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useQuery, useMutation } from "@vue/apollo-composable";
 import { GET_MY_PAYSLIPS } from "../graphql/payslip.queries";
 import { LOGIN } from "@/features/auth/graphql/auth.queries";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { usePayslipPrint } from "@/features/payslips/composables/usePayslipPrint";
 import { categoryLabel, categoryBadgeClass } from "@/features/salaryComponentTypes/constants";
 import { formatDate } from "@/shared/utils/format";
-import { BanknotesIcon, ArrowPathIcon, LockClosedIcon } from "@heroicons/vue/24/outline";
+import { BanknotesIcon, ArrowPathIcon, LockClosedIcon, ArrowDownTrayIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
   employeeId: { type: [Number, String], default: null },
@@ -78,6 +79,22 @@ const { result, loading } = useQuery(
   () => ({ enabled: unlocked.value && !!employeeIdNum.value, fetchPolicy: "cache-and-network" }),
 );
 
+// Info karyawan (untuk kop slip cetak) — slip milik sendiri tidak membawa
+// `employee`, jadi diambil dari level getEmployee lalu digabung saat cetak.
+const me = computed(() => result.value?.getEmployee?.data ?? {});
+const { print, printing } = usePayslipPrint();
+function onPrint(s) {
+  print({
+    ...s,
+    employee: {
+      fullName: me.value.fullName,
+      level: me.value.level,
+      units: me.value.units,
+      companies: me.value.companies,
+    },
+  });
+}
+
 const allSlips = computed(() => result.value?.getEmployee?.data?.payslips?.results ?? []);
 // Hanya slip FINAL (PayslipParams tak punya filter status → saring di klien),
 // urut periode terbaru dulu.
@@ -105,6 +122,22 @@ const filteredSlips = computed(() =>
     : slips.value,
 );
 
+// Default periode = bulan berjalan (bila ada slip-nya); jika belum ada slip bulan
+// ini, jatuh ke periode terbaru. Diset sekali saat opsi pertama tersedia; setelah
+// itu user bebas mengganti (termasuk "Semua Periode").
+const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+let periodDefaulted = false;
+watch(
+  periodOptions,
+  (opts) => {
+    if (periodDefaulted || !opts.length) return;
+    const match = opts.find((o) => String(o.value).slice(0, 7) === currentMonth);
+    selectedPeriod.value = match ? match.value : opts[0].value;
+    periodDefaulted = true;
+  },
+  { immediate: true },
+);
+
 // ── Util tampilan ────────────────────────────────────────────────────────────
 const MONTHS_ID = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -126,30 +159,31 @@ function money(v, currency) {
 function dateOnly(v) {
   return v ? formatDate(String(v).slice(0, 10)) : "-";
 }
-
-const BPJS_LABELS = {
-  jp: "JP (Jaminan Pensiun)",
-  jht: "JHT (Jaminan Hari Tua)",
-  jkk: "JKK (Kecelakaan Kerja)",
-  jkm: "JKM (Kematian)",
-  kesehatan: "Kesehatan",
-};
-function bpjsRows(breakdown) {
-  const b = breakdown?.bpjs ?? {};
-  return Object.keys(BPJS_LABELS)
-    .filter((k) => b[k])
-    .map((k) => ({ key: k, label: BPJS_LABELS[k], ...b[k] }));
+// Nominal bertanda (+/−) untuk item penyesuaian.
+function signed(v, currency) {
+  const n = Number(v) || 0;
+  return `${n < 0 ? "− " : "+ "}${money(Math.abs(n), currency)}`;
 }
 
-// Penjumlahan aman untuk array nilai string Decimal.
-function sumBy(arr, key) {
-  return (arr ?? []).reduce((acc, x) => {
-    const n = Number(x?.[key]);
-    return Number.isFinite(n) ? acc + n : acc;
-  }, 0);
+// Line-item slip dikelompokkan oleh `kind` (EmployeePayslipItemKindChoices).
+// Pendapatan = EARNING; penyesuaian net = ADJUSTMENT. Potongan dari section
+// `deduction.breakdown`; BPJS & pajak dari scalar.
+function sortedItems(s) {
+  return [...(s?.items ?? [])].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
 }
-function bpjsTotal(breakdown, which) {
-  return sumBy(bpjsRows(breakdown), which);
+function earningItems(s) {
+  return sortedItems(s).filter((i) => i.kind === "EARNING");
+}
+function adjustmentItems(s) {
+  return sortedItems(s).filter((i) => i.kind === "ADJUSTMENT");
+}
+function adjustmentTotal(s) {
+  return adjustmentItems(s).reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
+}
+// Keterangan ringkas untuk baris Penyesuaian di ringkasan (hanya bila 1 item).
+function adjustmentNote(s) {
+  const list = adjustmentItems(s);
+  return list.length === 1 ? list[0].note || list[0].code || null : null;
 }
 </script>
 
@@ -244,9 +278,20 @@ function bpjsTotal(breakdown, which) {
                 Periode {{ dateOnly(s.periodStart) }} – {{ dateOnly(s.periodEnd) }}
               </div>
             </div>
-            <div class="text-right">
-              <div class="text-[11px] uppercase tracking-wide text-slate-400">Gaji Bersih</div>
-              <div class="text-lg font-bold text-mahir-primary">{{ money(s.netPay, s.currency) }}</div>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div class="text-[11px] uppercase tracking-wide text-slate-400">Gaji Bersih</div>
+                <div class="text-lg font-bold text-mahir-primary">{{ money(s.netPay, s.currency) }}</div>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-mahir-border px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:border-mahir-primary hover:text-mahir-primary disabled:opacity-50"
+                title="Unduh / cetak slip gaji"
+                :disabled="printing"
+                @click="onPrint(s)"
+              >
+                <ArrowDownTrayIcon class="h-4 w-4" /> Unduh
+              </button>
             </div>
           </div>
 
@@ -270,18 +315,18 @@ function bpjsTotal(breakdown, which) {
             </div>
           </dl>
 
-          <!-- Pendapatan (komponen) -->
-          <div v-if="s.breakdown?.components?.length" class="px-4 py-3">
+          <!-- Pendapatan (komponen otomatis) -->
+          <div v-if="earningItems(s).length" class="px-4 py-3">
             <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mahir-primary">Pendapatan</div>
             <table class="w-full text-sm">
               <tbody>
                 <tr
-                  v-for="(c, i) in s.breakdown.components"
-                  :key="i"
+                  v-for="c in earningItems(s)"
+                  :key="c.id"
                   class="border-b border-mahir-border/50"
                 >
                   <td class="py-2 pr-3">
-                    <span class="font-medium text-slate-700">{{ c.code }}</span>
+                    <span class="font-medium text-slate-700">{{ c.note || c.code }}</span>
                     <span v-if="c.prorated" class="ml-1.5 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">prorata</span>
                   </td>
                   <td class="py-2 pr-3">
@@ -292,7 +337,7 @@ function bpjsTotal(breakdown, which) {
                       {{ categoryLabel(c.category) }}
                     </span>
                   </td>
-                  <td class="py-2 text-right font-semibold text-slate-800">{{ money(c.value, s.currency) }}</td>
+                  <td class="py-2 text-right font-semibold text-slate-800">{{ money(c.amount, s.currency) }}</td>
                 </tr>
               </tbody>
               <tfoot>
@@ -303,10 +348,10 @@ function bpjsTotal(breakdown, which) {
               </tfoot>
             </table>
             <p
-              v-if="s.breakdown.proration_factor && Number(s.breakdown.proration_factor) !== 1"
+              v-if="s.prorationFactor && Number(s.prorationFactor) !== 1"
               class="mt-1 text-[12px] text-amber-600"
             >
-              Faktor prorata diterapkan: {{ s.breakdown.proration_factor }}
+              Faktor prorata diterapkan: {{ s.prorationFactor }}
             </p>
           </div>
 
@@ -360,41 +405,27 @@ function bpjsTotal(breakdown, which) {
             </div>
           </div>
 
-          <!-- Rincian BPJS -->
-          <div v-if="bpjsRows(s.breakdown).length" class="border-t border-mahir-border/70 px-4 py-3">
-            <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mahir-primary">Rincian BPJS</div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-mahir-border text-left text-[11px] uppercase tracking-wide text-slate-400">
-                    <th class="py-2 pr-3 font-semibold">Jenis</th>
-                    <th class="py-2 pr-3 font-semibold text-right">Dasar</th>
-                    <th class="py-2 pr-3 font-semibold text-right">Karyawan</th>
-                    <th class="py-2 font-semibold text-right">Perusahaan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="r in bpjsRows(s.breakdown)"
-                    :key="r.key"
-                    class="border-b border-mahir-border/50"
-                  >
-                    <td class="py-2 pr-3 font-medium text-slate-700">{{ r.label }}</td>
-                    <td class="py-2 pr-3 text-right text-slate-600">{{ money(r.base, s.currency) }}</td>
-                    <td class="py-2 pr-3 text-right text-slate-600">{{ money(r.employee, s.currency) }}</td>
-                    <td class="py-2 text-right text-slate-600">{{ money(r.employer, s.currency) }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="border-t border-mahir-border">
-                    <td class="py-2 pr-3 text-[13px] font-semibold text-slate-600">Total</td>
-                    <td class="py-2 pr-3"></td>
-                    <td class="py-2 pr-3 text-right font-bold text-slate-800">{{ money(bpjsTotal(s.breakdown, 'employee'), s.currency) }}</td>
-                    <td class="py-2 text-right font-bold text-slate-800">{{ money(bpjsTotal(s.breakdown, 'employer'), s.currency) }}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+          <!-- Penyesuaian (kind = ADJUSTMENT) -->
+          <div v-if="adjustmentItems(s).length" class="border-t border-mahir-border/70 px-4 py-3">
+            <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mahir-primary">Penyesuaian</div>
+            <table class="w-full text-sm">
+              <tbody>
+                <tr v-for="it in adjustmentItems(s)" :key="it.id" class="border-b border-mahir-border/50">
+                  <td class="py-2 pr-3 text-slate-700">{{ it.note || it.code || "—" }}</td>
+                  <td class="py-2 text-right font-semibold" :class="Number(it.amount) < 0 ? 'text-red-500' : 'text-emerald-600'">
+                    {{ signed(it.amount, s.currency) }}
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td class="py-2 pr-3 text-[13px] font-semibold text-slate-600">Total Penyesuaian</td>
+                  <td class="py-2 text-right font-bold" :class="adjustmentTotal(s) < 0 ? 'text-red-500' : 'text-emerald-600'">
+                    {{ signed(adjustmentTotal(s), s.currency) }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
           <!-- Perhitungan gaji bersih -->
@@ -417,12 +448,14 @@ function bpjsTotal(breakdown, which) {
                 <dt class="text-slate-500">PPh 21</dt>
                 <dd class="font-medium text-red-500">− {{ money(s.pph21, s.currency) }}</dd>
               </div>
-              <div v-if="Number(s.adjustment) !== 0 || s.adjustmentNote" class="flex justify-between gap-3">
+              <div v-if="adjustmentTotal(s) !== 0" class="flex justify-between gap-3">
                 <dt class="text-slate-500">
                   Penyesuaian
-                  <span v-if="s.adjustmentNote" class="text-[12px] text-slate-400">({{ s.adjustmentNote }})</span>
+                  <span v-if="adjustmentNote(s)" class="text-[12px] text-slate-400">({{ adjustmentNote(s) }})</span>
                 </dt>
-                <dd class="font-medium text-slate-700">{{ money(s.adjustment, s.currency) }}</dd>
+                <dd class="font-medium" :class="adjustmentTotal(s) < 0 ? 'text-red-500' : 'text-emerald-600'">
+                  {{ signed(adjustmentTotal(s), s.currency) }}
+                </dd>
               </div>
               <div class="flex justify-between gap-3 border-t border-mahir-border pt-2">
                 <dt class="font-semibold text-slate-800">Gaji Bersih</dt>

@@ -2,7 +2,6 @@ import { ref } from "vue";
 import { useMutation } from "@vue/apollo-composable";
 import {
   GENERATE_PAYSLIP,
-  ADJUST_PAYSLIP,
   SUBMIT_PAYSLIP,
   RESTORE_PAYSLIP,
 } from "../graphql/payslip.queries";
@@ -27,11 +26,10 @@ export function usePayslipActions() {
   const loading = ref(false);
 
   const { mutate: generateMut } = useMutation(GENERATE_PAYSLIP);
-  const { mutate: adjustMut } = useMutation(ADJUST_PAYSLIP);
   const { mutate: submitMut } = useMutation(SUBMIT_PAYSLIP);
   const { mutate: restoreMut } = useMutation(RESTORE_PAYSLIP);
 
-  async function run(fn, { ok, fail }) {
+  async function run(fn, { fail }) {
     error.value = "";
     loading.value = true;
     try {
@@ -62,21 +60,6 @@ export function usePayslipActions() {
     return data || null;
   }
 
-  async function adjust({ id, adjustment, adjustmentNote }) {
-    const res = await run(
-      () =>
-        adjustMut({
-          id: Number(id),
-          adjustment: String(adjustment),
-          adjustmentNote: adjustmentNote?.trim() || null,
-        }),
-      { fail: "Gagal menyesuaikan slip. Coba lagi." },
-    );
-    const data = res?.data?.adjustPayslip?.data;
-    if (data) toast.success("Penyesuaian slip tersimpan");
-    return data || null;
-  }
-
   // Ajukan untuk persetujuan — berdasarkan daftar id ATAU filter aktif.
   async function submit({ ids = null, filters = null }) {
     const res = await run(
@@ -101,5 +84,5 @@ export function usePayslipActions() {
     return data || null;
   }
 
-  return { generate, adjust, submit, restore, error, loading };
+  return { generate, submit, restore, error, loading };
 }

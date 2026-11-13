@@ -11,6 +11,8 @@ const props = defineProps({
   // dan modal tidak bisa ditutup agar proses tidak terputus.
   loading: { type: Boolean, default: false },
   submitText: { type: String, default: "Simpan" },
+  // Nonaktifkan tombol simpan (mis. form belum valid).
+  submitDisabled: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["update:open", "submit"]);
@@ -66,7 +68,7 @@ function close() {
               <button
                 type="submit"
                 class="inline-flex items-center gap-1.5 rounded-lg bg-mahir-primary px-4 py-2 text-sm font-semibold text-white hover:bg-mahir-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="loading"
+                :disabled="loading || submitDisabled"
               >
                 <ArrowPathIcon v-if="loading" class="h-4 w-4 animate-spin" />
                 {{ loading ? "Memuat…" : submitText }}

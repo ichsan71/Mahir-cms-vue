@@ -21,8 +21,6 @@ export const LIST_PAYSLIP = gql`
           bpjsEmployee
           pph21
           netPay
-          adjustment
-          adjustmentNote
           currency
           status
           finalizedAt
@@ -39,13 +37,24 @@ export const LIST_PAYSLIP = gql`
               name
             }
           }
+          approvals {
+            results {
+              id
+              order
+              status
+              approver {
+                id
+                fullName
+              }
+            }
+          }
         }
       }
     }
   }
 `;
 
-// Detail satu slip gaji + rincian (breakdown) + jejak persetujuan.
+// Detail satu slip gaji + line-item (items) + rincian potongan + jejak persetujuan.
 export const GET_PAYSLIP = gql`
   query GetPayslip($id: Int!) {
     getPayslip(id: $id) {
@@ -59,13 +68,25 @@ export const GET_PAYSLIP = gql`
         bpjsEmployee
         pph21
         netPay
-        adjustment
-        adjustmentNote
-        breakdown
+        prorationFactor
         currency
         status
         finalizedAt
         emittedAt
+        items {
+          id
+          kind
+          code
+          note
+          amount
+          componentTypeId
+          category
+          base
+          dailyRate
+          paidDays
+          prorated
+          order
+        }
         employee {
           id
           fullName
@@ -76,6 +97,13 @@ export const GET_PAYSLIP = gql`
           level {
             id
             name
+          }
+          companies {
+            id
+            name
+            legalName
+            npwp
+            logo
           }
         }
         deduction {
@@ -181,17 +209,71 @@ export const GENERATE_PAYSLIP = gql`
   }
 `;
 
-// Penyesuaian nominal slip (adjustment ± dengan catatan).
-export const ADJUST_PAYSLIP = gql`
-  mutation AdjustPayslip($id: Int!, $adjustment: Decimal!, $adjustmentNote: String) {
-    adjustPayslip(id: $id, adjustment: $adjustment, adjustmentNote: $adjustmentNote) {
+// ── Item slip (PayslipItem) ──────────────────────────────────────────────────
+// Penyesuaian kini berupa line-item. `kind` (EmployeePayslipItemKindChoices:
+// EARNING/DEDUCTION/BPJS_EMPLOYEE/BPJS_EMPLOYER/TAX/ADJUSTMENT) menentukan jenis.
+// Semua item bisa diedit (nominal/keterangan via editPayslipItem); hanya
+// kind=ADJUSTMENT yang bisa ditambah/hapus (manual).
+
+const PAYSLIP_ITEM_FIELDS = gql`
+  fragment PayslipItemFields on PayslipItem {
+    id
+    kind
+    code
+    note
+    amount
+    componentTypeId
+    category
+    base
+    dailyRate
+    paidDays
+    prorated
+    order
+  }
+`;
+
+// Daftar item satu slip (filter by payslip). pageSize besar — item per slip sedikit.
+export const LIST_PAYSLIP_ITEM = gql`
+  query ListPayslipItem($params: PayslipItemParams) {
+    listPayslipItem(params: $params) {
       data {
-        id
-        adjustment
-        adjustmentNote
-        netPay
-        status
+        count
+        results {
+          ...PayslipItemFields
+        }
       }
+    }
+  }
+  ${PAYSLIP_ITEM_FIELDS}
+`;
+
+// Tambah item manual. `code` di-generate otomatis (lihat composable).
+export const CREATE_PAYSLIP_ITEM = gql`
+  mutation CreatePayslipItem($input: PayslipItemInput!) {
+    createPayslipItem(input: $input) {
+      data {
+        ...PayslipItemFields
+      }
+    }
+  }
+  ${PAYSLIP_ITEM_FIELDS}
+`;
+
+export const EDIT_PAYSLIP_ITEM = gql`
+  mutation EditPayslipItem($id: Int!, $input: PayslipItemInput!) {
+    editPayslipItem(id: $id, input: $input) {
+      data {
+        ...PayslipItemFields
+      }
+    }
+  }
+  ${PAYSLIP_ITEM_FIELDS}
+`;
+
+export const DELETE_PAYSLIP_ITEM = gql`
+  mutation DeletePayslipItem($id: Int!) {
+    deletePayslipItem(id: $id) {
+      data
     }
   }
 `;
@@ -260,13 +342,23 @@ export const REJECT_PAYSLIP = gql`
   }
 `;
 
-// Persetujuan massal (ids = daftar id PayslipApproval).
+// Persetujuan massal (ids = daftar id PayslipApproval). Hasilnya
+// PayslipApprovalBulkApprovalResult: results (sukses), failed (gagal + alasan),
+// queued (diproses async), count.
 export const APPROVE_PAYSLIP_MANY = gql`
   mutation ApprovePayslipMany($ids: [Int!]!, $remark: String) {
     approvePayslipMany(ids: $ids, remark: $remark) {
       data {
-        id
-        status
+        count
+        queued
+        results {
+          id
+          status
+        }
+        failed {
+          id
+          error
+        }
       }
     }
   }
@@ -276,8 +368,16 @@ export const REJECT_PAYSLIP_MANY = gql`
   mutation RejectPayslipMany($ids: [Int!]!, $remark: String) {
     rejectPayslipMany(ids: $ids, remark: $remark) {
       data {
-        id
-        status
+        count
+        queued
+        results {
+          id
+          status
+        }
+        failed {
+          id
+          error
+        }
       }
     }
   }

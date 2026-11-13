@@ -6,9 +6,10 @@ import { storeToRefs } from "pinia";
 import { usePayslipApprovals } from "../composables/usePayslipApprovals";
 import { usePayslipApprovalActions } from "../composables/usePayslipApprovalActions";
 import { usePayslipApprovalFiltersStore } from "../stores/payslipApprovalFilters.store";
-import { statusMeta, isPendingApproval, APPROVAL_STATUS_OPTIONS, PAGE_SIZES } from "../constants";
+import { statusMeta, isPendingApproval, PAGE_SIZES } from "../constants";
 import { PERM } from "../permissions";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useEnumChoices } from "@/shared/composables/useEnumChoices";
 import { useEmployeeSearch } from "@/features/employees/composables/useEmployeeSearch";
 import SearchableSelect from "@/shared/components/SearchableSelect.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
@@ -29,6 +30,11 @@ const {
   setSearch: setEmployeeSearch,
 } = useEmployeeSearch();
 const employeeSelected = ref([]);
+
+// Opsi status filter baris approval slip gaji — grup khusus PAYSLIP_APPROVAL_STATUS.
+// Nilai yang dikirim = enum LeaveApprovalStatusChoices (WAITING/PENDING/APPROVED/
+// REJECTED), sesuai tipe param `status` di schema.
+const { options: statusOptions } = useEnumChoices("PAYSLIP_APPROVAL_STATUS");
 
 function money(v, currency) {
   const n = Number(v);
@@ -157,7 +163,8 @@ const fieldCls =
           />
         </div>
         <select v-model="filters.status" :class="fieldCls">
-          <option v-for="opt in APPROVAL_STATUS_OPTIONS" :key="opt.value" :value="opt.value">
+          <option value="">Semua Status</option>
+          <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
           </option>
         </select>
@@ -173,7 +180,7 @@ const fieldCls =
       <div class="flex items-center gap-2">
         <button
           v-if="auth.can(PERM.APPROVE_MANY)"
-          class="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-600"
+          class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-mahir-primary/90"
           @click="openBulk('approve')"
         >
           <CheckIcon class="h-4 w-4" /> Setujui
