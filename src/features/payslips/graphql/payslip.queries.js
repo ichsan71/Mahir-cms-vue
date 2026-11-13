@@ -247,7 +247,7 @@ export const LIST_PAYSLIP_ITEM = gql`
   ${PAYSLIP_ITEM_FIELDS}
 `;
 
-// Tambah item manual. `code` di-generate otomatis (lihat composable).
+// Tambah item. `code` = nilai `kind` (lihat composable).
 export const CREATE_PAYSLIP_ITEM = gql`
   mutation CreatePayslipItem($input: PayslipItemInput!) {
     createPayslipItem(input: $input) {

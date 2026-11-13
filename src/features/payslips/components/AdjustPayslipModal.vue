@@ -8,6 +8,7 @@ import BaseModal from "@/shared/components/BaseModal.vue";
 import { formatDate } from "@/shared/utils/format";
 import { usePayslipItems } from "../composables/usePayslipItems";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useEnumChoices } from "@/shared/composables/useEnumChoices";
 import { PERM } from "../permissions";
 import { PlusIcon, TrashIcon, CheckIcon } from "@heroicons/vue/24/outline";
 
@@ -89,8 +90,19 @@ function isDirty(d) {
   return (o.note ?? "") !== d.note || plainAmount(o.amount) !== String(d.amount);
 }
 
-// Form item baru.
+// Form item manual baru.
 const newItem = ref({ note: "", amount: "" });
+
+// Pilihan jenis komponen otomatis dari enum backend PAYSLIP_ITEM_KIND (value =
+// nama enum). ADJUSTMENT dikecualikan (khusus item manual). Label tampilan lewat
+// KIND_META agar terbaca ("Pendapatan", dst.), fallback ke nama enum.
+const { options: kindChoices } = useEnumChoices("PAYSLIP_ITEM_KIND");
+const autoKindOptions = computed(() =>
+  kindChoices.value
+    .filter((o) => o.value !== "ADJUSTMENT")
+    .map((o) => ({ value: o.value, label: kindMeta(o.value).label })),
+);
+const newAuto = ref({ kind: "EARNING", note: "", amount: "" });
 
 // ── Total (net) ───────────────────────────────────────────────────────────────
 // Nominal disimpan positif; arah terhadap gaji bersih ditentukan `kind`.
@@ -115,6 +127,18 @@ async function onAdd() {
   const ok = await create({ note: newItem.value.note, amount: Number(newItem.value.amount) });
   if (ok) {
     newItem.value = { note: "", amount: "" };
+    emit("changed");
+  }
+}
+async function onAddAuto() {
+  if (!isValidAmount(newAuto.value.amount)) return;
+  const ok = await create({
+    kind: newAuto.value.kind,
+    note: newAuto.value.note,
+    amount: Number(newAuto.value.amount),
+  });
+  if (ok) {
+    newAuto.value = { kind: "EARNING", note: "", amount: "" };
     emit("changed");
   }
 }
@@ -159,7 +183,7 @@ const delBtnCls =
                 <th class="px-3 py-2.5 font-semibold">Komponen</th>
                 <th class="px-3 py-2.5 font-semibold">Keterangan</th>
                 <th class="px-3 py-2.5 text-right font-semibold">Nominal</th>
-                <th class="w-12 px-2 py-2.5"></th>
+                <th class="w-28 px-2 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
@@ -195,16 +219,28 @@ const delBtnCls =
                   />
                 </td>
                 <td class="px-2 py-2 align-top">
-                  <button
-                    v-if="canEdit"
-                    type="button"
-                    :class="saveBtnCls"
-                    :title="isDirty(d) ? 'Simpan perubahan' : 'Tidak ada perubahan'"
-                    :disabled="saving || !isValidAmount(d.amount) || !isDirty(d)"
-                    @click="onSaveRow(d)"
-                  >
-                    <CheckIcon class="h-4 w-4" />
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      v-if="canEdit"
+                      type="button"
+                      :class="saveBtnCls"
+                      :title="isDirty(d) ? 'Simpan perubahan' : 'Tidak ada perubahan'"
+                      :disabled="saving || !isValidAmount(d.amount) || !isDirty(d)"
+                      @click="onSaveRow(d)"
+                    >
+                      <CheckIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      v-if="canDelete"
+                      type="button"
+                      :class="delBtnCls"
+                      title="Hapus komponen dari slip ini (tidak menghapus master)"
+                      :disabled="saving"
+                      @click="onRemoveRow(d)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -221,6 +257,38 @@ const delBtnCls =
             </tfoot>
           </table>
         </div>
+
+        <!-- Tambah komponen otomatis baru -->
+        <div v-if="canCreate" class="mt-3 flex items-center gap-2">
+          <select v-model="newAuto.kind" :class="fieldCls" class="shrink-0 grow-0 basis-44">
+            <option v-for="opt in autoKindOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+          <input
+            v-model="newAuto.note"
+            type="text"
+            :class="fieldCls"
+            class="min-w-0 flex-1"
+            placeholder="Keterangan komponen baru"
+          />
+          <input
+            :value="newAuto.amount"
+            type="text"
+            inputmode="decimal"
+            :class="fieldCls"
+            class="shrink-0 grow-0 basis-44 text-right"
+            placeholder="Nominal"
+            @input="newAuto.amount = sanitizeAmount($event.target.value)"
+          />
+          <button
+            type="button"
+            class="flex h-11 shrink-0 items-center gap-1.5 rounded-lg bg-mahir-primary px-4 text-sm font-semibold text-white hover:bg-mahir-primary/90 disabled:opacity-50"
+            :disabled="saving || !isValidAmount(newAuto.amount)"
+            @click="onAddAuto"
+          >
+            <PlusIcon class="h-5 w-5" /> Tambah
+          </button>
+        </div>
+
         <p class="mt-1.5 text-[12px] text-mahir-muted">
           Komponen ini dihitung otomatis oleh sistem; ubah nominal/keterangan bila perlu koreksi, lalu simpan per baris.
         </p>

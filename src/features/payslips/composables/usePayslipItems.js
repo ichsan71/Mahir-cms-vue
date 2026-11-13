@@ -15,11 +15,6 @@ function cleanMessage(e) {
   return raw.replace(/^GraphQL error:\s*/i, "").trim();
 }
 
-// Kode item manual di-generate otomatis (user tidak mengisinya).
-function autoCode() {
-  return `ADJ-${Date.now().toString(36).toUpperCase()}`;
-}
-
 // Kelola line-item satu slip: daftar + simpan (edit semua item) + tambah/hapus
 // item manual. `payslipId` & `enabled` berupa ref agar query reaktif ke modal.
 export function usePayslipItems(payslipId, enabled) {
@@ -61,20 +56,21 @@ export function usePayslipItems(payslipId, enabled) {
 
   const dec = (v) => (v == null || v === "" ? null : String(v));
 
-  // Tambah item manual (kind ADJUSTMENT). Decimal dikirim sebagai String.
-  function create({ note, amount }) {
+  // Tambah item. `kind` default ADJUSTMENT (item manual); komponen otomatis
+  // kirim kind EARNING/DEDUCTION/BPJS_*/TAX. Decimal dikirim sebagai String.
+  function create({ kind = "ADJUSTMENT", note, amount }) {
     return run(
       () =>
         createMut({
           input: {
             payslipId: Number(payslipId.value),
-            kind: "ADJUSTMENT",
-            code: autoCode(),
+            kind,
+            code: kind,
             note: note?.trim() || null,
             amount: String(amount),
           },
         }),
-      { okMsg: "Item penyesuaian ditambahkan", failMsg: "Gagal menambah item." },
+      { okMsg: "Item ditambahkan", failMsg: "Gagal menambah item." },
     );
   }
 
@@ -89,7 +85,7 @@ export function usePayslipItems(payslipId, enabled) {
           input: {
             payslipId: Number(payslipId.value),
             kind: item.kind || "ADJUSTMENT",
-            code: item.code || autoCode(),
+            code: item.code || item.kind,
             componentTypeId: item.componentTypeId ?? null,
             category: item.category ?? null,
             order: item.order ?? null,
