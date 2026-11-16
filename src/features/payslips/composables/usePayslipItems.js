@@ -58,7 +58,9 @@ export function usePayslipItems(payslipId, enabled) {
 
   // Tambah item. `kind` default ADJUSTMENT (item manual); komponen otomatis
   // kirim kind EARNING/DEDUCTION/BPJS_*/TAX. Decimal dikirim sebagai String.
-  function create({ kind = "ADJUSTMENT", note, amount }) {
+  // `category` (BASIC/ALLOWANCE/DEDUCTION) dibawa untuk komponen otomatis baru
+  // — item manual (ADJUSTMENT) tidak punya kategori, jadi dibiarkan null.
+  function create({ kind = "ADJUSTMENT", category = null, note, amount }) {
     return run(
       () =>
         createMut({
@@ -66,6 +68,7 @@ export function usePayslipItems(payslipId, enabled) {
             payslipId: Number(payslipId.value),
             kind,
             code: kind,
+            category: category || null,
             note: note?.trim() || null,
             amount: String(amount),
           },

@@ -9,6 +9,7 @@ import { formatDate } from "@/shared/utils/format";
 import { usePayslipItems } from "../composables/usePayslipItems";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useEnumChoices } from "@/shared/composables/useEnumChoices";
+import { CATEGORIES, categoryLabel, categoryBadgeClass } from "@/features/salaryComponentTypes/constants";
 import { PERM } from "../permissions";
 import { PlusIcon, TrashIcon, CheckIcon } from "@heroicons/vue/24/outline";
 
@@ -102,7 +103,10 @@ const autoKindOptions = computed(() =>
     .filter((o) => o.value !== "ADJUSTMENT")
     .map((o) => ({ value: o.value, label: kindMeta(o.value).label })),
 );
-const newAuto = ref({ kind: "EARNING", note: "", amount: "" });
+// Kategori komponen otomatis baru (BASIC/ALLOWANCE/DEDUCTION) — ikut dibawa ke
+// mutation create agar backend bisa menggolongkan komponen yang baru ditambah.
+const categoryOptions = CATEGORIES;
+const newAuto = ref({ kind: "EARNING", category: "ALLOWANCE", note: "", amount: "" });
 
 // ── Total (net) ───────────────────────────────────────────────────────────────
 // Nominal disimpan positif; arah terhadap gaji bersih ditentukan `kind`.
@@ -134,11 +138,12 @@ async function onAddAuto() {
   if (!isValidAmount(newAuto.value.amount)) return;
   const ok = await create({
     kind: newAuto.value.kind,
+    category: newAuto.value.category,
     note: newAuto.value.note,
     amount: Number(newAuto.value.amount),
   });
   if (ok) {
-    newAuto.value = { kind: "EARNING", note: "", amount: "" };
+    newAuto.value = { kind: "EARNING", category: "ALLOWANCE", note: "", amount: "" };
     emit("changed");
   }
 }
@@ -154,13 +159,15 @@ const saveBtnCls =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-mahir-primary/10 text-mahir-primary hover:bg-mahir-primary/20 disabled:opacity-40";
 const delBtnCls =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50";
+const addBtnCls =
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-mahir-primary text-white hover:bg-mahir-primary/90 disabled:opacity-50";
 </script>
 
 <template>
   <BaseModal
     :open="open"
     title="Item Penyesuaian Slip Gaji"
-    size="xl"
+    size="2xl"
     submit-text="Selesai"
     @update:open="emit('update:open', $event)"
     @submit="emit('update:open', false)"
@@ -174,13 +181,15 @@ const delBtnCls =
       <p v-if="loading && !items.length" class="text-sm text-slate-400">Memuat item…</p>
 
       <!-- Komponen otomatis (editable) -->
-      <div v-if="autoDrafts.length">
+      <div v-if="autoDrafts.length || canCreate">
         <label :class="labelCls">Komponen Otomatis</label>
         <div class="overflow-x-auto rounded-xl border border-mahir-border">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-mahir-border bg-slate-50/80 text-left text-[11px] uppercase tracking-wide text-slate-400">
                 <th class="px-3 py-2.5 font-semibold">Komponen</th>
+                <th class="px-3 py-2.5 font-semibold">Jenis</th>
+                <th class="px-3 py-2.5 font-semibold">Kategori</th>
                 <th class="px-3 py-2.5 font-semibold">Keterangan</th>
                 <th class="px-3 py-2.5 text-right font-semibold">Nominal</th>
                 <th class="w-28 px-2 py-2.5"></th>
@@ -190,13 +199,25 @@ const delBtnCls =
               <tr v-for="d in autoDrafts" :key="d.id" class="border-b border-mahir-border/60 last:border-0">
                 <td class="px-3 py-2 align-top">
                   <div class="font-medium text-slate-700">{{ d.code || "—" }}</div>
+                  <span v-if="d.prorated" class="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">prorata</span>
+                </td>
+                <td class="px-3 py-2 align-top">
                   <span
-                    class="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
                     :class="kindMeta(d.kind).cls"
                   >
                     {{ kindMeta(d.kind).label }}
                   </span>
-                  <span v-if="d.prorated" class="ml-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">prorata</span>
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <span
+                    v-if="d.category"
+                    class="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    :class="categoryBadgeClass(d.category)"
+                  >
+                    {{ categoryLabel(d.category) }}
+                  </span>
+                  <span v-else class="text-[12px] text-slate-300">—</span>
                 </td>
                 <td class="px-3 py-2 align-top">
                   <input
@@ -243,10 +264,57 @@ const delBtnCls =
                   </div>
                 </td>
               </tr>
+
+              <!-- Baris tambah komponen otomatis baru (menyatu dengan tabel) -->
+              <tr v-if="canCreate" class="border-t border-mahir-border bg-slate-50/40">
+                <td class="px-3 py-2 align-top">
+                  <span class="inline-block rounded-full bg-mahir-primary/10 px-2 py-0.5 text-[10px] font-semibold text-mahir-primary">Baru</span>
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <select v-model="newAuto.kind" :class="fieldCls">
+                    <option v-for="opt in autoKindOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  </select>
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <select v-model="newAuto.category" :class="fieldCls">
+                    <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                  </select>
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <input
+                    v-model="newAuto.note"
+                    type="text"
+                    :class="fieldCls"
+                    placeholder="Keterangan komponen baru"
+                  />
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <input
+                    :value="newAuto.amount"
+                    type="text"
+                    inputmode="decimal"
+                    :class="fieldCls"
+                    class="text-right"
+                    placeholder="Nominal"
+                    @input="newAuto.amount = sanitizeAmount($event.target.value)"
+                  />
+                </td>
+                <td class="px-2 py-2 align-top">
+                  <button
+                    type="button"
+                    :class="addBtnCls"
+                    title="Tambah komponen"
+                    :disabled="saving || !isValidAmount(newAuto.amount)"
+                    @click="onAddAuto"
+                  >
+                    <PlusIcon class="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
             </tbody>
-            <tfoot>
+            <tfoot v-if="autoDrafts.length">
               <tr class="border-t-2 border-mahir-border bg-slate-50/60">
-                <td class="px-3 py-2.5 text-[13px] font-semibold text-slate-600" colspan="2">
+                <td class="px-3 py-2.5 text-[13px] font-semibold text-slate-600" colspan="4">
                   Subtotal (pendapatan − potongan/BPJS/pajak)
                 </td>
                 <td class="px-3 py-2.5 text-right font-bold" :class="autoTotal < 0 ? 'text-mahir-danger' : 'text-slate-800'">
@@ -258,37 +326,6 @@ const delBtnCls =
           </table>
         </div>
 
-        <!-- Tambah komponen otomatis baru -->
-        <div v-if="canCreate" class="mt-3 flex items-center gap-2">
-          <select v-model="newAuto.kind" :class="fieldCls" class="shrink-0 grow-0 basis-44">
-            <option v-for="opt in autoKindOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-          <input
-            v-model="newAuto.note"
-            type="text"
-            :class="fieldCls"
-            class="min-w-0 flex-1"
-            placeholder="Keterangan komponen baru"
-          />
-          <input
-            :value="newAuto.amount"
-            type="text"
-            inputmode="decimal"
-            :class="fieldCls"
-            class="shrink-0 grow-0 basis-44 text-right"
-            placeholder="Nominal"
-            @input="newAuto.amount = sanitizeAmount($event.target.value)"
-          />
-          <button
-            type="button"
-            class="flex h-11 shrink-0 items-center gap-1.5 rounded-lg bg-mahir-primary px-4 text-sm font-semibold text-white hover:bg-mahir-primary/90 disabled:opacity-50"
-            :disabled="saving || !isValidAmount(newAuto.amount)"
-            @click="onAddAuto"
-          >
-            <PlusIcon class="h-5 w-5" /> Tambah
-          </button>
-        </div>
-
         <p class="mt-1.5 text-[12px] text-mahir-muted">
           Komponen ini dihitung otomatis oleh sistem; ubah nominal/keterangan bila perlu koreksi, lalu simpan per baris.
         </p>
@@ -297,89 +334,113 @@ const delBtnCls =
       <!-- Item penyesuaian manual (editable) -->
       <div>
         <label :class="labelCls">Item Penyesuaian Manual</label>
-        <div class="space-y-2">
-          <div v-for="d in manualDrafts" :key="d.id" class="flex items-center gap-2">
-            <input
-              v-model="d.note"
-              type="text"
-              :class="fieldCls"
-              class="min-w-0 flex-1"
-              placeholder="Keterangan (mis. Bonus, Potongan pinjaman)"
-              :disabled="!canEdit"
-            />
-            <input
-              :value="d.amount"
-              type="text"
-              inputmode="decimal"
-              :class="fieldCls"
-              class="shrink-0 grow-0 basis-44 text-right"
-              placeholder="mis. 50000"
-              :disabled="!canEdit"
-              @input="d.amount = sanitizeAmount($event.target.value)"
-            />
-            <button
-              v-if="canEdit"
-              type="button"
-              :class="saveBtnCls"
-              title="Simpan perubahan"
-              :disabled="saving || !isValidAmount(d.amount) || !isDirty(d)"
-              @click="onSaveRow(d)"
-            >
-              <CheckIcon class="h-5 w-5" />
-            </button>
-            <button
-              v-if="canDelete"
-              type="button"
-              :class="delBtnCls"
-              title="Hapus item"
-              :disabled="saving"
-              @click="onRemoveRow(d)"
-            >
-              <TrashIcon class="h-5 w-5" />
-            </button>
-          </div>
-          <p v-if="!manualDrafts.length && !loading" class="text-[13px] text-slate-400">
-            Belum ada item penyesuaian manual.
-          </p>
-        </div>
+        <div v-if="manualDrafts.length || canCreate" class="overflow-x-auto rounded-xl border border-mahir-border">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-mahir-border bg-slate-50/80 text-left text-[11px] uppercase tracking-wide text-slate-400">
+                <th class="px-3 py-2.5 font-semibold">Keterangan</th>
+                <th class="px-3 py-2.5 text-right font-semibold">Nominal</th>
+                <th class="w-28 px-2 py-2.5"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="d in manualDrafts" :key="d.id" class="border-b border-mahir-border/60 last:border-0">
+                <td class="px-3 py-2 align-top">
+                  <input
+                    v-model="d.note"
+                    type="text"
+                    :class="fieldCls"
+                    placeholder="Keterangan (mis. Bonus, Potongan pinjaman)"
+                    :disabled="!canEdit"
+                  />
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <input
+                    :value="d.amount"
+                    type="text"
+                    inputmode="decimal"
+                    :class="fieldCls"
+                    class="text-right"
+                    placeholder="mis. 50000"
+                    :disabled="!canEdit"
+                    @input="d.amount = sanitizeAmount($event.target.value)"
+                  />
+                </td>
+                <td class="px-2 py-2 align-top">
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      v-if="canEdit"
+                      type="button"
+                      :class="saveBtnCls"
+                      :title="isDirty(d) ? 'Simpan perubahan' : 'Tidak ada perubahan'"
+                      :disabled="saving || !isValidAmount(d.amount) || !isDirty(d)"
+                      @click="onSaveRow(d)"
+                    >
+                      <CheckIcon class="h-4 w-4" />
+                    </button>
+                    <button
+                      v-if="canDelete"
+                      type="button"
+                      :class="delBtnCls"
+                      title="Hapus item"
+                      :disabled="saving"
+                      @click="onRemoveRow(d)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
 
-        <!-- Tambah item baru -->
-        <div v-if="canCreate" class="mt-3 flex items-center gap-2 border-t border-dashed border-mahir-border pt-3">
-          <input
-            v-model="newItem.note"
-            type="text"
-            :class="fieldCls"
-            class="min-w-0 flex-1"
-            placeholder="Keterangan item baru (mis. Bonus kinerja)"
-          />
-          <input
-            :value="newItem.amount"
-            type="text"
-            inputmode="decimal"
-            :class="fieldCls"
-            class="shrink-0 grow-0 basis-44 text-right"
-            placeholder="Nominal (± )"
-            @input="newItem.amount = sanitizeAmount($event.target.value)"
-          />
-          <button
-            type="button"
-            class="flex h-11 shrink-0 items-center gap-1.5 rounded-lg bg-mahir-primary px-4 text-sm font-semibold text-white hover:bg-mahir-primary/90 disabled:opacity-50"
-            :disabled="saving || !isValidAmount(newItem.amount)"
-            @click="onAdd"
-          >
-            <PlusIcon class="h-5 w-5" /> Tambah
-          </button>
+              <!-- Baris tambah item penyesuaian manual (menyatu dengan tabel) -->
+              <tr v-if="canCreate" class="border-t border-mahir-border bg-slate-50/40">
+                <td class="px-3 py-2 align-top">
+                  <input
+                    v-model="newItem.note"
+                    type="text"
+                    :class="fieldCls"
+                    placeholder="Keterangan item baru (mis. Bonus kinerja)"
+                  />
+                </td>
+                <td class="px-3 py-2 align-top">
+                  <input
+                    :value="newItem.amount"
+                    type="text"
+                    inputmode="decimal"
+                    :class="fieldCls"
+                    class="text-right"
+                    placeholder="Nominal (± )"
+                    @input="newItem.amount = sanitizeAmount($event.target.value)"
+                  />
+                </td>
+                <td class="px-2 py-2 align-top">
+                  <button
+                    type="button"
+                    :class="addBtnCls"
+                    title="Tambah item"
+                    :disabled="saving || !isValidAmount(newItem.amount)"
+                    @click="onAdd"
+                  >
+                    <PlusIcon class="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot v-if="manualDrafts.length">
+              <tr class="border-t-2 border-mahir-border bg-slate-50/60">
+                <td class="px-3 py-2.5 text-[13px] font-semibold text-slate-600">Total penyesuaian manual</td>
+                <td class="px-3 py-2.5 text-right font-bold" :class="manualTotal < 0 ? 'text-mahir-danger' : 'text-slate-800'">
+                  {{ signed(manualTotal) }}
+                </td>
+                <td class="px-2"></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
+        <p v-else-if="!loading" class="text-[13px] text-slate-400">
+          Belum ada item penyesuaian manual.
+        </p>
 
-        <div
-          v-if="manualDrafts.length"
-          class="mt-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"
-        >
-          <span class="text-slate-600">Total penyesuaian manual</span>
-          <span class="font-bold" :class="manualTotal < 0 ? 'text-mahir-danger' : 'text-slate-800'">
-            {{ signed(manualTotal) }}
-          </span>
-        </div>
         <p class="mt-2 text-[12px] text-mahir-muted">
           Nilai positif menambah, negatif mengurangi gaji bersih (net pay).
         </p>
