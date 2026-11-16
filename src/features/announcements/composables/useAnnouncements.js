@@ -25,7 +25,10 @@ export function useAnnouncements() {
   );
 
   const data = computed(() => result.value?.listAnnouncement?.data ?? null);
-  const announcements = computed(() => data.value?.results ?? []);
+  // Backend belum punya param ordering → urutkan di sisi klien: terbaru (id terbesar) di atas.
+  const announcements = computed(() =>
+    [...(data.value?.results ?? [])].sort((a, b) => Number(b.id) - Number(a.id)),
+  );
   const pagination = computed(() => {
     const count = data.value?.count ?? 0;
     const size = pageSize.value || 10;

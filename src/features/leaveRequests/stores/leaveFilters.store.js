@@ -5,12 +5,16 @@ import { ref } from "vue";
 export const useLeaveFiltersStore = defineStore("leaveFilters", () => {
   const search = ref("");
   const status = ref(""); // LeaveStatusChoices, "" = semua
+  // Apakah pengguna sudah pernah memilih status sendiri. Selama false, toolbar
+  // boleh men-default ke "menunggu persetujuan" saat opsi enum pertama termuat.
+  const statusTouched = ref(false);
   const page = ref(1);
   const pageSize = ref(10);
 
   function reset() {
     search.value = "";
     status.value = "";
+    statusTouched.value = false;
     page.value = 1;
   }
 
@@ -18,5 +22,5 @@ export const useLeaveFiltersStore = defineStore("leaveFilters", () => {
     page.value = p;
   }
 
-  return { search, status, page, pageSize, reset, setPage };
+  return { search, status, statusTouched, page, pageSize, reset, setPage };
 });

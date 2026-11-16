@@ -60,20 +60,23 @@ function unitNames(emp) {
 }
 
 // ── Seleksi untuk pengajuan massal ──────────────────────────────────────────
+// Hanya slip berstatus "Draf" yang bisa diajukan, jadi seleksi (termasuk
+// "check all") dibatasi pada baris draf saja.
 const selected = ref(new Set());
+const draftRows = computed(() => payslips.value.filter((p) => isDraft(p.status)));
 function toggle(id) {
   const s = new Set(selected.value);
   s.has(id) ? s.delete(id) : s.add(id);
   selected.value = s;
 }
 const allSelected = computed(
-  () => payslips.value.length > 0 && payslips.value.every((p) => selected.value.has(p.id)),
+  () => draftRows.value.length > 0 && draftRows.value.every((p) => selected.value.has(p.id)),
 );
 function toggleAll() {
   if (allSelected.value) {
     selected.value = new Set();
   } else {
-    selected.value = new Set(payslips.value.map((p) => p.id));
+    selected.value = new Set(draftRows.value.map((p) => p.id));
   }
 }
 const selectedCount = computed(() => selected.value.size);
@@ -270,7 +273,14 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
             class="border-b border-mahir-border last:border-0 hover:bg-slate-50/60"
           >
             <td v-if="canSelect" class="px-4 py-3">
-              <input type="checkbox" :checked="selected.has(row.id)" @change="toggle(row.id)" />
+              <input
+                type="checkbox"
+                :checked="selected.has(row.id)"
+                :disabled="!isDraft(row.status)"
+                class="disabled:cursor-not-allowed disabled:opacity-40"
+                :title="isDraft(row.status) ? '' : 'Hanya slip draf yang dapat diajukan'"
+                @change="toggle(row.id)"
+              />
             </td>
             <td class="px-4 py-3 font-semibold text-slate-800">{{ row.employee?.fullName ?? "-" }}</td>
             <td class="px-4 py-3 text-slate-600">{{ unitNames(row.employee) }}</td>
