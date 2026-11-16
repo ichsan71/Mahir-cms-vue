@@ -9,7 +9,7 @@ import { formatDate } from "@/shared/utils/format";
 import { usePayslipItems } from "../composables/usePayslipItems";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useEnumChoices } from "@/shared/composables/useEnumChoices";
-import { CATEGORIES, categoryLabel, categoryBadgeClass } from "@/features/salaryComponentTypes/constants";
+import { categoryLabel, categoryBadgeClass } from "@/features/salaryComponentTypes/constants";
 import { PERM } from "../permissions";
 import { PlusIcon, TrashIcon, CheckIcon } from "@heroicons/vue/24/outline";
 
@@ -103,10 +103,9 @@ const autoKindOptions = computed(() =>
     .filter((o) => o.value !== "ADJUSTMENT")
     .map((o) => ({ value: o.value, label: kindMeta(o.value).label })),
 );
-// Kategori komponen otomatis baru (BASIC/ALLOWANCE/DEDUCTION) — ikut dibawa ke
-// mutation create agar backend bisa menggolongkan komponen yang baru ditambah.
-const categoryOptions = CATEGORIES;
-const newAuto = ref({ kind: "EARNING", category: "ALLOWANCE", note: "", amount: "" });
+// Kategori komponen otomatis baru = freetext (field `category` String bebas di
+// backend) — ikut dibawa ke mutation create untuk menggolongkan komponen baru.
+const newAuto = ref({ kind: "EARNING", category: "", note: "", amount: "" });
 
 // ── Total (net) ───────────────────────────────────────────────────────────────
 // Nominal disimpan positif; arah terhadap gaji bersih ditentukan `kind`.
@@ -143,7 +142,7 @@ async function onAddAuto() {
     amount: Number(newAuto.value.amount),
   });
   if (ok) {
-    newAuto.value = { kind: "EARNING", category: "ALLOWANCE", note: "", amount: "" };
+    newAuto.value = { kind: "EARNING", category: "", note: "", amount: "" };
     emit("changed");
   }
 }
@@ -267,8 +266,8 @@ const addBtnCls =
 
               <!-- Baris tambah komponen otomatis baru (menyatu dengan tabel) -->
               <tr v-if="canCreate" class="border-t border-mahir-border bg-slate-50/40">
-                <td class="px-3 py-2 align-top">
-                  <span class="inline-block rounded-full bg-mahir-primary/10 px-2 py-0.5 text-[10px] font-semibold text-mahir-primary">Baru</span>
+                <td class="px-3 py-2 text-center align-middle">
+                  <span class="inline-block rounded-full bg-mahir-primary/10 px-2 py-0.5 text-[10px] font-semibold text-mahir-primary">Tambah Baru</span>
                 </td>
                 <td class="px-3 py-2 align-top">
                   <select v-model="newAuto.kind" :class="fieldCls">
@@ -276,9 +275,12 @@ const addBtnCls =
                   </select>
                 </td>
                 <td class="px-3 py-2 align-top">
-                  <select v-model="newAuto.category" :class="fieldCls">
-                    <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                  </select>
+                  <input
+                    v-model="newAuto.category"
+                    type="text"
+                    :class="fieldCls"
+                    placeholder="Kategori (opsional)"
+                  />
                 </td>
                 <td class="px-3 py-2 align-top">
                   <input
