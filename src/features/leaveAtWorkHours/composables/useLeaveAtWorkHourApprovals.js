@@ -10,7 +10,9 @@ export function useLeaveAtWorkHourApprovals() {
   const auth = useAuthStore();
 
   const search = ref("");
-  const status = ref("");
+  // Default tab Persetujuan = hanya tugas yang "menunggu" (PENDING), selaras dgn
+  // tab Pengajuan & Persetujuan cuti. Pengguna tetap bisa ganti lewat dropdown.
+  const status = ref("PENDING");
   const page = ref(1);
   const pageSize = ref(10);
 
@@ -26,24 +28,6 @@ export function useLeaveAtWorkHourApprovals() {
       },
     }),
     { fetchPolicy: "cache-and-network" },
-  );
-
-  // Query terpisah khusus menghitung tugas berstatus PENDING (untuk badge
-  // notifikasi di tab), independen dari filter/halaman daftar utama.
-  const { result: pendingResult, refetch: refetchCount } = useQuery(
-    LIST_LEAVE_AT_WORK_HOUR_APPROVAL,
-    () => ({
-      params: {
-        status: "PENDING",
-        approverId: auth.employee?.id ?? null,
-        page: 1,
-        pageSize: 1,
-      },
-    }),
-    { fetchPolicy: "cache-and-network" },
-  );
-  const pendingCount = computed(
-    () => pendingResult.value?.listLeaveAtWorkHourApproval?.data?.count ?? 0,
   );
 
   const data = computed(() => result.value?.listLeaveAtWorkHourApproval?.data ?? null);
@@ -71,5 +55,5 @@ export function useLeaveAtWorkHourApprovals() {
     if (pagination.value.hasPrev) page.value -= 1;
   }
 
-  return { items, pagination, loading, refetch, pendingCount, refetchCount, search, status, page, pageSize, nextPage, prevPage };
+  return { items, pagination, loading, refetch, search, status, page, pageSize, nextPage, prevPage };
 }

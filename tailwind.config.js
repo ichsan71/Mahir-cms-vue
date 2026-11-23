@@ -6,11 +6,11 @@ export default {
       colors: {
         // ── MAHIR design tokens (ported from admin-theme.scss :root) ──
         mahir: {
-          primary: "#243B8F",
+          primary: "#0B3660",
           "primary-soft": "#E7EEFF",
           "sidebar-bg": "#111D3D",
           "sidebar-hdr": "#0C1530",
-          "sidebar-active": "#243B8F",
+          "sidebar-active": "#0B3660",
           bg: "#F4F7FB",
           surface: "#FFFFFF",
           border: "#E2E8F0",

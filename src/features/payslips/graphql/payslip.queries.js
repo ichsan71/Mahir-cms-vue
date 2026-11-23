@@ -278,6 +278,21 @@ export const DELETE_PAYSLIP_ITEM = gql`
   }
 `;
 
+// Edit massal line-item slip dalam satu panggilan. `items`
+// ([PayslipItemBulkEditInput!]!): tiap elemen WAJIB `id` (id baris PayslipItem),
+// plus field yang diubah (amount/note/dst.). Item boleh berasal dari payslip
+// berbeda — dipakai untuk menyeragamkan nominal 1 komponen lintas karyawan.
+export const BULK_EDIT_PAYSLIP_ITEM = gql`
+  mutation BulkEditPayslipItem($items: [PayslipItemBulkEditInput!]!) {
+    bulkEditPayslipItem(items: $items) {
+      data {
+        ...PayslipItemFields
+      }
+    }
+  }
+  ${PAYSLIP_ITEM_FIELDS}
+`;
+
 // Ajukan slip untuk persetujuan — berdasarkan daftar id ATAU filter.
 export const SUBMIT_PAYSLIP = gql`
   mutation SubmitPayslip($ids: [Int!], $filters: PayslipParams) {

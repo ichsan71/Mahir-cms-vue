@@ -14,6 +14,7 @@ export const PERM = {
   ITEM_LIST: "listPayslipItem",
   ITEM_CREATE: "createPayslipItem",
   ITEM_EDIT: "editPayslipItem",
+  ITEM_BULK_EDIT: "bulkEditPayslipItem",
   ITEM_DELETE: "deletePayslipItem",
   // Persetujuan slip gaji
   LIST_APPROVAL: "listPayslipApproval",

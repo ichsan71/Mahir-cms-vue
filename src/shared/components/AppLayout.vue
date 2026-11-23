@@ -3,10 +3,12 @@
 // Shell: sidebar + navbar + slot konten. Judul navbar diambil dari route.meta.title.
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useUiStore } from "@/stores/ui.store";
 import AppSidebar from "./AppSidebar.vue";
 import AppNavbar from "./AppNavbar.vue";
 
 const route = useRoute();
+const ui = useUiStore();
 const title = computed(() => route.meta.title || "Dashboard");
 </script>
 
@@ -17,7 +19,10 @@ const title = computed(() => route.meta.title || "Dashboard");
     <!-- Main area digeser ke kanan selebar sidebar pada layar lg+.
          `min-w-0` + `overflow-x-hidden` mencegah konten melebar dari viewport
          (scroll horizontal pada body); tabel lebar tetap scroll di kartunya. -->
-    <div class="min-w-0 lg:pl-[260px]">
+    <div
+      class="min-w-0 transition-[padding] duration-200"
+      :class="ui.collapsed ? 'lg:pl-0' : 'lg:pl-[260px]'"
+    >
       <AppNavbar :title="title" />
       <main class="max-w-full overflow-x-hidden p-4 lg:p-6">
         <RouterView />

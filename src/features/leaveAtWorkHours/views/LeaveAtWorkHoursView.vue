@@ -45,8 +45,6 @@ const {
   pagination: apprPagination,
   loading: apprLoading,
   refetch: refetchApprovals,
-  pendingCount,
-  refetchCount,
   status: apprStatus,
   nextPage: apprNextPage,
   prevPage: apprPrevPage,
@@ -84,13 +82,10 @@ function approvedCount(row) {
 function pendingApprovers(row) {
   return (row?.approvals ?? []).filter((a) => isPending(a.status));
 }
-// Nama approver diambil dari approver.mandatoryApprovals[].employee.fullName;
-// fallback ke approver.fullName bila mandatoryApprovals kosong.
+// Nama approver = nama Employee approver itu sendiri (sama seperti list cuti).
+// Jangan pakai approver.mandatoryApprovals: itu model LeaveMandatoryApprover yang
+// berbeda (daftar orang yang approver ini wajib setujui), bukan identitas approver.
 function approverName(a) {
-  const names = (a?.approver?.mandatoryApprovals ?? [])
-    .map((m) => m?.employee?.fullName)
-    .filter(Boolean);
-  if (names.length) return names.join(", ");
   return a?.approver?.fullName || "—";
 }
 function pendingNames(row) {
@@ -143,13 +138,26 @@ function openEdit(row) {
   modalOpen.value = true;
 }
 
-async function handleSave({ input, id }) {
+async function handleSave({ input, id, send }) {
   const res = id ? await editLeave(id, input) : await createLeave(input);
-  if (res) {
-    modalOpen.value = false;
-    editingRow.value = null;
-    refetchMine();
+  if (!res) return;
+
+  const savedId = id ?? res.id;
+  if (send && savedId) {
+    // "Simpan & Kirim": langsung kirim ke persetujuan → status PENDING, sehingga
+    // tampil di filter default ("Menunggu"). Bila submit gagal, item tetap DRAFT
+    // → arahkan filter ke Draft agar pengguna tetap melihatnya.
+    const ok = await submit(savedId);
+    if (!ok) myStatus.value = "DRAFT";
+  } else {
+    // "Simpan Draf": item berstatus DRAFT. Karena filter default "Menunggu"
+    // menyembunyikannya, pindahkan filter ke Draft supaya langsung terlihat.
+    myStatus.value = "DRAFT";
   }
+
+  modalOpen.value = false;
+  editingRow.value = null;
+  refetchMine();
 }
 
 // ── Setujui / Tolak / Batalkan ───────────────────────────────────────────────
@@ -197,7 +205,6 @@ async function handleConfirm() {
     action.value = null;
     refetchMine();
     refetchApprovals();
-    refetchCount();
   }
 }
 </script>
@@ -215,11 +222,6 @@ async function handleConfirm() {
           @click="tab = t.id"
         >
           {{ t.label }}
-          <span
-            v-if="t.id === 'persetujuan' && pendingCount > 0"
-            class="inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10.5px] font-bold leading-none text-white"
-            :title="`${pendingCount} izin menunggu persetujuan`"
-          >{{ pendingCount > 99 ? "99+" : pendingCount }}</span>
         </button>
       </div>
       <button

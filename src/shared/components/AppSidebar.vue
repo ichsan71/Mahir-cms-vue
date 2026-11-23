@@ -103,8 +103,10 @@ function toggleGroup(key) {
 const isOpen = (key) => openGroups.value.includes(key);
 
 const linkBase =
-  "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors";
-const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
+  "relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium transition-colors";
+const inactive = "text-slate-600 hover:bg-slate-100 hover:text-slate-900";
+const activeCls =
+  "!bg-mahir-primary-soft !text-mahir-primary !font-semibold before:absolute before:left-0 before:top-[7px] before:bottom-[7px] before:w-[3px] before:rounded-r-full before:bg-mahir-primary";
 </script>
 
 <template>
@@ -116,25 +118,28 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
   ></div>
 
   <nav
-    class="sidebar-scroll fixed inset-y-0 left-0 z-[1040] flex w-[260px] flex-col overflow-y-auto bg-mahir-sidebar-bg transition-transform duration-200 lg:translate-x-0"
-    :class="ui.mobileOpen ? 'translate-x-0' : '-translate-x-full'"
+    class="fixed inset-y-0 left-0 z-[1040] flex w-[260px] flex-col overflow-hidden bg-white transition-transform duration-200"
+    :class="[
+      ui.mobileOpen ? 'translate-x-0' : '-translate-x-full',
+      ui.collapsed ? 'lg:-translate-x-full' : 'lg:translate-x-0',
+    ]"
   >
     <!-- Header -->
     <div
-      class="flex h-[60px] flex-shrink-0 items-center gap-3 border-b border-white/10 bg-mahir-sidebar-hdr px-5"
+      class="flex h-[60px] flex-shrink-0 items-center gap-3 bg-mahir-primary px-5"
     >
-      <div class="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white">
+      <div class="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white ring-1 ring-white/20">
         <img :src="logoUrl" alt="MAHIR" class="h-full w-full object-contain p-0.5" />
       </div>
       <div>
         <div class="font-display text-[15px] font-extrabold leading-tight text-white">MAHIR</div>
-        <div class="text-[10px] tracking-wider text-white/45">MAZTA GROUP</div>
+        <div class="text-[10px] tracking-wider text-white/50">MAZTA GROUP</div>
       </div>
     </div>
 
     <!-- Navigation -->
-    <div class="flex flex-1 flex-col gap-0.5 p-2">
-      <div class="px-3 pb-1 pt-3.5 text-[10px] font-bold uppercase tracking-widest text-white/30">
+    <div class="sidebar-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto border-r border-slate-200 p-2">
+      <div class="px-3 pb-1 pt-3.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
         Menu Utama
       </div>
 
@@ -154,13 +159,13 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
             />
           </button>
 
-          <div v-show="isOpen(item.key)" class="ml-3 mt-0.5 flex flex-col gap-0.5 border-l border-white/10 pl-2">
+          <div v-show="isOpen(item.key)" class="ml-3 mt-0.5 flex flex-col gap-0.5 border-l border-slate-200 pl-2">
             <RouterLink
               v-for="child in item.children"
               :key="child.to"
               :to="child.to"
               :class="[linkBase, inactive, 'py-2']"
-              active-class="!bg-mahir-sidebar-active !text-white"
+              :active-class="activeCls"
               @click="ui.closeMobile"
             >
               <component :is="child.icon" class="h-[18px] w-[18px] opacity-70" />
@@ -172,12 +177,12 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
         <!-- Item 'Soon' (modul belum selesai, tidak bisa diklik — semua peran) -->
         <div
           v-else-if="item.soon"
-          :class="[linkBase, 'text-white/40 cursor-not-allowed select-none']"
+          :class="[linkBase, 'text-slate-400 cursor-not-allowed select-none']"
         >
           <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
           <span>{{ item.label }}</span>
           <span
-            class="ml-auto rounded bg-orange-400 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-black"
+            class="ml-auto rounded bg-orange-100 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-orange-700"
           >
             Soon
           </span>
@@ -188,7 +193,7 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
           v-else
           :to="item.to"
           :class="[linkBase, inactive]"
-          active-class="!bg-mahir-sidebar-active !text-white"
+          :active-class="activeCls"
           @click="ui.closeMobile"
         >
           <component :is="item.icon" class="h-[18px] w-[18px] opacity-70" />
@@ -196,14 +201,14 @@ const inactive = "text-white/75 hover:bg-white/5 hover:text-white";
 
           <span
             v-if="item.badge"
-            class="ml-auto rounded-full bg-white/10 px-1.5 py-px text-[10px] font-bold text-white/60"
+            class="ml-auto rounded-full bg-slate-100 px-1.5 py-px text-[10px] font-bold text-slate-500"
           >
             {{ item.badge }}
           </span>
         </RouterLink>
       </template>
 
-      <div class="mx-3 my-2 h-px bg-white/10"></div>
+      <div class="mx-3 my-2 h-px bg-slate-200"></div>
 
       <!-- menu pengaturan di disable sementara -->
       <!-- <div class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-white/30">

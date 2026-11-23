@@ -29,19 +29,30 @@ export const LIST_LEAVE_AT_WORK_HOUR = gql`
             id
             name
           }
-          approvals {
+        }
+      }
+    }
+  }
+`;
+
+// Ambil approval untuk sekumpulan izin sekaligus (untuk progres persetujuan di
+// list Pengajuan). Dipakai karena field nested `LeaveAtWorkHour.approvals` pada
+// listLeaveAtWorkHour tidak ter-populate oleh backend — jadi approval diambil
+// terpisah lewat listLeaveAtWorkHourApproval (yang andal) lalu digabung per izin.
+export const LIST_LEAVE_AT_WORK_HOUR_APPROVALS_FOR_LEAVES = gql`
+  query ListLeaveAtWorkHourApprovalsForLeaves($params: LeaveAtWorkHourApprovalParams) {
+    listLeaveAtWorkHourApproval(params: $params) {
+      data {
+        results {
+          id
+          status
+          order
+          approver {
             id
-            status
-            approver {
-              id
-              fullName
-              mandatoryApprovals {
-                employee {
-                  id
-                  fullName
-                }
-              }
-            }
+            fullName
+          }
+          leaveAtWorkHour {
+            id
           }
         }
       }
@@ -111,12 +122,6 @@ export const LIST_LEAVE_AT_WORK_HOUR_APPROVAL = gql`
           approver {
             id
             fullName
-            mandatoryApprovals {
-              employee {
-                id
-                fullName
-              }
-            }
           }
           leaveAtWorkHour {
             id

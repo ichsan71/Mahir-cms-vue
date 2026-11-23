@@ -8,8 +8,6 @@ import {
   CalendarDaysIcon,
   BanknotesIcon,
   DocumentTextIcon,
-  UserIcon,
-  LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
   ArrowRightEndOnRectangleIcon,
@@ -38,7 +36,7 @@ const features = [
 <template>
   <div class="flex min-h-screen">
     <!-- Brand side -->
-    <div class="hidden w-[43%] flex-col justify-between bg-mahir-sidebar-bg p-12 lg:flex">
+    <div class="hidden w-[43%] flex-col justify-between bg-mahir-primary p-12 lg:flex">
       <div>
         <div class="mb-10 flex items-center gap-3">
           <div class="flex h-[38px] w-[38px] items-center justify-center overflow-hidden rounded-[10px] bg-white">
@@ -102,40 +100,43 @@ const features = [
 
         <form @submit.prevent="submit">
           <!-- Username -->
-          <div class="mb-3">
-            <label class="mb-1 block text-sm font-medium text-slate-700">Username</label>
-            <div class="flex overflow-hidden rounded-lg border border-slate-300 focus-within:border-mahir-primary">
-              <span class="flex items-center px-3 text-slate-400"><UserIcon class="h-4 w-4" /></span>
-              <input
-                v-model="username"
-                type="text"
-                required
-                autofocus
-                placeholder="username Anda"
-                class="w-full border-0 py-2 pr-3 text-sm focus:outline-none"
-              />
-            </div>
+          <div class="ub-field mb-6">
+            <input
+              id="login-username"
+              v-model="username"
+              type="text"
+              required
+              autofocus
+              placeholder=" "
+              class="ub-input"
+            />
+            <label for="login-username" class="ub-label">Username</label>
+            <span class="ub-bar"></span>
           </div>
 
           <!-- Password -->
-          <div class="mb-3">
-            <div class="mb-1 flex items-center justify-between">
-              <label class="text-sm font-medium text-slate-700">Password</label>
-              <router-link to="/lupa-password" class="text-xs text-mahir-primary hover:underline">Lupa password?</router-link>
-            </div>
-            <div class="flex overflow-hidden rounded-lg border border-slate-300 focus-within:border-mahir-primary">
-              <span class="flex items-center px-3 text-slate-400"><LockClosedIcon class="h-4 w-4" /></span>
-              <input
-                v-model="password"
-                :type="showPwd ? 'text' : 'password'"
-                required
-                placeholder="••••••••"
-                class="w-full border-0 py-2 text-sm focus:outline-none"
-              />
-              <button type="button" class="px-3 text-slate-400" @click="showPwd = !showPwd">
-                <component :is="showPwd ? EyeSlashIcon : EyeIcon" class="h-4 w-4" />
-              </button>
-            </div>
+          <div class="ub-field mb-2">
+            <input
+              id="login-password"
+              v-model="password"
+              :type="showPwd ? 'text' : 'password'"
+              required
+              placeholder=" "
+              class="ub-input pr-8"
+            />
+            <label for="login-password" class="ub-label">Password</label>
+            <button
+              type="button"
+              class="ub-toggle"
+              aria-label="Tampilkan password"
+              @click="showPwd = !showPwd"
+            >
+              <component :is="showPwd ? EyeSlashIcon : EyeIcon" class="h-4 w-4" />
+            </button>
+            <span class="ub-bar"></span>
+          </div>
+          <div class="mb-6 text-right">
+            <router-link to="/lupa-password" class="text-xs text-mahir-primary hover:underline">Lupa password?</router-link>
           </div>
 
           <!-- Remember -->
@@ -162,3 +163,76 @@ const features = [
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ── Input gaya "Underline Grow" (varian B) ── */
+.ub-field {
+  position: relative;
+  padding-top: 0.3rem;
+}
+
+.ub-input {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0 0.5rem;
+  border: 0;
+  border-bottom: 1.5px solid #cbd5e1;
+  background: transparent;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+}
+
+.ub-label {
+  position: absolute;
+  left: 0;
+  top: 1.15rem;
+  font-size: 14px;
+  color: #64748b;
+  pointer-events: none;
+  transition: top 0.18s ease, font-size 0.18s ease, color 0.18s ease;
+}
+
+.ub-input:focus ~ .ub-label,
+.ub-input:not(:placeholder-shown) ~ .ub-label {
+  top: -0.35rem;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #366994;
+}
+
+.ub-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: #366994;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.28s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+
+.ub-input:focus ~ .ub-bar {
+  transform: scaleX(1);
+}
+
+.ub-toggle {
+  position: absolute;
+  right: 0;
+  bottom: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ub-label,
+  .ub-bar {
+    transition: none;
+  }
+}
+</style>

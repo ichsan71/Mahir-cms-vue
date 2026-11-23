@@ -14,24 +14,40 @@ import { MegaphoneIcon, BookmarkIcon, ArrowRightIcon } from "@heroicons/vue/24/o
 const auth = useAuthStore();
 const canList = computed(() => auth.can(PERM.LIST));
 
-// Ambil beberapa pengumuman terbaru (hanya bila diizinkan).
+// Hanya 3 pengumuman yang ditampilkan di kartu; sisanya lewat "Lihat semua".
+const DISPLAY_LIMIT = 3;
+// AnnouncementParams belum punya opsi ordering, jadi urutan server tak bisa
+// dijamin terbaru. Ambil buffer lebih banyak lalu urutkan di klien (terbaru di
+// atas) agar yang tampil benar-benar 3 terbaru. Catatan: bila total pengumuman
+// melebihi FETCH_SIZE DAN server mengurutkan terlama-dulu, yang paling baru bisa
+// terlewat — idealnya backend menyediakan ordering `-publishedAt`.
+const FETCH_SIZE = 50;
+
 const { result, loading } = useQuery(
   LIST_ANNOUNCEMENT,
-  () => ({ params: { page: 1, pageSize: 3 } }),
+  () => ({ params: { page: 1, pageSize: FETCH_SIZE } }),
   () => ({ enabled: canList.value, fetchPolicy: "cache-and-network" }),
 );
 
-// Pengumuman yang disematkan (isPinned) tampil paling atas; sisanya
-// mengikuti urutan dari server. Pakai index sebagai tie-breaker agar stabil.
+// Pengumuman yang disematkan (isPinned) tampil paling atas; sisanya diurutkan
+// dari yang terbaru. Pakai publishedAt desc; bila kosong/sama, fallback ke id
+// desc (id lebih besar = dibuat lebih baru) agar terbaru selalu di atas.
+// Ambil DISPLAY_LIMIT teratas.
 const items = computed(() => {
   const rows = result.value?.listAnnouncement?.data?.results ?? [];
-  return rows
-    .map((row, index) => ({ row, index }))
+  const ts = (row) => {
+    const t = new Date(row.publishedAt).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
+  return [...rows]
     .sort((a, b) => {
-      const pin = Number(Boolean(b.row.isPinned)) - Number(Boolean(a.row.isPinned));
-      return pin !== 0 ? pin : a.index - b.index;
+      const pin = Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned));
+      if (pin !== 0) return pin;
+      const byDate = ts(b) - ts(a);
+      if (byDate !== 0) return byDate;
+      return Number(b.id) - Number(a.id);
     })
-    .map((entry) => entry.row);
+    .slice(0, DISPLAY_LIMIT);
 });
 
 // Detail modal.

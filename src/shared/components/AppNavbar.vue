@@ -46,11 +46,11 @@ const userImage = computed(() => auth.displayImage);
 
 <template>
   <header
-    class="sticky top-0 z-[1020] flex h-[60px] items-center justify-between border-b border-mahir-border bg-white px-4 lg:px-6"
+    class="sticky top-0 z-[1020] flex h-[60px] items-center justify-between bg-mahir-primary px-4 lg:px-6"
   >
     <div class="flex items-center gap-3">
       <button
-        class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+        class="flex h-9 w-9 items-center justify-center rounded-lg text-white hover:bg-white/10"
         aria-label="Toggle sidebar"
         @click="ui.toggleSidebar"
       >
@@ -60,9 +60,9 @@ const userImage = computed(() => auth.displayImage);
       <!-- Breadcrumb -->
       <nav class="hidden text-sm md:block">
         <ol class="flex items-center gap-2">
-          <li class="text-slate-500">MAHIR CMS</li>
-          <li class="text-slate-300">/</li>
-          <li class="font-medium text-slate-900">{{ title }}</li>
+          <li class="text-white/60">MAHIR CMS</li>
+          <li class="text-white/30">/</li>
+          <li class="font-medium text-white">{{ title }}</li>
         </ol>
       </nav>
     </div>
@@ -107,10 +107,10 @@ const userImage = computed(() => auth.displayImage);
             <template v-else>{{ userInitials }}</template>
           </span>
           <div class="hidden text-left leading-tight md:block">
-            <div class="text-[13px] font-semibold text-slate-900">{{ userName }}</div>
-            <div class="text-[11px] text-slate-400">{{ userRole }}</div>
+            <div class="text-[13px] font-semibold text-white">{{ userName }}</div>
+            <div class="text-[11px] text-white/55">{{ userRole }}</div>
           </div>
-          <ChevronDownIcon class="hidden h-3.5 w-3.5 text-slate-400 md:block" />
+          <ChevronDownIcon class="hidden h-3.5 w-3.5 text-white/55 md:block" />
         </button>
 
         <Transition name="fade">

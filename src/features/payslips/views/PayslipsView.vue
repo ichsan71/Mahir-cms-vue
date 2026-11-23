@@ -17,6 +17,7 @@ import SearchableSelect from "@/shared/components/SearchableSelect.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import GeneratePayslipModal from "../components/GeneratePayslipModal.vue";
 import AdjustPayslipModal from "../components/AdjustPayslipModal.vue";
+import BulkEditPayslipItemModal from "../components/BulkEditPayslipItemModal.vue";
 import PayslipDetailModal from "../components/PayslipDetailModal.vue";
 import PayslipExportModal from "../components/PayslipExportModal.vue";
 import ApprovalStepper from "../components/ApprovalStepper.vue";
@@ -28,6 +29,7 @@ import {
   PlusIcon,
   ArrowDownTrayIcon,
   PrinterIcon,
+  XMarkIcon,
 } from "@heroicons/vue/24/outline";
 
 const auth = useAuthStore();
@@ -59,27 +61,40 @@ function unitNames(emp) {
   return (emp?.units ?? []).map((u) => u.name).join(", ") || "—";
 }
 
-// ── Seleksi untuk pengajuan massal ──────────────────────────────────────────
+// ── Seleksi untuk aksi massal (ajukan / edit komponen) ───────────────────────
 // Hanya slip berstatus "Draf" yang bisa diajukan, jadi seleksi (termasuk
-// "check all") dibatasi pada baris draf saja.
-const selected = ref(new Set());
-const draftRows = computed(() => payslips.value.filter((p) => isDraft(p.status)));
-function toggle(id) {
-  const s = new Set(selected.value);
-  s.has(id) ? s.delete(id) : s.add(id);
-  selected.value = s;
+// "check all") dibatasi pada baris draf saja. Disimpan sebagai Map id→baris agar
+// seleksi TETAP terbawa lintas halaman (modal butuh objek baris, mis. nama
+// karyawan — bukan sekadar id).
+const selectedRows = ref(new Map());
+function isSelected(id) {
+  return selectedRows.value.has(id);
 }
+const draftRows = computed(() => payslips.value.filter((p) => isDraft(p.status)));
+function toggle(row) {
+  const m = new Map(selectedRows.value);
+  m.has(row.id) ? m.delete(row.id) : m.set(row.id, row);
+  selectedRows.value = m;
+}
+// "check all" hanya memengaruhi baris draf di HALAMAN ini (tak menghapus seleksi
+// halaman lain).
 const allSelected = computed(
-  () => draftRows.value.length > 0 && draftRows.value.every((p) => selected.value.has(p.id)),
+  () => draftRows.value.length > 0 && draftRows.value.every((p) => selectedRows.value.has(p.id)),
 );
 function toggleAll() {
+  const m = new Map(selectedRows.value);
   if (allSelected.value) {
-    selected.value = new Set();
+    draftRows.value.forEach((p) => m.delete(p.id));
   } else {
-    selected.value = new Set(draftRows.value.map((p) => p.id));
+    draftRows.value.forEach((p) => m.set(p.id, p));
   }
+  selectedRows.value = m;
 }
-const selectedCount = computed(() => selected.value.size);
+function clearSelection() {
+  selectedRows.value = new Map();
+}
+const selectedCount = computed(() => selectedRows.value.size);
+const selectedPayslips = computed(() => [...selectedRows.value.values()]);
 
 // ── Buat slip ────────────────────────────────────────────────────────────────
 const generateOpen = ref(false);
@@ -97,6 +112,13 @@ const adjustTarget = ref(null);
 function openAdjust(row) {
   adjustTarget.value = row;
   adjustOpen.value = true;
+}
+
+// ── Edit komponen massal (lintas-payslip) ────────────────────────────────────
+const bulkEditOpen = ref(false);
+function openBulkEdit() {
+  if (!selectedCount.value) return;
+  bulkEditOpen.value = true;
 }
 
 // ── Detail ───────────────────────────────────────────────────────────────────
@@ -152,8 +174,8 @@ async function handleConfirm() {
   if (confirmKind.value === "submit") {
     ok = !!(await submit({ ids: [confirmTarget.value?.id] }));
   } else if (confirmKind.value === "submitBulk") {
-    ok = !!(await submit({ ids: [...selected.value] }));
-    if (ok) selected.value = new Set();
+    ok = !!(await submit({ ids: [...selectedRows.value.keys()] }));
+    if (ok) clearSelection();
   }
   if (ok) {
     confirmOpen.value = false;
@@ -165,6 +187,9 @@ async function handleConfirm() {
 const fieldCls =
   "rounded-lg border border-mahir-border py-2 px-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary";
 const canSelect = computed(() => auth.can(PERM.SUBMIT));
+const canBulkEdit = computed(() => auth.can(PERM.ITEM_BULK_EDIT) || auth.can(PERM.ITEM_EDIT));
+// Kolom checkbox tampil bila ada salah satu aksi massal (ajukan / edit komponen).
+const canSelectRow = computed(() => canSelect.value || canBulkEdit.value);
 </script>
 
 <template>
@@ -216,16 +241,50 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
 
     <!-- Bar aksi massal -->
     <div
-      v-if="canSelect && selectedCount"
-      class="flex items-center justify-between gap-3 border-y border-mahir-border bg-mahir-primary/5 px-5 py-2.5"
+      v-if="canSelectRow && selectedCount"
+      class="flex flex-wrap items-center justify-between gap-3 border-y border-mahir-border bg-mahir-primary/5 px-5 py-2.5"
     >
-      <span class="text-[13px] font-medium text-slate-700">{{ selectedCount }} slip terpilih</span>
-      <button
-        class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-mahir-primary/90"
-        @click="openSubmitBulk"
-      >
-        <PaperAirplaneIcon class="h-4 w-4" /> Ajukan Terpilih
-      </button>
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        <span class="text-[13px] font-medium text-slate-700">{{ selectedCount }} slip terpilih:</span>
+        <span
+          v-for="p in selectedPayslips"
+          :key="p.id"
+          class="inline-flex items-center gap-1 rounded-full bg-white py-0.5 pl-2.5 pr-1 text-[12px] font-medium text-slate-700 ring-1 ring-mahir-border"
+        >
+          {{ p.employee?.fullName ?? "-" }}
+          <button
+            type="button"
+            class="flex h-4 w-4 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            title="Lepas dari seleksi"
+            @click="toggle(p)"
+          >
+            <XMarkIcon class="h-3 w-3" />
+          </button>
+        </span>
+        <button
+          type="button"
+          class="ml-1 text-[12px] font-medium text-mahir-primary hover:underline"
+          @click="clearSelection"
+        >
+          Kosongkan
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          v-if="canBulkEdit"
+          class="flex items-center gap-1.5 rounded-lg border border-mahir-border bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          @click="openBulkEdit"
+        >
+          <PencilSquareIcon class="h-4 w-4" /> Edit Komponen
+        </button>
+        <button
+          v-if="canSelect"
+          class="flex items-center gap-1.5 rounded-lg bg-mahir-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-mahir-primary/90"
+          @click="openSubmitBulk"
+        >
+          <PaperAirplaneIcon class="h-4 w-4" /> Ajukan Terpilih
+        </button>
+      </div>
     </div>
 
     <!-- Bar: jumlah per halaman + info jumlah data -->
@@ -246,7 +305,7 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
       <table class="w-full text-left text-sm">
         <thead>
           <tr class="border-b border-mahir-border text-xs uppercase tracking-wide text-slate-400">
-            <th v-if="canSelect" class="px-4 py-3">
+            <th v-if="canSelectRow" class="px-4 py-3">
               <input type="checkbox" :checked="allSelected" @change="toggleAll" />
             </th>
             <th class="px-4 py-3 font-semibold">Karyawan</th>
@@ -262,24 +321,24 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
         </thead>
         <tbody>
           <tr v-if="loading && !payslips.length">
-            <td :colspan="canSelect ? 10 : 9" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
+            <td :colspan="canSelectRow ? 10 : 9" class="px-4 py-8 text-center text-slate-400">Memuat data…</td>
           </tr>
           <tr v-else-if="!payslips.length">
-            <td :colspan="canSelect ? 10 : 9" class="px-4 py-8 text-center text-slate-400">Belum ada slip gaji.</td>
+            <td :colspan="canSelectRow ? 10 : 9" class="px-4 py-8 text-center text-slate-400">Belum ada slip gaji.</td>
           </tr>
           <tr
             v-for="row in payslips"
             :key="row.id"
             class="border-b border-mahir-border last:border-0 hover:bg-slate-50/60"
           >
-            <td v-if="canSelect" class="px-4 py-3">
+            <td v-if="canSelectRow" class="px-4 py-3">
               <input
                 type="checkbox"
-                :checked="selected.has(row.id)"
+                :checked="isSelected(row.id)"
                 :disabled="!isDraft(row.status)"
                 class="disabled:cursor-not-allowed disabled:opacity-40"
                 :title="isDraft(row.status) ? '' : 'Hanya slip draf yang dapat diajukan'"
-                @change="toggle(row.id)"
+                @change="toggle(row)"
               />
             </td>
             <td class="px-4 py-3 font-semibold text-slate-800">{{ row.employee?.fullName ?? "-" }}</td>
@@ -375,6 +434,11 @@ const canSelect = computed(() => auth.can(PERM.SUBMIT));
   <!-- Modals -->
   <GeneratePayslipModal v-model:open="generateOpen" :saving="acting" @submit="handleGenerate" />
   <AdjustPayslipModal v-model:open="adjustOpen" :payslip="adjustTarget" @changed="refetch" />
+  <BulkEditPayslipItemModal
+    v-model:open="bulkEditOpen"
+    :payslips="selectedPayslips"
+    @changed="refetch"
+  />
   <PayslipDetailModal v-model:open="detailOpen" :payslip-id="detailId" />
   <PayslipExportModal v-model:open="exportOpen" :saving="exporting" @submit="handleExport" />
 

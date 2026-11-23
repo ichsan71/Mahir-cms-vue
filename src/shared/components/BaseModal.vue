@@ -11,11 +11,14 @@ const props = defineProps({
   // dan modal tidak bisa ditutup agar proses tidak terputus.
   loading: { type: Boolean, default: false },
   submitText: { type: String, default: "Simpan" },
+  // Tombol aksi sekunder opsional (mis. "Simpan Draf"). Kosong = tidak dirender.
+  // Diletakkan di antara "Batal" dan tombol submit; memicu event "secondary".
+  secondaryText: { type: String, default: "" },
   // Nonaktifkan tombol simpan (mis. form belum valid).
   submitDisabled: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["update:open", "submit"]);
+const emit = defineEmits(["update:open", "submit", "secondary"]);
 
 const SIZE = { md: "max-w-md", lg: "max-w-2xl", xl: "max-w-4xl", "2xl": "max-w-6xl" };
 
@@ -64,6 +67,15 @@ function close() {
                 @click="close"
               >
                 Batal
+              </button>
+              <button
+                v-if="secondaryText"
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-mahir-border px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="loading"
+                @click="emit('secondary')"
+              >
+                {{ secondaryText }}
               </button>
               <button
                 type="submit"

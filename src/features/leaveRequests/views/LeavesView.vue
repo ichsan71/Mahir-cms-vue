@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { useLeaves } from "../composables/useLeaves";
 import { useLeaveRequestForm } from "../composables/useLeaveRequestForm";
+import { useLeaveFiltersStore } from "../stores/leaveFilters.store";
 import LeaveToolbar from "../components/LeaveToolbar.vue";
 import LeaveTable from "../components/LeaveTable.vue";
 import LeaveRequestFormModal from "../components/LeaveRequestFormModal.vue";
@@ -9,15 +10,35 @@ import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 
 const { leaves, pagination, loading, nextPage, prevPage, refetch } = useLeaves();
 const { createLeave, submitLeave, cancelLeave, loading: saving } = useLeaveRequestForm();
+const filters = useLeaveFiltersStore();
 
 const modalOpen = ref(false);
 
-async function handleSave({ input }) {
+async function handleSave({ input, send }) {
   const result = await createLeave(input);
-  if (result) {
-    modalOpen.value = false;
-    refetch();
+  if (!result) return;
+
+  if (send && result.id) {
+    // "Simpan & Kirim": langsung kirim ke persetujuan → status PENDING, tampil di
+    // filter default ("Menunggu"). Bila submit gagal, pengajuan tetap DRAFT →
+    // arahkan filter ke Draft agar pengguna tetap melihatnya.
+    const ok = await submitLeave(result.id);
+    if (!ok) showDrafts();
+  } else {
+    // "Simpan Draf": pengajuan berstatus DRAFT. Filter default "Menunggu"
+    // menyembunyikannya, jadi pindahkan filter ke Draft supaya langsung terlihat.
+    showDrafts();
   }
+
+  modalOpen.value = false;
+  refetch();
+}
+
+// Arahkan filter daftar ke status Draft (dan tandai statusTouched agar toolbar
+// tidak menimpa kembali ke default "Menunggu" saat opsi enum termuat).
+function showDrafts() {
+  filters.status = "DRAFT";
+  filters.statusTouched = true;
 }
 
 // Kirim pengajuan (DRAFT → alur persetujuan): konfirmasi dulu.

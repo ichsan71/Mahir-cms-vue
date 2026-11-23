@@ -116,7 +116,9 @@ function toHHMMSS(t) {
   return t.length === 5 ? `${t}:00` : t;
 }
 
-function onSubmit() {
+// `send` = true → setelah disimpan, langsung dikirim ke persetujuan (status jadi
+// PENDING via submit terpisah di handler induk). false → simpan sebagai draf saja.
+function onSubmit(send) {
   if (!validate()) return;
   const f = form.value;
   const input = {
@@ -126,14 +128,14 @@ function onSubmit() {
     reason: f.reason?.trim() || null,
     expectedCheckIn: toHHMMSS(f.expectedCheckIn),
     expectedCheckOut: toHHMMSS(f.expectedCheckOut),
-    status: "DRAFT", // simpan sebagai draf; dikirim ke persetujuan via submit terpisah
+    status: "DRAFT", // selalu disimpan sbg draf dulu; pengiriman lewat submit terpisah
   };
   // Lampiran: sertakan hanya bila ada File baru. Saat edit tanpa unggah ulang,
   // key attachment tidak dikirim agar backend mempertahankan lampiran lama.
   if (attachment.value) input.attachment = attachment.value;
   else if (!isEdit.value) input.attachment = null;
 
-  emit("save", { input, id: props.leave?.id ?? null });
+  emit("save", { input, id: props.leave?.id ?? null, send: !!send });
 }
 
 const fieldCls =
@@ -149,9 +151,11 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
     :title="isEdit ? 'Ubah Izin di Jam Kerja' : 'Ajukan Izin di Jam Kerja'"
     size="lg"
     :loading="saving"
-    :submit-text="isEdit ? 'Simpan' : 'Simpan Draf'"
+    submit-text="Simpan & Kirim"
+    :secondary-text="isEdit ? 'Simpan' : 'Simpan Draf'"
     @update:open="emit('update:open', $event)"
-    @submit="onSubmit"
+    @submit="onSubmit(true)"
+    @secondary="onSubmit(false)"
   >
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>

@@ -89,7 +89,9 @@ function validate() {
   return Object.keys(next).length === 0;
 }
 
-function onSubmit() {
+// `send` = true → setelah disimpan, langsung dikirim ke persetujuan (status jadi
+// PENDING via submit terpisah di handler induk). false → simpan sebagai draf saja.
+function onSubmit(send) {
   if (!validate()) return;
   const f = form.value;
   const input = {
@@ -100,11 +102,11 @@ function onSubmit() {
     endDate: f.endDate || null,
     totalDays: f.totalDays === "" ? null : Number(f.totalDays),
     reason: f.reason?.trim() || null,
-    // Status selalu draft saat pengajuan dibuat.
+    // Status selalu draft saat pengajuan dibuat; pengiriman lewat submit terpisah.
     status: "DRAFT",
     attachment: attachment.value || null,
   };
-  emit("save", { input });
+  emit("save", { input, send: !!send });
 }
 
 const fieldCls =
@@ -120,9 +122,11 @@ const labelCls = "mb-1 block text-sm font-medium text-slate-700";
     title="Ajukan Cuti"
     size="lg"
     :loading="saving"
-    submit-text="Ajukan"
+    submit-text="Simpan & Kirim"
+    secondary-text="Simpan Draf"
     @update:open="emit('update:open', $event)"
-    @submit="onSubmit"
+    @submit="onSubmit(true)"
+    @secondary="onSubmit(false)"
   >
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
