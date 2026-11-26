@@ -14,6 +14,7 @@ import EmployeeBpjsCard from "../components/EmployeeBpjsCard.vue";
 import EmployeeTaxInfoCard from "../components/EmployeeTaxInfoCard.vue";
 import EmployeeEmergencyContactCard from "../components/EmployeeEmergencyContactCard.vue";
 import EmployeeFamilyMemberCard from "../components/EmployeeFamilyMemberCard.vue";
+import EmployeeAttendanceCard from "../components/EmployeeAttendanceCard.vue";
 import EmployeeAddressModal from "../components/EmployeeAddressModal.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
@@ -44,6 +45,8 @@ const canViewTax = computed(() => auth.can(PERM.TAX_LIST));
 const canViewEmergency = computed(() => auth.can(PERM.EMERGENCY_LIST));
 // Tab "Keluarga" hanya muncul bila user boleh melihatnya (listEmployeeFamilyMember).
 const canViewFamily = computed(() => auth.can(PERM.FAMILY_LIST));
+// Tab "Kehadiran" hanya muncul bila user boleh melihat kehadiran (listAttendance).
+const canViewAttendance = computed(() => auth.can(PERM.ATTENDANCE_LIST));
 const tabs = computed(() => [
   { id: "profil", label: "Profil" },
   ...(canViewAccess.value ? [{ id: "akses", label: "Hak Akses" }] : []),
@@ -55,6 +58,7 @@ const tabs = computed(() => [
   ...(canViewTax.value ? [{ id: "pajak", label: "Pajak" }] : []),
   ...(canViewEmergency.value ? [{ id: "kontak-darurat", label: "Kontak Darurat" }] : []),
   ...(canViewFamily.value ? [{ id: "keluarga", label: "Keluarga" }] : []),
+  ...(canViewAttendance.value ? [{ id: "kehadiran", label: "Kehadiran" }] : []),
 ]);
 const tab = ref("profil");
 
@@ -194,6 +198,8 @@ async function handleDeleteAddress() {
     <EmployeeEmergencyContactCard v-if="canViewEmergency" v-show="tab === 'kontak-darurat'" :employee="employee" />
 
     <EmployeeFamilyMemberCard v-if="canViewFamily" v-show="tab === 'keluarga'" :employee="employee" />
+
+    <EmployeeAttendanceCard v-if="canViewAttendance" v-show="tab === 'kehadiran'" :employee="employee" />
   </template>
 
   <!-- Tambah / ubah alamat karyawan -->

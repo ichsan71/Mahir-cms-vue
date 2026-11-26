@@ -1,63 +1,58 @@
 <script setup>
-// Bagan struktur organisasi (top-down) untuk tab "Hirarki" di daftar karyawan.
+// Bagan struktur organisasi untuk tab "Hirarki" di daftar karyawan.
+// Tampilan POHON TERINDENTASI (gaya directory): satu baris per karyawan,
+// indentasi menandakan jenjang, buka/tutup per cabang. Terbaca pada ratusan
+// karyawan (berbeda dari bagan node-link yang menciut saat di-fit-to-view).
 // Data & normalisasi childrenTree memakai composable dashboard yang sudah ada.
-// Render pakai Vue Flow (pan/zoom/minimap/controls) + auto-layout hierarki dagre.
-import { computed, nextTick, provide, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { VueFlow, useVueFlow, Position } from "@vue-flow/core";
-import { Controls } from "@vue-flow/controls";
-import { MiniMap } from "@vue-flow/minimap";
-import dagre from "@dagrejs/dagre";
 import {
   MagnifyingGlassIcon,
   ArrowPathIcon,
-  ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ChevronDoubleDownIcon,
+  ChevronDoubleRightIcon,
 } from "@heroicons/vue/24/outline";
 import { useEmployeeStructure } from "@/features/dashboard/composables/useEmployeeStructure";
-import OrgNodeCard from "./OrgNodeCard.vue";
-
-import "@vue-flow/core/dist/style.css";
-import "@vue-flow/core/dist/theme-default.css";
-import "@vue-flow/controls/dist/style.css";
-import "@vue-flow/minimap/dist/style.css";
-
-const NODE_W = 192;
-const NODE_H = 92;
 
 const router = useRouter();
 const { roots, loading, error, refetch } = useEmployeeStructure();
-const { setNodes, setEdges, fitView, onNodeClick } = useVueFlow();
 
-// --- Pencarian: pangkas pohon, sisakan node yang cocok + seluruh leluhurnya ---
+// --- Pencarian: pangkas pohon, sisakan node cocok + seluruh leluhurnya ---
 const query = ref("");
 const searchActive = computed(() => query.value.trim().length > 0);
 
-function filterNodes(nodes, q) {
-  const out = [];
-  for (const n of nodes) {
-    const selfMatch = n.name.toLowerCase().includes(q) || (n.code ?? "").toLowerCase().includes(q);
-    const kids = filterNodes(n.children ?? [], q);
-    if (selfMatch || kids.length) {
-      out.push({ ...n, children: selfMatch ? n.children : kids });
+// Set berisi id node yang TERTUTUP. Default: hanya tingkat teratas (root) &
+// anak langsungnya yang terbuka; selebihnya tertutup agar tidak membanjiri layar.
+const collapsed = ref(null);
+
+// Inisialisasi status tutup sekali, saat data pertama tersedia.
+const initialized = ref(false);
+function ensureInit(nodes) {
+  if (initialized.value || !nodes.length) return;
+  const s = new Set();
+  const walk = (list, depth) => {
+    for (const n of list) {
+      const kids = n.children ?? [];
+      if (kids.length) {
+        if (depth >= 1) s.add(String(n.id)); // tutup mulai cucu ke bawah
+        walk(kids, depth + 1);
+      }
     }
-  }
-  return out;
+  };
+  walk(nodes, 0);
+  collapsed.value = s;
+  initialized.value = true;
 }
 
-const visibleRoots = computed(() => {
-  if (!searchActive.value) return roots.value;
-  return filterNodes(roots.value, query.value.trim().toLowerCase());
-});
-
-// --- State buka/tutup (set berisi id yang tertutup) ---
-const collapsed = ref(new Set());
-// Saat mencari, abaikan status tutup agar semua hasil tampak.
-const isCollapsed = (id) => !searchActive.value && collapsed.value.has(id);
+const isCollapsed = (id) =>
+  !searchActive.value && (collapsed.value?.has(String(id)) ?? false);
 
 function toggle(id) {
-  const s = new Set(collapsed.value);
-  s.has(id) ? s.delete(id) : s.add(id);
+  const s = new Set(collapsed.value ?? []);
+  const key = String(id);
+  s.has(key) ? s.delete(key) : s.add(key);
   collapsed.value = s;
 }
 function expandAll() {
@@ -67,16 +62,22 @@ function collapseAll() {
   const s = new Set();
   const walk = (nodes) => {
     for (const n of nodes) {
-      if ((n.children?.length ?? 0) > 0) s.add(String(n.id));
-      walk(n.children ?? []);
+      if ((n.children?.length ?? 0) > 0) {
+        s.add(String(n.id));
+        walk(n.children);
+      }
     }
   };
   walk(roots.value);
   collapsed.value = s;
 }
 
-provide("empOrgChart", { toggle });
-
+// --- Jumlah total & bawahan (langsung + seluruh keturunan) ---
+function descendants(node) {
+  let c = 0;
+  for (const k of node.children ?? []) c += 1 + descendants(k);
+  return c;
+}
 const totalCount = computed(() => {
   let c = 0;
   const walk = (nodes) => {
@@ -89,82 +90,95 @@ const totalCount = computed(() => {
   return c;
 });
 
-// --- Bangun daftar node + edge dari pohon, hormati status tutup ---
-function buildGraph(treeRoots) {
-  const nodes = [];
-  const edges = [];
-  const walk = (node, parentId) => {
-    const id = String(node.id);
-    const kids = node.children ?? [];
-    const collapsedHere = isCollapsed(id) && kids.length > 0;
-    nodes.push({
-      id,
-      type: "org",
-      position: { x: 0, y: 0 },
-      data: {
-        name: node.name,
-        code: node.code,
-        units: node.units ?? [],
-        childCount: kids.length,
-        collapsed: collapsedHere,
-      },
-    });
-    if (parentId) {
-      edges.push({
-        id: `${parentId}->${id}`,
-        source: parentId,
-        target: id,
-        type: "smoothstep",
-        style: { stroke: "#cbd5e1", strokeWidth: 1.5 },
-      });
+// --- Pencarian: pertahankan node cocok + leluhurnya ---
+function filterNodes(nodes, q) {
+  const out = [];
+  for (const n of nodes) {
+    const selfMatch =
+      n.name.toLowerCase().includes(q) || (n.code ?? "").toLowerCase().includes(q);
+    const kids = filterNodes(n.children ?? [], q);
+    if (selfMatch || kids.length) {
+      out.push({ ...n, children: selfMatch ? n.children : kids });
     }
-    if (!collapsedHere) {
-      for (const k of kids) walk(k, id);
+  }
+  return out;
+}
+
+const visibleRoots = computed(() => {
+  ensureInit(roots.value);
+  if (!searchActive.value) return roots.value;
+  return filterNodes(roots.value, query.value.trim().toLowerCase());
+});
+
+// --- Ratakan pohon menjadi daftar baris, hormati status tutup ---
+// Tiap baris: { id, name, code, units, depth, hasChildren, open, childCount, total }.
+const rows = computed(() => {
+  const out = [];
+  const walk = (nodes, depth) => {
+    for (const n of nodes) {
+      const kids = n.children ?? [];
+      const has = kids.length > 0;
+      const open = has && !isCollapsed(n.id);
+      out.push({
+        id: n.id,
+        name: n.name,
+        code: n.code,
+        units: n.units ?? [],
+        depth,
+        hasChildren: has,
+        open,
+        childCount: kids.length,
+        total: has ? descendants(n) : 0,
+      });
+      if (open) walk(kids, depth + 1);
     }
   };
-  for (const r of treeRoots) walk(r, null);
-  return { nodes, edges };
-}
-
-// --- Auto-layout hierarki top-down memakai dagre ---
-function layout(nodes, edges) {
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: "TB", nodesep: 36, ranksep: 64, marginx: 20, marginy: 20 });
-  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
-  edges.forEach((e) => g.setEdge(e.source, e.target));
-  dagre.layout(g);
-  return nodes.map((n) => {
-    const { x, y } = g.node(n.id);
-    return {
-      ...n,
-      position: { x: x - NODE_W / 2, y: y - NODE_H / 2 },
-      targetPosition: Position.Top,
-      sourcePosition: Position.Bottom,
-    };
-  });
-}
-
-function refresh() {
-  const { nodes, edges } = buildGraph(visibleRoots.value);
-  setNodes(layout(nodes, edges));
-  setEdges(edges);
-  nextTick(() => fitView({ padding: 0.2 }));
-}
-
-// Rebuild saat data, pencarian, atau status tutup berubah.
-watch([visibleRoots, collapsed], refresh, { deep: false, immediate: true });
-
-onNodeClick(({ node }) => {
-  router.push({ name: "karyawan-detail", params: { id: node.id } });
+  walk(visibleRoots.value, 0);
+  return out;
 });
+
+// --- Sorot potongan yang cocok pada nama (tanpa v-html) ---
+function segments(text) {
+  const q = query.value.trim();
+  if (!q) return [{ t: text, hit: false }];
+  const lower = text.toLowerCase();
+  const ql = q.toLowerCase();
+  const parts = [];
+  let i = 0;
+  while (i < text.length) {
+    const idx = lower.indexOf(ql, i);
+    if (idx === -1) {
+      parts.push({ t: text.slice(i), hit: false });
+      break;
+    }
+    if (idx > i) parts.push({ t: text.slice(i, idx), hit: false });
+    parts.push({ t: text.slice(idx, idx + ql.length), hit: true });
+    i = idx + ql.length;
+  }
+  return parts;
+}
+
+function initials(name) {
+  return String(name ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
+}
+
+function openDetail(id) {
+  router.push({ name: "karyawan-detail", params: { id } });
+}
 </script>
 
 <template>
   <div class="rounded-2xl border border-mahir-border bg-white">
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-mahir-border px-5 py-3">
-      <p class="text-xs text-slate-400">{{ totalCount }} karyawan dalam hierarki</p>
+      <p class="text-xs text-slate-400">
+        <span class="font-semibold text-slate-600">{{ totalCount }}</span> karyawan dalam hierarki
+      </p>
 
       <div class="flex flex-wrap items-center gap-2">
         <div class="relative">
@@ -178,38 +192,33 @@ onNodeClick(({ node }) => {
         </div>
         <button
           type="button"
-          title="Buka semua"
-          class="flex h-8 w-8 items-center justify-center rounded-lg border border-mahir-border text-slate-500 hover:bg-slate-50"
+          class="flex items-center gap-1 rounded-lg border border-mahir-border px-2.5 py-1.5 text-[12.5px] font-medium text-slate-600 hover:bg-slate-50"
           @click="expandAll"
         >
-          <ArrowsPointingOutIcon class="h-4 w-4" />
+          <ChevronDoubleDownIcon class="h-4 w-4" /> Buka semua
         </button>
         <button
           type="button"
-          title="Tutup semua"
-          class="flex h-8 w-8 items-center justify-center rounded-lg border border-mahir-border text-slate-500 hover:bg-slate-50"
+          class="flex items-center gap-1 rounded-lg border border-mahir-border px-2.5 py-1.5 text-[12.5px] font-medium text-slate-600 hover:bg-slate-50"
           @click="collapseAll"
         >
-          <ArrowsPointingInIcon class="h-4 w-4" />
+          <ChevronDoubleRightIcon class="h-4 w-4" /> Tutup semua
         </button>
       </div>
     </div>
 
-    <!-- Kanvas -->
-    <div class="relative h-[68vh] w-full">
+    <!-- Konten -->
+    <div class="relative min-h-[40vh]">
       <!-- Loading -->
       <div
-        v-if="loading"
-        class="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-white/70 text-sm text-slate-400"
+        v-if="loading && !roots.length"
+        class="flex items-center justify-center gap-2 py-24 text-sm text-slate-400"
       >
         <ArrowPathIcon class="h-4 w-4 animate-spin" /> Memuat struktur…
       </div>
 
       <!-- Error -->
-      <div
-        v-else-if="error"
-        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/70"
-      >
+      <div v-else-if="error" class="flex flex-col items-center justify-center gap-2 py-24">
         <p class="text-sm text-rose-500">Gagal memuat struktur organisasi.</p>
         <button
           type="button"
@@ -222,47 +231,75 @@ onNodeClick(({ node }) => {
 
       <!-- Kosong -->
       <div
-        v-else-if="!visibleRoots.length"
-        class="absolute inset-0 z-10 flex items-center justify-center text-sm text-slate-400"
+        v-else-if="!rows.length"
+        class="flex items-center justify-center py-24 text-sm text-slate-400"
       >
         {{ searchActive ? "Tidak ada karyawan yang cocok." : "Belum ada data struktur." }}
       </div>
 
-      <VueFlow
-        :min-zoom="0.2"
-        :max-zoom="2"
-        :nodes-draggable="false"
-        :nodes-connectable="false"
-        :elements-selectable="true"
-        fit-view-on-init
-        class="rounded-b-2xl"
-      >
-        <template #node-org="nodeProps">
-          <OrgNodeCard :id="nodeProps.id" :data="nodeProps.data" />
-        </template>
+      <!-- Pohon terindentasi -->
+      <div v-else class="max-h-[64vh] overflow-auto py-1.5">
+        <div
+          v-for="r in rows"
+          :key="r.id"
+          class="group flex cursor-pointer items-center gap-2.5 py-1.5 pr-4 hover:bg-slate-50"
+          @click="openDetail(r.id)"
+        >
+          <!-- Garis indentasi per kedalaman -->
+          <span class="flex self-stretch">
+            <span
+              v-for="d in r.depth"
+              :key="d"
+              class="relative w-[22px] self-stretch before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-mahir-border"
+            ></span>
+          </span>
 
-        <Controls :show-interactive="false" />
-        <MiniMap pannable zoomable />
-      </VueFlow>
+          <!-- Tombol buka/tutup cabang -->
+          <button
+            v-if="r.hasChildren"
+            type="button"
+            class="flex h-[22px] w-[22px] flex-none items-center justify-center rounded-md text-slate-400 hover:bg-mahir-primary-soft hover:text-mahir-primary"
+            :title="r.open ? 'Tutup bawahan' : 'Buka bawahan'"
+            @click.stop="toggle(r.id)"
+          >
+            <ChevronDownIcon v-if="r.open" class="h-4 w-4" />
+            <ChevronRightIcon v-else class="h-4 w-4" />
+          </button>
+          <span v-else class="w-[22px] flex-none"></span>
+
+          <!-- Avatar inisial -->
+          <span
+            class="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-mahir-primary-soft text-[12.5px] font-semibold text-mahir-primary ring-1 ring-mahir-primary/15"
+          >
+            {{ initials(r.name) || "?" }}
+          </span>
+
+          <!-- Identitas -->
+          <span class="flex min-w-0 flex-1 items-center gap-2.5">
+            <span class="truncate text-[13.5px] font-semibold text-slate-800">
+              <template v-for="(seg, i) in segments(r.name)" :key="i">
+                <mark v-if="seg.hit" class="rounded-sm bg-amber-200/70 px-0.5 text-inherit">{{ seg.t }}</mark>
+                <template v-else>{{ seg.t }}</template>
+              </template>
+            </span>
+            <span v-if="r.code" class="flex-none font-mono text-[11px] text-slate-400">{{ r.code }}</span>
+            <span
+              v-if="r.units[0]"
+              class="hidden max-w-[9rem] flex-none truncate rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 sm:inline"
+            >
+              {{ r.units[0].name ?? r.units[0] }}
+            </span>
+          </span>
+
+          <!-- Jumlah bawahan -->
+          <span
+            v-if="r.hasChildren"
+            class="ml-auto flex-none rounded-full bg-mahir-primary-soft px-2.5 py-0.5 text-[11px] font-semibold text-mahir-primary tabular-nums"
+          >
+            {{ r.childCount }} langsung · {{ r.total }} total
+          </span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Sembunyikan titik handle bawaan (dibutuhkan untuk edge, tapi tak perlu terlihat) */
-:deep(.vue-flow__handle) {
-  opacity: 0;
-  pointer-events: none;
-}
-/* Kartu node kita punya border sendiri; matikan gaya default node Vue Flow */
-:deep(.vue-flow__node-org) {
-  background: transparent;
-  border: none;
-  padding: 0;
-  box-shadow: none;
-  cursor: pointer;
-}
-:deep(.vue-flow__node-org.selected) {
-  outline: none;
-}
-</style>

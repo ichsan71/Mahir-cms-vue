@@ -1,11 +1,11 @@
 <script setup>
 import { ref, watch, onUnmounted } from "vue";
 import { useEmployeeFiltersStore } from "../stores/employeeFilters.store";
-import { MagnifyingGlassIcon, ShareIcon, ArrowDownTrayIcon } from "@heroicons/vue/24/outline";
+import { MagnifyingGlassIcon, ShareIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { PERM } from "../permissions";
 
-const emit = defineEmits(["export"]);
+const emit = defineEmits(["export", "import"]);
 
 const auth = useAuthStore();
 const filters = useEmployeeFiltersStore();
@@ -65,6 +65,16 @@ watch(
         class="w-[160px] rounded-lg border border-mahir-border py-2 pl-9 pr-3 text-sm focus:border-mahir-primary focus:outline-none focus:ring-1 focus:ring-mahir-primary"
       />
     </div>
+
+    <!-- Import -->
+    <button
+      v-if="auth.can(PERM.IMPORT)"
+      type="button"
+      class="flex items-center gap-1.5 rounded-lg border border-mahir-border bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      @click="emit('import')"
+    >
+      <ArrowUpTrayIcon class="h-4 w-4" /> Impor
+    </button>
 
     <!-- Export -->
     <button

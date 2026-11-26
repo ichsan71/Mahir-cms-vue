@@ -310,6 +310,35 @@ export const EXPORT_EMPLOYEE = gql`
   }
 `;
 
+// Impor karyawan massal dari berkas (CSV/XLSX) via bulkImportEmployee.
+// `file` (Upload) terkirim langsung sebagai berkas berkat createUploadLink;
+// `notifyEmail` tujuan hasil. Backend memproses async & mengirim ringkasan
+// (berhasil/gagal per baris) ke email; respons hanya metadata antrean.
+export const BULK_IMPORT_EMPLOYEE = gql`
+  mutation BulkImportEmployee($file: Upload!, $notifyEmail: String!) {
+    bulkImportEmployee(file: $file, notifyEmail: $notifyEmail) {
+      data {
+        detail
+        requestId
+      }
+    }
+  }
+`;
+
+// Minta template impor karyawan dikirim ke email (proses async di backend).
+// Backend menyusun berkas template & mengirimkannya ke `email`; respons hanya
+// metadata antrean (detail, requestId).
+export const EXPORT_EMPLOYEE_IMPORT_TEMPLATE = gql`
+  mutation ExportEmployeeImportTemplate($email: String!) {
+    exportEmployeeImportTemplate(email: $email) {
+      data {
+        detail
+        requestId
+      }
+    }
+  }
+`;
+
 // Kirim ulang email verifikasi/aktivasi untuk user yang belum aktif.
 // `userId` = id akun user (emp.user.id). Mengembalikan { detail, success }.
 export const RESEND_VERIFICATION_EMAIL = gql`

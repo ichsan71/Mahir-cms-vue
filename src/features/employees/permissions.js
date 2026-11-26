@@ -14,6 +14,8 @@ export const PERM = {
   DELETE: "deleteEmployee",
   // Ekspor data karyawan ke email (proses async di backend).
   EXPORT: "exportEmployee",
+  // Impor karyawan massal dari berkas CSV/XLSX (proses async di backend).
+  IMPORT: "bulkImportEmployee",
   // Kirim ulang email verifikasi untuk user yang belum aktif.
   RESEND_VERIFICATION: "resendVerificationEmail",
   // Alamat karyawan (dikelola di halaman detail karyawan).
@@ -57,4 +59,7 @@ export const PERM = {
   FAMILY_CREATE: "createEmployeeFamilyMember",
   FAMILY_EDIT: "editEmployeeFamilyMember",
   FAMILY_DELETE: "deleteEmployeeFamilyMember",
+  // Kehadiran (tab Kehadiran di detail karyawan): melihat riwayat & set/edit manual.
+  ATTENDANCE_LIST: "listAttendance",
+  ATTENDANCE_SET_MANUAL: "setManualAttendance",
 };

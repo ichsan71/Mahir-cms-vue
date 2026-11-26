@@ -105,6 +105,60 @@ export const CREATE_ATTENDANCE_LOG = gql`
   }
 `;
 
+// Set/edit kehadiran manual seorang karyawan untuk satu tanggal (dibuat atau
+// diperbarui). `input` (ManualAttendanceInput): employeeId (atau employeeCode),
+// date (YYYY-MM-DD, hari ini atau sebelumnya), checkIn (HH:MM, wajib),
+// checkOut (HH:MM, opsional — lebih awal dari checkIn = hari berikutnya),
+// note (opsional). Backend menegakkan izin per-karyawan.
+export const SET_MANUAL_ATTENDANCE = gql`
+  mutation SetManualAttendance($input: ManualAttendanceInput!) {
+    setManualAttendance(input: $input) {
+      data {
+        id
+        date
+        status
+      }
+    }
+  }
+`;
+
+// Set/edit kehadiran manual BANYAK baris sekaligus (lintas karyawan & tanggal).
+// `rows` = daftar ManualAttendanceInput (tiap baris: employeeId/employeeCode,
+// date, checkIn wajib, checkOut & note opsional). Respons berisi daftar baris
+// kehadiran yang berhasil dibuat/diperbarui. Backend menegakkan izin per-karyawan.
+export const SET_MANUAL_ATTENDANCE_BULK = gql`
+  mutation SetManualAttendanceBulk($rows: [ManualAttendanceInput!]!) {
+    setManualAttendanceBulk(rows: $rows) {
+      data {
+        id
+        date
+        status
+        employee {
+          id
+          fullName
+        }
+      }
+    }
+  }
+`;
+
+// Impor kehadiran manual dari berkas (CSV/XLSX). Kolom berkas:
+// employee_id, employee_code, date, check_in, check_out, note. `file` (Upload)
+// terkirim via multipart berkat createUploadLink. Proses dijalankan async di
+// backend; hasil (sukses/galat per baris) dikirim ke `notifyEmail`. Respons hanya
+// metadata antrean: detail, requestId, rowCount (jumlah baris terbaca dari berkas).
+export const IMPORT_MANUAL_ATTENDANCE = gql`
+  mutation ImportManualAttendance($file: Upload!, $notifyEmail: String!) {
+    importManualAttendance(file: $file, notifyEmail: $notifyEmail) {
+      data {
+        detail
+        requestId
+        rowCount
+      }
+    }
+  }
+`;
+
 // Ekspor data kehadiran ke berkas & kirim ke email (proses async di backend).
 // `input` (AttendanceExportInput): dateFrom, dateTo (rentang tanggal kehadiran),
 // email tujuan. Respons hanya metadata antrean; hasil dikirim ke email.

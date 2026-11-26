@@ -10,6 +10,9 @@ export const PERM = {
   LEAVE_LIST: "listLeave",
   // Catat log absen (check-in / check-out).
   LOG_CREATE: "createAttendanceLog",
+  // Set/edit kehadiran manual seorang karyawan (jam masuk/keluar). Backend
+  // menegakkan izin per-karyawan — tombol hanya tampil bila operasi diizinkan.
+  MANUAL_SET: "setManualAttendance",
   // Ekspor data kehadiran ke email (proses async di backend).
   EXPORT: "exportAttendance",
 };

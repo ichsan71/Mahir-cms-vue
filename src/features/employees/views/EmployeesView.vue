@@ -9,24 +9,31 @@ import EmployeeToolbar from "../components/EmployeeToolbar.vue";
 import EmployeeTable from "../components/EmployeeTable.vue";
 import EmployeeRegisterModal from "../components/EmployeeRegisterModal.vue";
 import EmployeeExportModal from "../components/EmployeeExportModal.vue";
+import ImportEmployeeModal from "../components/ImportEmployeeModal.vue";
 import EmployeeOrgChart from "../components/EmployeeOrgChart.vue";
+import BulkManualAttendanceCard from "../components/BulkManualAttendanceCard.vue";
 import ConfirmDialog from "@/shared/components/ConfirmDialog.vue";
 import { PlusIcon } from "@heroicons/vue/24/outline";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { useEmployeeFiltersStore } from "../stores/employeeFilters.store";
 import { PERM } from "../permissions";
 
 const auth = useAuthStore();
 const router = useRouter();
+const employeeFilters = useEmployeeFiltersStore();
 const { employees, pagination, loading, nextPage, prevPage, refetch } = useEmployees();
 const { registerEmployee, editEmployee, deleteEmployee, resendVerification, loading: saving, resending } = useEmployeeRegister();
 const { exportEmployee, loading: exporting } = useEmployeeExport();
 
-// Tab halaman: daftar tabel vs bagan hierarki (struktur organisasi).
+// Tab halaman: daftar tabel vs bagan hierarki vs kelola kehadiran massal.
+// Tab "Kelola Kehadiran" hanya untuk yang boleh set kehadiran manual.
+const canBulkAttendance = computed(() => auth.can(PERM.ATTENDANCE_SET_MANUAL));
 const tab = ref("daftar");
-const tabs = [
+const tabs = computed(() => [
   { id: "daftar", label: "Daftar Karyawan" },
   { id: "hirarki", label: "Hirarki" },
-];
+  ...(canBulkAttendance.value ? [{ id: "kehadiran", label: "Kelola Kehadiran" }] : []),
+]);
 
 const modalOpen = ref(false);
 
@@ -67,9 +74,37 @@ async function handleSave({ id, username, email, input }) {
 // Ekspor karyawan ke email (proses async di backend).
 const exportOpen = ref(false);
 
+// Filter aktif daftar (EmployeeParams) agar ekspor mengikuti apa yang sedang
+// ditampilkan/difilter user. `page`/`pageSize` sengaja TIDAK dikirim — ekspor
+// mencakup seluruh data yang cocok, bukan satu halaman. Field kosong dibuang.
+function activeListFilters() {
+  const f = {
+    search: employeeFilters.search?.trim() || null,
+    fullName: employeeFilters.fullName?.trim() || null,
+    nik: employeeFilters.nik?.trim() || null,
+    unitsName: employeeFilters.unitsName?.trim() || null,
+  };
+  const entries = Object.entries(f).filter(([, v]) => v != null);
+  return entries.length ? Object.fromEntries(entries) : null;
+}
+
 async function handleExport(payload) {
-  const result = await exportEmployee(payload);
+  // Gabung filter dari modal (jika ada) dengan filter aktif daftar.
+  const filters = { ...(activeListFilters() ?? {}), ...(payload.filters ?? {}) };
+  const result = await exportEmployee({
+    ...payload,
+    filters: Object.keys(filters).length ? filters : null,
+  });
   if (result) exportOpen.value = false;
+}
+
+// Impor karyawan massal dari berkas (proses async di backend).
+const importOpen = ref(false);
+
+function handleImported() {
+  // Impor diproses async; data belum tentu masuk saat modal ditutup.
+  // Refetch opurtunistik agar baris yang sudah masuk langsung terlihat.
+  refetch();
 }
 
 // Hapus: tampung target lalu konfirmasi dulu sebelum eksekusi.
@@ -152,13 +187,16 @@ async function handleResend() {
   <!-- Bagan hierarki -->
   <EmployeeOrgChart v-if="tab === 'hirarki'" />
 
+  <!-- Kelola kehadiran massal (lintas-karyawan) -->
+  <BulkManualAttendanceCard v-else-if="tab === 'kehadiran' && canBulkAttendance" />
+
   <!-- Table card -->
   <div v-show="tab === 'daftar'" class="overflow-hidden rounded-2xl border border-mahir-border bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
       <h2 class="font-semibold text-slate-900">
         Daftar Karyawan
       </h2>
-      <EmployeeToolbar @export="exportOpen = true" />
+      <EmployeeToolbar @export="exportOpen = true" @import="importOpen = true" />
     </div>
 
     <EmployeeTable
@@ -211,6 +249,12 @@ async function handleResend() {
     v-model:open="exportOpen"
     :saving="exporting"
     @submit="handleExport"
+  />
+
+  <!-- Modal impor karyawan massal dari berkas -->
+  <ImportEmployeeModal
+    v-model:open="importOpen"
+    @imported="handleImported"
   />
 
   <!-- Konfirmasi hapus karyawan -->

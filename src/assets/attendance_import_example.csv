@@ -1,0 +1,5 @@
+employee_id,employee_code,date,check_in,check_out,note
+12,,2026-11-17,08:05,17:00,Forgot phone at home
+,EMP001,2026-11-17,07:55,17:10,
+,EMP002,2026-11-18,22:00,06:00,Night shift - check_out is next day
+15,,2026-11-19,08:30,,Check-in only; went home without checking out
